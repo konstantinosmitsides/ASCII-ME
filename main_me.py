@@ -51,11 +51,11 @@ def main(config: DictConfig) -> None:
     
     # Compute the centroids
     centroids, key = compute_cvt_centroids(
-		num_descriptors=min_bd.size,
+		num_descriptors=env.behavior_descriptor_length,
 		num_init_cvt_samples=config.qd.num_init_cvt_samples,
 		num_centroids=config.qd.num_centroids,
-		minval=min_bd,
-		maxval=max_bd,
+		minval=config.env.min_bd,
+		maxval=config.env.max_bd,
 		random_key=key,
 	)
     
