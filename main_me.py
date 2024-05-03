@@ -46,8 +46,8 @@ def main(config: DictConfig) -> None:
     env = get_env(config)
     reset_fn = jax.jit(env.reset)
     
-    def scoring_fn(genotypes, key):
-        pass
+    #def scoring_fn(genotypes, key):
+    #    pass
     
     # Compute the centroids
     centroids, key = compute_cvt_centroids(
@@ -59,6 +59,23 @@ def main(config: DictConfig) -> None:
 		random_key=key,
 	)
     
+    # Init policy net
+    policy_layers_sizes = policy_layers_sizes + (env.action_size, )
+    policy_network = MLP(
+        layer_sizes=policy_layers_sizes,
+        kernel_init=jax.nn.initializers.lecun_uniform(),
+        fina_activation=jnp.tanh,
+    )
+    
+    # Init population of controllers
+    random_key, subkey = jax.random.split(random_key)
+    keys = jax.random.split(subkey, num=config.batch_size)
+    fake_batch_obs = jnp.zeros(shape=(config.batch_size, env.observation_size))
+    init_params = jax.vmap(policy_network.init)(keys, fake_batch_obs)
+    
+    param_count = sum(x[0].size for x in jax.tree_util.tree_leaves(init_params))
+    print(f"Number of parameters in policy_network: {param_count}")
+        
     # Define a metrics function
     metrics_fn = partial(
 		default_qd_metrics,
