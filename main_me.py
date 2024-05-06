@@ -10,9 +10,8 @@ import jax.numpy as jnp
 from qdax.environments import behavior_descriptor_extractor
 from qdax.core.map_elites import MAPElites
 from qdax.tasks.brax_envs import scoring_function_brax_envs as scoring_function
-from qdax.core.containers.mapelites_repertoire import compute_cvt_centroids
-from qdax.core.map_elites import MAPElites
-from qdax.core.emitters.mutation_operators import isoline_variation
+from qdax.core.containers.mapelites_repertoire import compute_cvt_centroids # utility for computing centroids in a CVT; it is a method used in ME for dividing the search space
+from qdax.core.emitters.mutation_operators import isoline_variation 
 from qdax.core.emitters.standard_emitters import MixingEmitter
 from qdax.core.neuroevolution.buffers.buffer import QDTransition
 from qdax.core.neuroevolution.networks.networks import MLP
@@ -43,7 +42,7 @@ def main(config: DictConfig) -> None:
     
     # Init env
     logging.info("Initializing env...")
-    env = get_env(config)
+    env = get_env(config) # it creates the environment by connecting using the functionfrom the utils.py file and calling the env key from config 'me'
     reset_fn = jax.jit(env.reset)
     
     #def scoring_fn(genotypes, key):
