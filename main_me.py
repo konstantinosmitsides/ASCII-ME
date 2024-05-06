@@ -75,7 +75,66 @@ def main(config: DictConfig) -> None:
     
     param_count = sum(x[0].size for x in jax.tree_util.tree_leaves(init_params))
     print(f"Number of parameters in policy_network: {param_count}")
+    
+    # Define the function to play a step with the policy in the environment
+    def play_step_fn(env_state, policy_params, random_key):
         
+        """
+        Play an environement step and return the updated state and the transition
+        """
+        
+        actions = policy_network.apply(policy_params, env_state.obs)
+        state_desc = env_state.info["state_descriptor"]
+        next_state = env.step(env_state, actions)
+        
+        transition = QDTransition(
+            obs=env_state.obs,
+            next_obs=next_state.obs,
+            rewards=next_state.reward,
+            dones=next_state.done,
+            truncations=next_state.info["truncation"],
+            actions=actions,
+            state_desc=state_desc,
+            next_state_desc=next_state.info["state_descriptor"],
+            desc=jnp.zeros(env.behavior_descriptor_length, ) * jnp.nan,
+            desc_prime=jnp.zeros(env.behavior_descriptor_length, ) * jnp.nan,
+        )
+        
+        return next_state, policy_params, random_key, transition
+    
+    # Prepare the scoring function
+    bd_extraction_fn = behavior_descriptor_extractor[config.env.name]
+    scoring_fn = partial(
+        scoring_function,
+        #init_states=init_states,
+        episode_length=config.env.episode_length,
+        play_step_fn=play_step_fn,
+        behavior_descriptor_extractor=bd_extraction_fn,
+    )
+    
+    @jax.jit
+    def evaluate_repertoire(random_key, repertoire):
+        repertoire_empty = repertoire.fitnesses == -jnp.inf
+        
+        fitnesses, descriptors, extra_scores, random_key = scoring_fn(
+            repertoire.genotypes, random_key
+        )
+        
+        # Compute reperoire QD score
+        qd_score = jnp.sum((1.0 - repertoire_empty) * fitnesses).astype(float)
+        
+        # Compute repertoire desc error mean
+        error = jnp.linalg.norm(repertoire.descrpitors - descriptors, axis=1)
+        dem = (jnp.sum((1.0 - repertoire_empty) * error) / jnp.sum(1.0 - repertoire_empty)).astype(float)
+        
+        return random_key, qd_score, dem
+    
+    
+    
+    
+    
+    
+    
     # Define a metrics function
     metrics_fn = partial(
 		default_qd_metrics,
