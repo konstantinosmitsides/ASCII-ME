@@ -129,16 +129,16 @@ def main(config: DictConfig) -> None:
         
         return random_key, qd_score, dem
     
+    def get_elites(metric):
+        return jnp.sum(metric, axis=-1)
     
-    
-    
-    
-    
+    # Get a minimum reward value to make sure qs_score are positive 
+    reward_offset = 0
     
     # Define a metrics function
     metrics_fn = partial(
 		default_qd_metrics,
-		qd_offset=0.,  # TODO
+		qd_offset=reward_offset * config.env.episode_length,  # TODO
 	)
     
     # Define emitter
@@ -159,6 +159,10 @@ def main(config: DictConfig) -> None:
 		emitter=mixing_emitter,
 		metrics_function=metrics_fn,
 	)
+    
+    # Compute initial reperoire and emitter space
+    repertoire, emitter_space, random_key = map_elites.init(init_params, centroids, random_key)
+    
     
     # Compute initial repertoire and emitter state
     logging.info("Initializing MAP-Elites...")
