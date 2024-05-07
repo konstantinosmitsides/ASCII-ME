@@ -7,7 +7,7 @@ from absl import logging
 import jax
 import jax.numpy as jnp
 
-from qdax.environments import behavior_descriptor_extractor
+from qdax.environments import behavior_descriptor_extractor, reward_offset
 from qdax.core.map_elites import MAPElites
 from qdax.tasks.brax_envs import scoring_function_brax_envs as scoring_function
 from qdax.core.containers.mapelites_repertoire import compute_cvt_centroids # utility for computing centroids in a CVT; it is a method used in ME for dividing the search space
@@ -43,7 +43,7 @@ def main(config: DictConfig) -> None:
     # Init env
     logging.info("Initializing env...")
     env = get_env(config) # it creates the environment by connecting using the functionfrom the utils.py file and calling the env key from config 'me'
-    reset_fn = jax.jit(env.reset) # FROM WHERE DO THEY ACCESS .RESET?
+    #reset_fn = jax.jit(env.reset) # FROM WHERE DO THEY ACCESS .RESET?
     
     #def scoring_fn(genotypes, key):
     #    pass
@@ -75,6 +75,12 @@ def main(config: DictConfig) -> None:
     # Each element of the bacth gets is own set of initialized parameters independent of others, which is important 
     # for initializing different instances of a model in parallel during multi-agent simulations
     init_params = jax.vmap(policy_network.init)(keys, fake_batch_obs) 
+    
+    # Create the initial environment states
+    random_key, subkey = jax.random.split(random_key)
+    keys = jnp.repeat(jnp.expand_dims(subkey, axis=0), repeats=config.batch_size, axis=0)
+    reset_fn = jax.jit(jax.vmap(env.reset))
+    init_states = reset_fn(keys)
     
     param_count = sum(x[0].size for x in jax.tree_util.tree_leaves(init_params))
     print(f"Number of parameters in policy_network: {param_count}")
@@ -117,12 +123,12 @@ def main(config: DictConfig) -> None:
         return next_state, policy_params, random_key, transition
     
     # Prepare the scoring function
-    bd_extraction_fn = behavior_descriptor_extractor[config.env.name]
+    bd_extraction_fn = behavior_descriptor_extractor[config.qd.env.name]
     scoring_fn = partial(
         scoring_function,
-        #init_states=init_states,
+        init_states=init_states,
         episode_length=config.env.episode_length,
-        play_step_fn=play_step_fn,
+        play_step_fn=play_step_fn,  # WHAT EXACLTY HAPPENS HERE? WHAT IS THE INPUT OF PLAY_STEP_FN?
         behavior_descriptor_extractor=bd_extraction_fn,
     )
     
@@ -147,7 +153,7 @@ def main(config: DictConfig) -> None:
         return jnp.sum(metric, axis=-1)
     
     # Get a minimum reward value to make sure qs_score are positive 
-    reward_offset = 0
+    reward_offset = reward_offset[config.qd.0env.name]
     
     # Define a metrics function
     metrics_fn = partial(
@@ -156,6 +162,7 @@ def main(config: DictConfig) -> None:
 	)
     
     # Define emitter
+    # WHAT IS THE INPUT OF ISOLINE_VARIATION?
     variation_fn = partial(
 		isoline_variation, iso_sigma=config.qd.iso_sigma, line_sigma=config.qd.line_sigma,
 	)
@@ -174,14 +181,12 @@ def main(config: DictConfig) -> None:
 		metrics_function=metrics_fn,
 	)
     
-    # Compute initial reperoire and emitter space
-    repertoire, emitter_space, random_key = map_elites.init(init_params, centroids, random_key)
+    
     
     
     # Compute initial repertoire and emitter state
     logging.info("Initializing MAP-Elites...")
     key, subkey = jax.random.split(key)
-    init_params = 0  # TODO
     repertoire, emitter_state, key = map_elites.init(init_params, centroids, key)
     
     metrics = dict.fromkeys(["generation", "qd_score", "coverage", "max_fitness", "time"], jnp.array([]))
