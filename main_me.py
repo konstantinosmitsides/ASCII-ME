@@ -153,7 +153,7 @@ def main(config: DictConfig) -> None:
         return jnp.sum(metric, axis=-1)
     
     # Get a minimum reward value to make sure qs_score are positive 
-    reward_offset = reward_offset[config.qd.0env.name]
+    reward_offset = reward_offset[config.qd.env.name]
     
     # Define a metrics function
     metrics_fn = partial(
