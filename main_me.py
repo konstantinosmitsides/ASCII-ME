@@ -43,15 +43,15 @@ def main(config: DictConfig) -> None:
     # Init env
     logging.info("Initializing env...")
     env = get_env(config) # it creates the environment by connecting using the functionfrom the utils.py file and calling the env key from config 'me'
-    reset_fn = jax.jit(env.reset)
+    reset_fn = jax.jit(env.reset) # FROM WHERE DO THEY ACCESS .RESET?
     
     #def scoring_fn(genotypes, key):
     #    pass
     
     # Compute the centroids
     centroids, key = compute_cvt_centroids(
-		num_descriptors=env.behavior_descriptor_length,
-		num_init_cvt_samples=config.qd.num_init_cvt_samples,
+		num_descriptors=env.behavior_descriptor_length,  # FROM WHERE DO THEY ACCESS BEHAVIOR_DESCRIPTOR_LENGTH?
+		num_init_cvt_samples=config.qd.num_init_cvt_samples,  # WHY IS IT QD ONLY HERE?
 		num_centroids=config.qd.num_centroids,
 		minval=config.env.min_bd,
 		maxval=config.env.max_bd,
@@ -59,18 +59,22 @@ def main(config: DictConfig) -> None:
 	)
     
     # Init policy net
-    policy_layers_sizes = policy_layers_sizes + (env.action_size, )
+    policy_layers_sizes = config.qd.policy_hidden_layer_sizes + (env.action_size, )  # WHERE CAN I SEE THE ACTION_SIZE
     policy_network = MLP(
         layer_sizes=policy_layers_sizes,
-        kernel_init=jax.nn.initializers.lecun_uniform(),
+        kernel_init=jax.nn.initializers.lecun_uniform(),   # how to initialize the weights of the layers
         fina_activation=jnp.tanh,
     )
     
     # Init population of controllers
-    random_key, subkey = jax.random.split(random_key)
-    keys = jax.random.split(subkey, num=config.batch_size)
-    fake_batch_obs = jnp.zeros(shape=(config.batch_size, env.observation_size))
-    init_params = jax.vmap(policy_network.init)(keys, fake_batch_obs)
+    random_key, subkey = jax.random.split(random_key)    # splits random_key into 2 new random keys
+    keys = jax.random.split(subkey, num=config.batch_size)   # subkey is split into config.batch_size new keys stored in the array keys; this provides a unique random key for each example in the batch 
+    fake_batch_obs = jnp.zeros(shape=(config.batch_size, env.observation_size))  # creates a batch of fake observations, which are all initialized to zero.
+    
+    # Initializes parameters separately for each observation in the batch of fake observations using the corresponding key from keys. 
+    # Each element of the bacth gets is own set of initialized parameters independent of others, which is important 
+    # for initializing different instances of a model in parallel during multi-agent simulations
+    init_params = jax.vmap(policy_network.init)(keys, fake_batch_obs) 
     
     param_count = sum(x[0].size for x in jax.tree_util.tree_leaves(init_params))
     print(f"Number of parameters in policy_network: {param_count}")
@@ -79,24 +83,35 @@ def main(config: DictConfig) -> None:
     def play_step_fn(env_state, policy_params, random_key):
         
         """
-        Play an environement step and return the updated state and the transition
+        Play an environement step and return the updated state and the transition.
+        
+        Args:
+            env_state: current state
+            policy_params: corresponding policy parameters
+            random_key: corresponding random key
+            
+        Returns:
+            next_state: next state after policy has acted
+            policy_params: corresponding policy parameters
+            random_key: corresponding random key
+            transition: all the info from QDTransition
         """
         
-        actions = policy_network.apply(policy_params, env_state.obs)
-        state_desc = env_state.info["state_descriptor"]
+        actions = policy_network.apply(policy_params, env_state.obs)  # given the current state, findthe actions you take
+        state_desc = env_state.info["state_descriptor"]  # get the descriptor of the current state
         next_state = env.step(env_state, actions)
         
         transition = QDTransition(
             obs=env_state.obs,
             next_obs=next_state.obs,
             rewards=next_state.reward,
-            dones=next_state.done,
-            truncations=next_state.info["truncation"],
+            dones=next_state.done,  # WHAT IS THIS?
+            truncations=next_state.info["truncation"],  # indicates if an episode has reached max time step
             actions=actions,
             state_desc=state_desc,
             next_state_desc=next_state.info["state_descriptor"],
-            desc=jnp.zeros(env.behavior_descriptor_length, ) * jnp.nan,
-            desc_prime=jnp.zeros(env.behavior_descriptor_length, ) * jnp.nan,
+            desc=jnp.zeros(env.behavior_descriptor_length, ) * jnp.nan,   # WHAT IS THIS?
+            desc_prime=jnp.zeros(env.behavior_descriptor_length, ) * jnp.nan,   # WHAT IS THIS?
         )
         
         return next_state, policy_params, random_key, transition
