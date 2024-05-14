@@ -27,13 +27,13 @@ class MAPElites:
     elements explicit.
 
     Args:
-        scoring_function: a function that takes a batch of genotypes and compute
+        scoring_function: a function that takes a batch of genotypes and compute    # evaluate fitness & descriptor
             their fitnesses and descriptors
-        emitter: an emitter is used to suggest offsprings given a MAPELites
+        emitter: an emitter is used to suggest offsprings given a MAPELites         # select sols? & update them
             repertoire. It has two compulsory functions. A function that takes
             emits a new population, and a function that update the internal state
             of the emitter.
-        metrics_function: a function that takes a MAP-Elites repertoire and compute
+        metrics_function: a function that takes a MAP-Elites repertoire and compute  # evaluate the MAP-Elites repertoire
             any useful metric to track its evolution
     """
 
