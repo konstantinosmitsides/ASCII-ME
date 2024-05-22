@@ -16,8 +16,8 @@ from qdax.core.emitters.standard_emitters import MixingEmitter
 from qdax.core.neuroevolution.buffers.buffer import QDTransition
 from qdax.core.neuroevolution.networks.networks import MLP
 from qdax.utils.metrics import CSVLogger, default_qd_metrics
-from analysis.plot_repertoire import plot_repertoire
-from utils import get_metric, get_env
+from qdax.utils.plotting import plot_map_elites_results
+from utils import get_metrics, get_env
 
 import hydra
 from omegaconf import OmegaConf, DictConfig
