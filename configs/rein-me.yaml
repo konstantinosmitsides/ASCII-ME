@@ -8,20 +8,22 @@ seed: 0
 env_name: ant_uni
 episode_length: 250
 policy_hidden_layer_sizes: [64, 64]
-#ME config
+# ME config
 num_evaluations: 0
 num_iterations: 2000
 batch_size: 128
 num_samples: 1
 fixed_init_state: False
 discard_dead: False
-#Emitter config
+# Emitter config
 iso_sigma: 0.01
 line_sigma: 0.1
 crossover_percentage: 1.0
 # Grid config
 grid_shape: [50, 50]
-# Log config 
+num_init_cvt_samples: 50000
+num_centroids: 1024
+# Log config
 log_period: 400
 store_repertoire: True
 store_repertoire_log_period: 800

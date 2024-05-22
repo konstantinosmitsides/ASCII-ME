@@ -86,6 +86,7 @@ class MAPElites:
         )
 
         # get initial state of the emitter
+        '''
         emitter_state, random_key = self._emitter.init(
             random_key=random_key,
             repertoire=repertoire,
@@ -93,6 +94,11 @@ class MAPElites:
             fitnesses=fitnesses,
             descriptors=descriptors,
             extra_scores=extra_scores,
+        )
+        '''
+        emitter_state, random_key = self._emitter.init(
+            init_genotypes=genotypes,
+            random_key=random_key,
         )
 
         return repertoire, emitter_state, random_key
@@ -124,7 +130,12 @@ class MAPElites:
             a new jax PRNG key
         """
         # generate offsprings with the emitter
+        '''
         genotypes, extra_info, random_key = self._emitter.emit(
+            repertoire, emitter_state, random_key
+        )
+        '''
+        genotypes, random_key = self._emitter.emit(
             repertoire, emitter_state, random_key
         )
 
@@ -143,7 +154,7 @@ class MAPElites:
             genotypes=genotypes,
             fitnesses=fitnesses,
             descriptors=descriptors,
-            extra_scores={**extra_scores, **extra_info},
+            extra_scores={**extra_scores}#, **extra_info},
         )
 
         # update the metrics

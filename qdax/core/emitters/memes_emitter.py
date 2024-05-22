@@ -327,7 +327,7 @@ class MEMESFixResetEmitter(Emitter):
             random_key,
         )
 
-        # Get correspondin score
+        # Get corresponding score
         scores = jnp.where(
             explore, 
             emitter_state.novelty_archive.novelty(
