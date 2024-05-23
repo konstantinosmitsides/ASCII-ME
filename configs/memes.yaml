@@ -11,7 +11,7 @@ policy_hidden_layer_sizes: [64, 64]
 # ME config
 num_evaluations: 0
 num_iterations: 2000
-batch_size: 128
+batch_size: 32
 num_samples: 1
 fixed_init_state: False
 discard_dead: False
@@ -42,5 +42,5 @@ use_novelty_archive: False # if 1 use repertoire for novelty
 use_novelty_fifo: True # if 1 use fifo archive for novelty
 fifo_size: 50000 # size of the fifo buffer
 proportion_explore: 0.5 # if simultaneous, proportion of exploit-explore
-scan_batch_size: 128
-scan_novelty: 2048
+scan_batch_size: 32
+scan_novelty: 4096
