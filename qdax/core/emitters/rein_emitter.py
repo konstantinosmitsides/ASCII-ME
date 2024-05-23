@@ -21,8 +21,8 @@ from qdax.core.emitters.es_novelty_archives import (
 from qdax.core.emitters.emitter import Emitter, EmitterState
 
 @dataclass
-class REINNaiveConfig:
-    """Configuration for the REINNaive emitter.
+class REINaiveConfig:
+    """Configuration for the REINaive emitter.
     
     Args:
         rollout_number: num of rollouts for gradient estimate
@@ -60,5 +60,64 @@ class REINNaiveConfig:
     use_novelty_fifo: bool = False
     fifo_size: int = 100000
     
-    proportion_explore: float = 0.5
+    proportion_explore: float = 0.0
+
+
+class REINaiveEmitterState(EmitterState):
+    """Emitter State for the REINaive emitter.
+    
+    Args:
+        initial_optimizer_state: stored to re-initialize when sampling new parent
+        optimizer_state: current optimizer state
+        offspring: offspring generated through gradient estimate
+        generation_count: generation counter used to update the novelty archive
+        novelty_archive: used to compute novelty for explore
+        random_key: key to handle stochastic operations
+    """
+    
+    initial_optimizer_state: optax.OptState
+    optimizer_states: ArrayTree
+    offspring: Genotype
+    generation_count: int
+    novelty_archive: NoveltyArchive
+    random_key: RNGKey
+    
+    
+class REINAiveEmitter(Emitter):
+    """
+    An emitter that uses gradients approximated through rollouts.
+    It dedicates part of the process on REINFORCE for fitness gradients and part
+    to exploration gradients.
+    
+    This scan version scans through parents isntead of performing all REINFORCE
+    operations in parallel, to avoid memory overload issue.
+    """
+    
+    def __init__(
+        self,
+        congif: REINaiveConfig,
+        batch_size: int,
+        scoring_fn: Callable[
+            [Genotype, RNGKey],
+            Tuple[Fitness, Descriptor, ExtraScores, RNGKey]
+        ],
+        num_descriptors: int,
+        scan_batch_size: int = 1,
+        scan_novelty: int = 1,
+        total_generations: int = 1,
+        num_centroids: int = 1,
+    ) -> None:
+        """Initialize the emitter.
+        
+        Args:
+            config
+            batch_size: number of individuals generated per generation.
+            scoring_fn: used to evaluate the rollouts for the gradfient estimate.
+            num_descriptors: dimensions of the descriptors, used to initialize
+                the empty novelty archive.
+                total_generations: total number of generations for which the emitter
+                    will run, allow to initialize the novelty archive.
+        """
+        
+    
     
