@@ -7,7 +7,7 @@ from functools import partial
 from typing import Any, Dict, Tuple, Callable, List
 
 import hydra
-logging.basicConfig(level=logging.DEBUG)
+#logging.basicConfig(level=logging.DEBUG)
 import jax
 import jax.numpy as jnp
 from hydra.core.config_store import ConfigStore
