@@ -34,7 +34,7 @@ class REINaiveConfig:
         
         adam_optimizer: if True, use ADAM, if False, use SGD
         learning_rate: obvious
-        l2_coeffivient: coefficient for regularisation
+        l2_coefficient: coefficient for regularisation
         
         novelty_nearest_neighbors: num of nearest neigbors for novelty computation
         use_novelty_archive: if True, use novelty archive for novelty (default is to use the content of the reperoire)
@@ -44,7 +44,7 @@ class REINaiveConfig:
         proprtion_explore: proportion of explore
     """
     
-    sample_number: int = 10
+    rollout_number: int = 10
     sample_sigma: float = 0.02
     sample_mirror: bool = True
     sample_rank_norm: bool = True
@@ -252,9 +252,9 @@ class REINAiveEmitter(Emitter):
             )
             
             # Empty Novelty archive
-            novelty_archive = self._init_novelty_archive(
-                self._batch_size, self._batch_size * self._config.sample_number
-            )
+            #novelty_archive = self._init_novelty_archive(
+            #    self._batch_size, self._batch_size * self._config.sample_number
+            #)
             
             return (
                 REINaiveEmitterState(
@@ -262,7 +262,7 @@ class REINAiveEmitter(Emitter):
                     optimizer_states=optimizer_states,
                     offspring=init_genotypes,
                     generation_count=0,
-                    novelty_archive=novelty_archive,
+                    #novelty_archive=novelty_archive,
                     random_key=random_key,
                 ),
                 random_key,
@@ -298,7 +298,7 @@ class REINAiveEmitter(Emitter):
         )
         def _scores(
             self,
-            rollouts: Genotype,
+            final_policies_of_gen: Genotype,
             explore: jnp.ndarray,
             repertoire: Repertoire,
             emitter_state: REINaiveEmitterState,
@@ -307,7 +307,7 @@ class REINAiveEmitter(Emitter):
             """Compute the scores associated with each rollout.
             
             Args:
-                rollouts: obvious
+                final_policies_of_gen: the most updated policies of the generation
                 explore: repartition of explore and exploit emitters
                 reperoire: current repertoire
                 emitter_state: current emitter state
@@ -319,7 +319,7 @@ class REINAiveEmitter(Emitter):
             
             # Evaluate rollouts
             fitnesses, descriptors, _, random_key = self._scoring_fn(
-                rollouts,
+                final_policies_of_gen,
                 random_key,
             )
             
@@ -338,8 +338,3 @@ class REINAiveEmitter(Emitter):
         
         # SEE WHAT YOU WILL DO WITH THE _pre_es_noise & _pre_es_apply FUNCTIONS
         
-        
-        
-        
-    
-    
