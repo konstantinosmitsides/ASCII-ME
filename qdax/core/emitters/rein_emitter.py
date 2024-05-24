@@ -95,7 +95,7 @@ class REINAiveEmitter(Emitter):
     
     def __init__(
         self,
-        congif: REINaiveConfig,
+        config: REINaiveConfig,
         batch_size: int,
         scoring_fn: Callable[
             [Genotype, RNGKey],
@@ -118,6 +118,228 @@ class REINAiveEmitter(Emitter):
                 total_generations: total number of generations for which the emitter
                     will run, allow to initialize the novelty archive.
         """
+        assert (
+            batch_size % scan_batch_size == 0 or scan_batch_size > batch_size
+        ), "ERROR!!! Batch-size should be divisible by snace-batch-size."
+        total_rollouts = batch_size * config.sample_number
+        assert(
+            total_rollouts % scan_novelty == 0 or scan_novelty > total_rollouts
+        ), "ERROR!!! Total number of rollouts should be divisible by scan-novelty"
+        
+        # Set up config 
+        self._config = config
+        self._config.use_explore = self._config.proportion_explore > 0
+        
+        # Set up other parameters
+        self._batch_size = batch_size
+        self._scoring_fn = scoring_fn
+        self._scan_batch_size = (
+            scan_batch_size if batch_size > scan_batch_size else batch_size
+        )
+        self._scan_novelty = (
+            scan_novelty if total_rollouts > scan_novelty else total_rollouts
+        )
+        self._num_scan = self._batch_size // self._scan_batch_size
+        self._num_descriptors = num_descriptors
+        self._total_generations = total_generations
+        self._num_centroids = num_centroids
+        assert not (
+            self._config.use_novelty_archive and self._config.use_novelty_fifo
+        ), "!!! ERROR!!! Use both novelty archive and novelty fifo."
+        
+        # Create the score repartition based on proportion_explore
+        number_explore = floor(self._batch_size * self._config.proportion_explore)
+        self._non_scan_explore = jnp.concatenate(
+            [
+                jnp.ones(number_explore),
+                jnp.zeros(self._batch_size - number_explore)
+            ],
+            axis=0,
+        )
+        self._explore = jnp.repeat(
+            self._non_scan_explore, self._config.sample_number, axis=0
+        )
+        self._explore = jnp.reshape(self._explore, (self._num_scan, -1))
+        
+        # Initialize optimizer
+        if self._config.adam_optimizer:
+            self._optimizer = optax.adam(learning_rate=config.learning_rate)
+        else:
+            self._optimizer - optax.sgd(learning_rate=config.learning_rate)
+            
+        @property
+        def batch_size(self) -> int:
+            """
+            Returns:
+                the batch size emitter by the emitter.
+            """
+            return self._batch_size
+        
+        @partial(
+            jax.jit,
+            static_argnames=("self", "batch_size", "novelty_batch_size")
+        )
+        def _init_novelty_archive(
+            self, batch_size: int, novelty_batch_size: int
+        ) -> NoveltyArchive:
+            """Init the novelty archive for the emitter.
+            """
+            
+            if self._config.use_explore and self._config.use_novelty_archive:
+                novelty_archive = SequentialNoveltyArchive.init(
+                    self._total_generations * batch_size, self._num_descriptors
+                )
+            elif (
+                self._config.use_explore
+                and self._config.use_novelty_fifo
+                and self._scan_novelty < novelty_batch_size
+            ):
+                novelty_archive = SequentialScanNoveltyArchive.init(
+                    self._config.fifo_size,
+                    self._num_descriptors,
+                    scan_size=self._scan_novelty,
+                )
+            elif (
+                self._config.use_explore
+                and self._config.use_novelty_fifo
+                and self._scan_novelty == 1
+            ):
+                novelty_archive = SequentialNoveltyArchive.init(
+                    self._config.fifo_size, self._num_descriptors
+                )
+            elif self._config.use_explore and self._config.use_novelty_fifo:
+                novelty_archive = ParallelNoveltyArchive.init(
+                    self._config.fifo_size, self._num_descriptors
+                )
+            elif self._config.use_explore:
+                novelty_archive = RepertoireNoveltyArchive.init(
+                    self._num_centroids, self._num_descriptors
+                )
+            else:
+                novelty_archive = EmptyNoveltyArchive.init(1, 1)
+                
+            return novelty_archive
+        
+        @partial(
+            jax.jit,
+            static_argnames=("self",),
+        )
+        def init(
+            self,
+            init_genotypes: Genotype,
+            random_key: RNGKey,
+        ) -> Tuple[REINaiveEmitterState, RNGKey]:
+            """Initiliazes the emitter state.
+            
+            Args:
+                init_genotypes: The initial population.
+                random_key: A random key.
+                
+            Returns:
+                The initial state of the emitter, a new random key.
+            """
+            
+            # Initialize optimizer
+            params = jax.tree_util.tree_map(lambda x: x[0], init_genotypes)
+            initial_optimizer_state = self._optimizer.init(params)
+            
+            # One optimizer_state per lineage 
+            # A lineage is essentially a chain of individuals connected by descent, 
+            # tracing back from a current individual to its ancestors in previous generations.
+            optimizer_states = jax.tree_util.tree_map(
+                lambda x: jnp.repeat(jnp.expand_dims(x, axis=0), self._batch_size, axis=0),
+                initial_optimizer_state,
+            )
+            
+            # Empty Novelty archive
+            novelty_archive = self._init_novelty_archive(
+                self._batch_size, self._batch_size * self._config.sample_number
+            )
+            
+            return (
+                REINaiveEmitterState(
+                    initial_optimizer_state=initial_optimizer_state,
+                    optimizer_states=optimizer_states,
+                    offspring=init_genotypes,
+                    generation_count=0,
+                    novelty_archive=novelty_archive,
+                    random_key=random_key,
+                ),
+                random_key,
+            )
+            
+        @partial(
+            jax.jit,
+            static_argnames=("self",),
+        )
+        def emit(
+            self,
+            repertoire: Repertoire,
+            emitter_state: REINaiveEmitterState,
+            random_key: RNGKey,
+        ) -> Tuple[Genotype, RNGKey]:
+            """Return the offsrping generated through gradient update.
+            
+            Args:
+                repertoire: the MAP-ELites reperoire to sample from emitter_state
+                random_key: a jax PRNG random key
+                
+            Returns:
+                a batch of offsprings
+                a new jax PRNG key
+            """
+            
+            assert emitter_state is not None, "\n!!! ERROR!! No emitter state."
+            return emitter_state.offspring, random_key
+        
+        @partial(
+            jax.jit,
+            static_argnames=("self",),
+        )
+        def _scores(
+            self,
+            rollouts: Genotype,
+            explore: jnp.ndarray,
+            repertoire: Repertoire,
+            emitter_state: REINaiveEmitterState,
+            random_key: RNGKey
+        ) -> Tuple[jnp.ndarray, RNGKey]:
+            """Compute the scores associated with each rollout.
+            
+            Args:
+                rollouts: obvious
+                explore: repartition of explore and exploit emitters
+                reperoire: current repertoire
+                emitter_state: current emitter state
+                random_key: a jax PRNG key
+                
+            Returns:
+                the gradients to apply and a new random key
+            """
+            
+            # Evaluate rollouts
+            fitnesses, descriptors, _, random_key = self._scoring_fn(
+                rollouts,
+                random_key,
+            )
+            
+            # Get corresponding score
+            scores = jnp.where(
+                explore,
+                emitter_state.novelty_archive.novelty(
+                    descriptors,
+                    self._config.novelty_nearest_neighbors,
+                ),
+                fitnesses,
+            )
+            
+            return scores, random_key
+        
+        
+        # SEE WHAT YOU WILL DO WITH THE _pre_es_noise & _pre_es_apply FUNCTIONS
+        
+        
+        
         
     
     
