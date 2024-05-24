@@ -129,3 +129,56 @@ class QModuleDC(nn.Module):
             )(hidden, desc)
             res.append(q)
         return jnp.concatenate(res, axis=-1)
+
+
+_half_log2pi = 0.5 * jnp.log(2 * jnp.pi)
+EPS = 1e-8
+class MLPRein(nn.Module):
+    """MLP-REINFORCE module."""
+
+    layer_sizes: Tuple[int, ...]
+    activation: Callable[[jnp.ndarray], jnp.ndarray] = nn.relu
+    kernel_init: Callable[..., Any] = jax.nn.initializers.lecun_uniform()
+    final_activation: Optional[Callable[[jnp.ndarray], jnp.ndarray]] = None
+    bias: bool = True
+    kernel_init_final: Optional[Callable[..., Any]] = None
+    
+    def distribution_params(self, obs: jnp.ndarray):
+        hidden = obs
+        for hidden_layer in self.hidden_layers:
+            hidden = self.activation(hidden_layer(hidden))
+
+        mean = self.mean(hidden)
+        log_std = self.log_std
+        std = jnp.exp(log_std)
+
+        return mean, log_std, std
+
+    def logp(self, obs: jnp.ndarray, action: jnp.ndarray) -> jnp.ndarray:
+		# Distribution parameters
+        mean, log_std, std = self.distribution_params(obs)
+
+		# Log probability
+        logp = jnp.sum(-0.5 * jnp.square((action - mean)/(std + EPS)) - _half_log2pi - log_std, axis=-1)
+
+        return logp
+
+    def entropy(self, obs: jnp.ndarray) -> jnp.ndarray:
+		# Distribution parameters
+        _, _, std = self.distribution_params(obs)
+
+        entropy = self.action_size * (0.5 + _half_log2pi) + 0.5 * jnp.log(jnp.prod(std))
+        return entropy
+
+    def __call__(self, random_key, obs: jnp.ndarray) -> jnp.ndarray:
+		# Distribution parameters
+        mean, log_std, std = self.distribution_params(obs)
+
+		# Sample action
+        rnd = jax.random.normal(random_key, shape=(self.action_size,))
+        action = jax.lax.stop_gradient(mean + rnd * std)
+
+		# Log probability
+        logp = jnp.sum(-0.5 * jnp.square(rnd) - _half_log2pi - log_std, axis=-1)
+
+        return action, logp

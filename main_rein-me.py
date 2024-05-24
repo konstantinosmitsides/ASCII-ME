@@ -16,7 +16,7 @@ from qdax.core.map_elites import MAPElites
 from qdax.types import RNGKey, Genotype
 from qdax.utils.sampling import sampling 
 from qdax.core.containers.mapelites_repertoire import compute_cvt_centroids, MapElitesRepertoire
-from qdax.core.neuroevolution.networks.networks import MLP
+from qdax.core.neuroevolution.networks.networks import MLP, MLPRein
 
 from set_up_brax import (
     get_behavior_descriptor_length_brax,
@@ -91,7 +91,7 @@ def set_up_envs(
     )
     
     # Create the network 
-    policy_network = MLP(
+    policy_network = MLPRein(
         layer_sizes=policy_layer_sizes,
         kernel_init=jax.nn.initializers.lecun_uniform(),
         final_activation=activation,

@@ -337,4 +337,11 @@ class REINAiveEmitter(Emitter):
         
         
         # SEE WHAT YOU WILL DO WITH THE _pre_es_noise & _pre_es_apply FUNCTIONS
-        
+        @partial(
+            jax.jit,
+            static_argnames=("self",),
+        )
+        def logp_fn(
+            self,
+            
+        )
