@@ -1,0 +1,30 @@
+alg_name: rein-me
+seed: 0
+env_name: ant_uni
+episode_length: 250
+policy_hidden_layer_sizes:
+- 64
+- 64
+num_evaluations: 0
+num_iterations: 2000
+batch_size: 128
+num_samples: 1
+fixed_init_state: false
+discard_dead: false
+iso_sigma: 0.01
+line_sigma: 0.1
+crossover_percentage: 1.0
+grid_shape:
+- 50
+- 50
+num_init_cvt_samples: 50000
+num_centroids: 1024
+log_period: 400
+store_repertoire: true
+store_repertoire_log_period: 800
+sample_number: 10
+num_in_optimizer_steps: 1
+adam_optimizer: true
+learning_rate: 0.01
+l2_coefficient: 0.0
+scan_batch_size: 128

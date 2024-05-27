@@ -58,7 +58,7 @@ class ExperimentConfig:
     num_centroids: int
     # Log config
     log_period: int
-    store_repertoire: True
+    store_repertoire: bool
     store_reperoire_log_period: int
     
     # REINFORCE Parameters
@@ -111,7 +111,7 @@ def set_up_envs(
         random_key, subkey = jax.random.split(random_key)
         keys = jax.random.split(subkey, num=size)
         fake_batch = jnp.zeros(shape=(size, output_size))
-        init_variables = jax.vmap(policy_network.init)(keys, fake_batch)
+        init_variables = jax.vmap(policy_network.init)(keys, random_key, fake_batch)
         return init_variables, random_key
     
     # Build all common parts
