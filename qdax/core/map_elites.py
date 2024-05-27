@@ -71,7 +71,7 @@ class MAPElites:
             An initialized MAP-Elite repertoire with the initial state of the emitter,
             and a random key.
         """
-        # score initial genotypes
+        # score initial genotypes      
         fitnesses, descriptors, extra_scores, random_key = self._scoring_function(
             genotypes, random_key
         )

@@ -18,6 +18,9 @@ from qdax.utils.sampling import sampling
 from qdax.core.containers.mapelites_repertoire import compute_cvt_centroids, MapElitesRepertoire
 from qdax.core.neuroevolution.networks.networks import MLP, MLPRein
 from qdax.core.emitters.rein_emitter import REINaiveConfig, REINaiveEmitter
+from qdax.core.neuroevolution.buffers.buffer import QDTransition
+from qdax.environments import behavior_descriptor_extractor
+from qdax.tasks.brax_envs import reset_based_scoring_function_brax_envs as scoring_function
 
 from set_up_brax import (
     get_behavior_descriptor_length_brax,
@@ -93,12 +96,36 @@ def set_up_envs(
     
     # Create the network 
     policy_network = MLPRein(
+        action_size=input_size,
         layer_sizes=policy_layer_sizes,
         kernel_init=jax.nn.initializers.lecun_uniform(),
         final_activation=activation,
     )
     
+    # Define the function to play a step with the policy in the environment
+    def play_step_fn(env_state, policy_params, random_key):
+        actions = policy_network.apply(policy_params, env_state.obs)
+        #actions = jnp.asarray(actions)
+        state_desc = env_state.info["state_descriptor"]
+        next_state = env.step(env_state, actions)
+        transition = QDTransition(
+            obs=env_state.obs,
+            next_obs=next_state.obs,
+            rewards=next_state.reward,
+            dones=next_state.done,
+            truncations=next_state.info["truncation"],
+            actions=actions,
+            state_desc=state_desc,
+            next_state_desc=next_state.info["state_descriptor"],
+        )  
+        
+        return next_state, policy_params, random_key, transition
+    
+    reset_fn = jax.jit(env.reset)
+    bd_extraction_fn = behavior_descriptor_extractor[config.env_name]
+    
     # Get the scoring function
+    '''
     scoring_fn, random_key = get_scoring_function_brax(
         env,
         config.env_name,
@@ -106,13 +133,25 @@ def set_up_envs(
         policy_network,
         random_key,
     )
+    '''
+    
+    scoring_fn =partial(
+        scoring_function,
+        episode_length=config.episode_length,
+        play_reset_fn=reset_fn,
+        play_step_fn=play_step_fn,
+        behavior_descriptor_extractor=bd_extraction_fn,
+    )
+
+
+    
     
     # Build init variables 
     def construction_fn(size: int, random_key: RNGKey) -> jnp.ndarray:
         random_key, subkey = jax.random.split(random_key)
         keys = jax.random.split(subkey, num=size)
         fake_batch = jnp.zeros(shape=(size, output_size))
-        init_variables = jax.vmap(policy_network.init)(keys, random_key, fake_batch)
+        init_variables = jax.vmap(policy_network.init)(keys, fake_batch)
         return init_variables, random_key
     
     # Build all common parts
@@ -180,6 +219,7 @@ def train(config: ExperimentConfig) -> None:
     ) = set_up_envs(config, config.batch_size, random_key)
     
     # Wrap the scoring function to do sampling
+    
     me_scoring_fn = partial(
         sampling,
         scoring_fn=scoring_fn,
@@ -192,9 +232,9 @@ def train(config: ExperimentConfig) -> None:
     
     minval, maxval = env.behavior_descriptor_limits
     centroids, _ = compute_cvt_centroids(
-        num_descriptors=env.behavior_descriptors_length,
+        num_descriptors=env.behavior_descriptor_length,
         num_init_cvt_samples=config.num_init_cvt_samples,
-        num_centorids=config.num_centroids,
+        num_centroids=config.num_centroids,
         minval=minval,
         maxval=maxval,
         random_key=random_key,
@@ -283,8 +323,8 @@ def train(config: ExperimentConfig) -> None:
     # All necessary functions and parameters
     map_elites_update_fn = partial(map_elites.update)
     log_period = config.log_period
-    store_repertoire = config.store_reperoire
-    store_repertoire_log_period = config.store_reperoire_log_period
+    store_repertoire = config.store_repertoire
+    store_repertoire_log_period = config.store_repertoire_log_period
     episode_length = config.episode_length
     output_dir = "./"
     

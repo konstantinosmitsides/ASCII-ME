@@ -11,6 +11,7 @@ policy_hidden_layer_sizes: [64, 64]
 # ME config
 num_evaluations: 0
 num_iterations: 2000
+num_samples: 1
 batch_size: 32
 fixed_init_state: False
 discard_dead: False
@@ -26,10 +27,9 @@ store_repertoire_log_period: 800
 
 
 # REINFORCE Parameters
-rollout_number: 10 # Num of episodes used for gradient estimate
-num_rein_training_steps: 10 # Num gradient steps per generation
-buffer_size: 100000 # Size of the replay buffer
 rollout_number: 100 # Num of episodes used for gradient estimate
+num_rein_training_steps: 10 # Num gradient steps per generation
+buffer_size: 320000 # Size of the replay buffer
 adam_optimizer: True
 learning_rate: 1e-3
 discount_rate: 0.99
