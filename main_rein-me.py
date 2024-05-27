@@ -17,6 +17,7 @@ from qdax.types import RNGKey, Genotype
 from qdax.utils.sampling import sampling 
 from qdax.core.containers.mapelites_repertoire import compute_cvt_centroids, MapElitesRepertoire
 from qdax.core.neuroevolution.networks.networks import MLP, MLPRein
+from qdax.core.emitters.rein_emitter import REINaiveConfig, REINaiveEmitter
 
 from set_up_brax import (
     get_behavior_descriptor_length_brax,
@@ -203,14 +204,20 @@ def train(config: ExperimentConfig) -> None:
     logger.warning(f"--- Duration for CVT centroids computation : {centroid_time:.2f}s")
     
     # Define emitter
-    
-    # HERE SET A VARIABLE EQUAL TO REINFORCE CONFIG
-    
-    # rein_emitter_config = emitter_config_class(...)
-    
-    # HERE SET A VARIABLE EQUAL TO REINFORCE EMITTER
-    
-    # rein_emitter = emitter(...)
+    rein_emitter_config = REINaiveConfig(
+        batch_size=config.batch_size,
+        num_rein_training_steps=config.num_rein_training_steps,
+        buffer_size=config.buffer_size,
+        rollout_number=config.rollout_number,
+        discount_rate=config.discount_rate,
+        adam_optimizer=config.adam_optimizer,
+        learning_rate=config.learning_rate,
+    )
+    rein_emitter = REINaiveEmitter(
+        config=rein_emitter_config,
+        policy_network=policy_network,
+        env=env,
+        )
     
     # Define metrics function
     def metrics_fn(repertoire: MapElitesRepertoire) -> Dict:
@@ -233,6 +240,7 @@ def train(config: ExperimentConfig) -> None:
     # Instantiate MAP-Elites
     map_elites = MAPElites(
         scoring_function=me_scoring_fn,
+        emitter=rein_emitter,
         metrics_function=metrics_fn,
     )
     

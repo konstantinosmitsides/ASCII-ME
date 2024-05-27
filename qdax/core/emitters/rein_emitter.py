@@ -51,23 +51,11 @@ class REINaiveConfig:
     batch_size: int = 32
     num_rein_training_steps: int = 10
     buffer_size: int = 100000
-    rollout_number: int = 10
-    sample_sigma: float = 0.02
-    sample_mirror: bool = True
-    sample_rank_norm: bool = True
-    
-    num_generations_sample: int = 10
-    
+    rollout_number: int = 100
+    discount_rate: float = 0.99
     adam_optimizer: bool = True
-    learning_rate: float = 0.01
-    l2_coefficient: float = False
-    
-    novelty_nearest_neighbors: int = 10
-    use_novelty_archive: bool = False
-    use_novelty_fifo: bool = False
-    fifo_size: int = 100000
-    
-    proportion_explore: float = 0.0
+    learning_rate: float = 1e-3
+
 
 
 class REINaiveEmitterState(EmitterState):
