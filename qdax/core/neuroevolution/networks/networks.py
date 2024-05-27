@@ -133,15 +133,23 @@ class QModuleDC(nn.Module):
 
 _half_log2pi = 0.5 * jnp.log(2 * jnp.pi)
 EPS = 1e-8
+
 class MLPRein(nn.Module):
     """MLP-REINFORCE module."""
 
+    action_size: int
     layer_sizes: Tuple[int, ...]
     activation: Callable[[jnp.ndarray], jnp.ndarray] = nn.relu
     kernel_init: Callable[..., Any] = jax.nn.initializers.lecun_uniform()
     final_activation: Optional[Callable[[jnp.ndarray], jnp.ndarray]] = None
     bias: bool = True
     kernel_init_final: Optional[Callable[..., Any]] = None
+    
+    def setup(self):
+        # Define the layers
+        self.hidden_layers = [nn.Dense(size, kernel_init=self.kernel_init) for size in self.layer_sizes]
+        self.mean = nn.Dense(self.action_size, kernel_init=self.kernel_init_final)
+        self.log_std = self.param('log_std', self.kernel_init_final or self.kernel_init, (self.action_size,))
     
     def distribution_params(self, obs: jnp.ndarray):
         hidden = obs
@@ -154,31 +162,34 @@ class MLPRein(nn.Module):
 
         return mean, log_std, std
 
-    def logp(self, obs: jnp.ndarray, action: jnp.ndarray) -> jnp.ndarray:
-		# Distribution parameters
-        mean, log_std, std = self.distribution_params(obs)
+    def logp(self, params, obs: jnp.ndarray, action: jnp.ndarray) -> jnp.ndarray:
+        # Distribution parameters
+        mean, log_std, std = self.apply(params, obs, method=self.distribution_params)
 
-		# Log probability
+        # Log probability
         logp = jnp.sum(-0.5 * jnp.square((action - mean)/(std + EPS)) - _half_log2pi - log_std, axis=-1)
 
         return logp
 
-    def entropy(self, obs: jnp.ndarray) -> jnp.ndarray:
-		# Distribution parameters
-        _, _, std = self.distribution_params(obs)
+    def entropy(self, params, obs: jnp.ndarray) -> jnp.ndarray:
+        # Distribution parameters
+        _, _, std = self.apply(params, obs, method=self.distribution_params)
 
         entropy = self.action_size * (0.5 + _half_log2pi) + 0.5 * jnp.log(jnp.prod(std))
         return entropy
 
-    def __call__(self, random_key, obs: jnp.ndarray) -> jnp.ndarray:
-		# Distribution parameters
-        mean, log_std, std = self.distribution_params(obs)
+    def __call__(self, random_key, obs: jnp.ndarray):
+        return self.sample({'params': self.variables['params']}, random_key, obs)
 
-		# Sample action
-        rnd = jax.random.normal(random_key, shape=(self.action_size,))
-        action = jax.lax.stop_gradient(mean + rnd * std)
+    def sample(self, params, random_key, obs: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        # Distribution parameters
+        mean, log_std, std = self.apply(params, obs, method=self.distribution_params)
 
-		# Log probability
-        logp = jnp.sum(-0.5 * jnp.square(rnd) - _half_log2pi - log_std, axis=-1)
+        # Sample action
+        rnd = jax.random.normal(random_key, shape=mean.shape)
+        action = mean + rnd * std
+
+        # Log probability
+        logp = jnp.sum(-0.5 * jnp.square((action - mean)/(std + EPS)) - _half_log2pi - log_std, axis=-1)
 
         return action, logp

@@ -1,14 +1,19 @@
 from dataclasses import dataclass
 from functools import partial
 from math import floor 
-from typing import Callable, Tuple
+from typing import Callable, Tuple, Any
 
 import jax
 import jax.numpy as jnp
+import flax.linen as nn
 import optax
 from chex import ArrayTree
 from qdax.core.containers.repertoire import Repertoire
 from qdax.types import Descriptor, ExtraScores, Fitness, Genotype, RNGKey
+from qdax.environments.base_wrappers import QDEnv
+from qdax.core.neuroevolution.buffers.buffer import QDTransition
+from qdax.core.neuroevolution.buffers.trajectory_buffer import TrajectoryBuffer
+from rein_related import *
 
 from qdax.core.emitters.es_novelty_archives import (
     EmptyNoveltyArchive,
@@ -43,47 +48,24 @@ class REINaiveConfig:
         
         proprtion_explore: proportion of explore
     """
-    
-    rollout_number: int = 10
-    sample_sigma: float = 0.02
-    sample_mirror: bool = True
-    sample_rank_norm: bool = True
-    
-    num_generations_sample: int = 10
-    
+    batch_size: int = 32
+    num_rein_training_steps: int = 10
+    buffer_size: int = 100000
+    rollout_number: int = 100
+    discount_rate: float = 0.99
     adam_optimizer: bool = True
-    learning_rate: float = 0.01
-    l2_coefficient: float = False
-    
-    novelty_nearest_neighbors: int = 10
-    use_novelty_archive: bool = False
-    use_novelty_fifo: bool = False
-    fifo_size: int = 100000
-    
-    proportion_explore: float = 0.0
+    learning_rate: float = 1e-3
+
 
 
 class REINaiveEmitterState(EmitterState):
-    """Emitter State for the REINaive emitter.
-    
-    Args:
-        initial_optimizer_state: stored to re-initialize when sampling new parent
-        optimizer_state: current optimizer state
-        offspring: offspring generated through gradient estimate
-        generation_count: generation counter used to update the novelty archive
-        novelty_archive: used to compute novelty for explore
-        random_key: key to handle stochastic operations
+    """Contains replay buffer.
     """
-    
-    initial_optimizer_state: optax.OptState
-    optimizer_states: ArrayTree
-    offspring: Genotype
-    generation_count: int
-    novelty_archive: NoveltyArchive
+    trajectory_buffer: TrajectoryBuffer
     random_key: RNGKey
     
     
-class REINAiveEmitter(Emitter):
+class REINaiveEmitter(Emitter):
     """
     An emitter that uses gradients approximated through rollouts.
     It dedicates part of the process on REINFORCE for fitness gradients and part
@@ -96,252 +78,378 @@ class REINAiveEmitter(Emitter):
     def __init__(
         self,
         config: REINaiveConfig,
-        batch_size: int,
-        scoring_fn: Callable[
-            [Genotype, RNGKey],
-            Tuple[Fitness, Descriptor, ExtraScores, RNGKey]
-        ],
-        num_descriptors: int,
-        scan_batch_size: int = 1,
-        scan_novelty: int = 1,
-        total_generations: int = 1,
-        num_centroids: int = 1,
+        policy_network: nn.Module,
+        env: QDEnv,
     ) -> None:
-        """Initialize the emitter.
-        
-        Args:
-            config
-            batch_size: number of individuals generated per generation.
-            scoring_fn: used to evaluate the rollouts for the gradfient estimate.
-            num_descriptors: dimensions of the descriptors, used to initialize
-                the empty novelty archive.
-                total_generations: total number of generations for which the emitter
-                    will run, allow to initialize the novelty archive.
-        """
-        assert (
-            batch_size % scan_batch_size == 0 or scan_batch_size > batch_size
-        ), "ERROR!!! Batch-size should be divisible by snace-batch-size."
-        total_rollouts = batch_size * config.sample_number
-        assert(
-            total_rollouts % scan_novelty == 0 or scan_novelty > total_rollouts
-        ), "ERROR!!! Total number of rollouts should be divisible by scan-novelty"
-        
-        # Set up config 
         self._config = config
-        self._config.use_explore = self._config.proportion_explore > 0
-        
-        # Set up other parameters
-        self._batch_size = batch_size
-        self._scoring_fn = scoring_fn
-        self._scan_batch_size = (
-            scan_batch_size if batch_size > scan_batch_size else batch_size
-        )
-        self._scan_novelty = (
-            scan_novelty if total_rollouts > scan_novelty else total_rollouts
-        )
-        self._num_scan = self._batch_size // self._scan_batch_size
-        self._num_descriptors = num_descriptors
-        self._total_generations = total_generations
-        self._num_centroids = num_centroids
-        assert not (
-            self._config.use_novelty_archive and self._config.use_novelty_fifo
-        ), "!!! ERROR!!! Use both novelty archive and novelty fifo."
-        
-        # Create the score repartition based on proportion_explore
-        number_explore = floor(self._batch_size * self._config.proportion_explore)
-        self._non_scan_explore = jnp.concatenate(
-            [
-                jnp.ones(number_explore),
-                jnp.zeros(self._batch_size - number_explore)
-            ],
-            axis=0,
-        )
-        self._explore = jnp.repeat(
-            self._non_scan_explore, self._config.sample_number, axis=0
-        )
-        self._explore = jnp.reshape(self._explore, (self._num_scan, -1))
-        
-        # Initialize optimizer
-        if self._config.adam_optimizer:
-            self._optimizer = optax.adam(learning_rate=config.learning_rate)
-        else:
-            self._optimizer - optax.sgd(learning_rate=config.learning_rate)
+        self._policy = policy_network
+        self._env = env
             
+            
+        # SET UP THE LOSSES
+        
+        # Init optimizers
+        
+        self._policies_optmizer = optax.adam(
+            learning_rate=self._config.learning_rate
+            )
+        
         @property
         def batch_size(self) -> int:
             """
             Returns:
-                the batch size emitter by the emitter.
+                int: the batch size emitted by the emitter.
             """
-            return self._batch_size
+            return self._config.batch_size
         
-        @partial(
-            jax.jit,
-            static_argnames=("self", "batch_size", "novelty_batch_size")
-        )
-        def _init_novelty_archive(
-            self, batch_size: int, novelty_batch_size: int
-        ) -> NoveltyArchive:
-            """Init the novelty archive for the emitter.
+        @property 
+        def use_all_data(self) -> bool:
+            """Whether to use all data or not when used along other emitters.
             """
-            
-            if self._config.use_explore and self._config.use_novelty_archive:
-                novelty_archive = SequentialNoveltyArchive.init(
-                    self._total_generations * batch_size, self._num_descriptors
-                )
-            elif (
-                self._config.use_explore
-                and self._config.use_novelty_fifo
-                and self._scan_novelty < novelty_batch_size
-            ):
-                novelty_archive = SequentialScanNoveltyArchive.init(
-                    self._config.fifo_size,
-                    self._num_descriptors,
-                    scan_size=self._scan_novelty,
-                )
-            elif (
-                self._config.use_explore
-                and self._config.use_novelty_fifo
-                and self._scan_novelty == 1
-            ):
-                novelty_archive = SequentialNoveltyArchive.init(
-                    self._config.fifo_size, self._num_descriptors
-                )
-            elif self._config.use_explore and self._config.use_novelty_fifo:
-                novelty_archive = ParallelNoveltyArchive.init(
-                    self._config.fifo_size, self._num_descriptors
-                )
-            elif self._config.use_explore:
-                novelty_archive = RepertoireNoveltyArchive.init(
-                    self._num_centroids, self._num_descriptors
-                )
-            else:
-                novelty_archive = EmptyNoveltyArchive.init(1, 1)
-                
-            return novelty_archive
+            return True
         
-        @partial(
-            jax.jit,
-            static_argnames=("self",),
-        )
+        @partial(jax.jit, static_argnames=("self",))
         def init(
             self,
             init_genotypes: Genotype,
             random_key: RNGKey,
-        ) -> Tuple[REINaiveEmitterState, RNGKey]:
-            """Initiliazes the emitter state.
-            
+        ) -> Tuple[REINaiveEmitter, RNGKey]:
+            """Initializes the emitter.
+
             Args:
                 init_genotypes: The initial population.
                 random_key: A random key.
-                
+
             Returns:
-                The initial state of the emitter, a new random key.
+                The initial state of the REINAiveEmitter, a new random key.
             """
+
+            observation_size = self._env.observation_size
+            action_size = self._env.action_size
+            descriptor_size = self._env.state_descriptor_length
             
-            # Initialize optimizer
-            params = jax.tree_util.tree_map(lambda x: x[0], init_genotypes)
-            initial_optimizer_state = self._optimizer.init(params)
-            
-            # One optimizer_state per lineage 
-            # A lineage is essentially a chain of individuals connected by descent, 
-            # tracing back from a current individual to its ancestors in previous generations.
-            optimizer_states = jax.tree_util.tree_map(
-                lambda x: jnp.repeat(jnp.expand_dims(x, axis=0), self._batch_size, axis=0),
-                initial_optimizer_state,
+            # Init trajectory buffer
+            dummy_transition = QDTransition.init_dummy(
+                observation_size=observation_size,
+                action_size=action_size,
+                descriptor_dim=descriptor_size,
             )
             
-            # Empty Novelty archive
-            #novelty_archive = self._init_novelty_archive(
-            #    self._batch_size, self._batch_size * self._config.sample_number
-            #)
-            
-            return (
-                REINaiveEmitterState(
-                    initial_optimizer_state=initial_optimizer_state,
-                    optimizer_states=optimizer_states,
-                    offspring=init_genotypes,
-                    generation_count=0,
-                    #novelty_archive=novelty_archive,
-                    random_key=random_key,
-                ),
-                random_key,
+            trajectory_buffer = TrajectoryBuffer.init(
+                buffer_size=self._config.buffer_size,
+                transition=dummy_transition,
+                env_batch_size=self._config.batch_size,
+                episode_length=self._env.episode_length,
             )
             
-        @partial(
-            jax.jit,
-            static_argnames=("self",),
-        )
+            random_key, subkey = jax.random.split(random_key)
+            emitter_state = REINaiveEmitterState(
+                trajectory_buffer=trajectory_buffer,
+                random_key=subkey,
+            )
+            
+            return emitter_state, random_key
+        
+        @partial(jax.jit, static_argnames=("self",))
         def emit(
             self,
             repertoire: Repertoire,
             emitter_state: REINaiveEmitterState,
             random_key: RNGKey,
         ) -> Tuple[Genotype, RNGKey]:
-            """Return the offsrping generated through gradient update.
-            
+            """Do a step of REINFORCE emission.
+
             Args:
-                repertoire: the MAP-ELites reperoire to sample from emitter_state
-                random_key: a jax PRNG random key
-                
+                repertoire: the current repertoire of genotypes.
+                emitter_state: the state of the emitter used
+                random_key: random key
+
             Returns:
-                a batch of offsprings
-                a new jax PRNG key
+                A batch of offspring, the new emitter state and a new key.
             """
             
-            assert emitter_state is not None, "\n!!! ERROR!! No emitter state."
-            return emitter_state.offspring, random_key
+            batch_size = self._config.batch_size
+            
+            # sample parents
+            parents, random_key = repertoire.sample(
+                batch_size=batch_size,
+                random_key=random_key,
+            )
+            
+            offsprings_rein = self.emit_rein(emitter_state, parents)
+            
+            genotypes = offsprings_rein
+            
+            return genotypes, {}, random_key
         
-        @partial(
-            jax.jit,
-            static_argnames=("self",),
-        )
-        def _scores(
+        @partial(jax.jit, static_argnames=("self",))
+        def emit_rein(
             self,
-            final_policies_of_gen: Genotype,
-            explore: jnp.ndarray,
-            repertoire: Repertoire,
             emitter_state: REINaiveEmitterState,
-            random_key: RNGKey
-        ) -> Tuple[jnp.ndarray, RNGKey]:
-            """Compute the scores associated with each rollout.
-            
+            parents: Genotype,
+        ) -> Genotype:
+            """Emit the offsprings generated through REINFORCE mutation.
+
             Args:
-                final_policies_of_gen: the most updated policies of the generation
-                explore: repartition of explore and exploit emitters
-                reperoire: current repertoire
-                emitter_state: current emitter state
-                random_key: a jax PRNG key
-                
+                emitter_state: the state of the emitter used, contains
+                the trahectory buffer.
+                parents: the parents selected to be applied gradients 
+                to mutate towards better performance.
+
             Returns:
-                the gradients to apply and a new random key
+                A new set of offspring.
             """
             
-            # Evaluate rollouts
-            fitnesses, descriptors, _, random_key = self._scoring_fn(
-                final_policies_of_gen,
-                random_key,
+            # Do a step of REINFORCE emission
+            mutation_fn = partial(
+                self._mutation_function_rein,
+                emitter_state=emitter_state,
             )
+            offsprings = jax.vmap(mutation_fn)(parents)
             
-            # Get corresponding score
-            scores = jnp.where(
-                explore,
-                emitter_state.novelty_archive.novelty(
-                    descriptors,
-                    self._config.novelty_nearest_neighbors,
-                ),
-                fitnesses,
-            )
-            
-            return scores, random_key
+            return offsprings
         
-        
-        # SEE WHAT YOU WILL DO WITH THE _pre_es_noise & _pre_es_apply FUNCTIONS
-        @partial(
-            jax.jit,
-            static_argnames=("self",),
-        )
-        def logp_fn(
+        @partial(jax.jit, static_argnames=("self",))
+        def _mutation_function_rein(
             self,
+            policy_params: Genotype,
+            emitter_state: REINaiveEmitterState,
+        ) -> Genotype:
+            """Apply REINFORCE mutation to a policy via multiple steps of gradient descent.
+
+            Args:
+                policy_params: a policy, supposed to be a differentiable neuaral network.
+                emitter_state: the current state of the emitter, containing among others,
+                the trajectory buffer.
+
+            Returns:
+                The updated parameters of the neural network.
+            """
             
-        )
+            # Define new policy optimizer state
+            policy_optimizer_state = self._policies_optmizer.init(policy_params)
+            
+            def scan_train_policy(
+                carry: Tuple[REINaiveEmitterState, Genotype, optax.OptState],
+                unused: Any,
+            ) -> Tuple[Tuple[REINaiveEmitterState, Genotype, optax.OptState], Any]:
+                """Scans through the parents and applies REINFORCE training.
+                """
+                
+                emitter_state, parent, policy_optimizer_state = carry
+                
+                (
+                    new_emitter_state,
+                    new_policy_params,
+                    new_policy_optimizer_state,
+                ) = self._train_policy_(
+                    emitter_state,
+                    policy_params,
+                    policy_optimizer_state,
+                )
+                return (
+                    new_emitter_state,
+                    new_policy_params,
+                    new_policy_optimizer_state,
+                ), ()
+                
+            (emitter_state, policy_params, policy_optimizer_state,), _ = jax.lax.scan(
+                scan_train_policy,
+                (emitter_state, policy_params, policy_optimizer_state),
+                (),
+                length=self._config.num_rein_training_steps,
+            )
+            
+            return policy_params
+            
+        @partial(jax.jit, static_argnames=("self",))
+        def _train_policy_(
+            self,
+            emitter_state: REINaiveEmitterState,
+            policy_params: Genotype,
+            policy_optimizer_state: optax.OptState,
+        ) -> Tuple[REINaiveEmitterState, Genotype, optax.OptState]:
+            """Apply one gradient step to a policy (called policy_params).
+
+            Args:
+                emitter_state: the current state of the emitter.
+                policy_params: the current parameters of the policy network.
+                policy_optimizer_state: the current state of the optimizer.
+
+            Returns:
+                The updated state of the emitter, the updated policy parameters
+                and the updated optimizer state.
+            """
+
+            random_keys = jax.random.split(emitter_state.random_key, self._config.rollout_number)
+            obs, action, logp, reward, _, mask = jax.vmap(
+                self._sample_trajectory, in_axes=(0, None))(random_keys, emitter_state)
+            
+            # Add entropy term to reward
+            reward += self._config.temperature * (-logp)
+            
+            # Compute standardized return
+            return_standardized = self.get_return_standardized(reward, mask)
+            
+            # update policy
+            policy_optimizer_state, policy_params = self._update_policy(
+                policy_params=policy_params,
+                policy_optimizer_state=policy_optimizer_state,
+                obs=obs,
+                action=action,
+                logp=logp,
+                mask=mask,
+                return_standardized=return_standardized,
+            )
+            
+            new_emitter_state = emitter_state.replace(
+                random_key=random_keys[-1]
+            )
+            
+            return new_emitter_state, policy_params, policy_optimizer_state
+        
+        @partial(jax.jit, static_argnames=("self",))
+        def _sample_trajectory(
+            self,
+            random_key: RNGKey,
+            policy_params: Genotype,
+        ):
+            """Samples a full trajectory using the environment and policy.
+            Args:
+                random_key: a random key.
+                policy_params: the current parameters of the policy network.
+            Returns:
+                A tuple of observation, action, log-probability, reward, state descriptor, and mask arrays.
+            """
+            random_keys = jax.rando.split(random_key, self._env.episode_length + 1)
+            env_state_init = self._env.reset(random_keys[-1])
+            
+            def _scan_sample_step(carry, x):
+                (policy_params, env_state) = carry
+                (random_key,) = x
+                
+                next_env_state, action, action_logp = self.sample_step(
+                    random_key, policy_params, env_state
+                )
+                return (policy_params, next_env_state), (
+                    env_state.obs,
+                    action,
+                    action_logp,
+                    next_env_state.reward,
+                    env_state.done,
+                    env_state.info["state_descriptor"],
+                )
+            _, (obs, action, action_logp, reward, _, state_desc) = jax.lax.scan(
+                _scan_sample_step,
+                (policy_params, env_state_init),
+                (random_keys[:self._env.episode_length],),
+                length=self._env.episode_length,
+            )
+            
+            # compute a mask to indicate the valid steps
+            mask = 1. - jnp.clip(jnp.cumsum(mask, axis=0), a_max=1.)
+            
+            return obs, action, action_logp, reward, state_desc, mask
+        
+        @partial(jax.jit, static_argnames=("self",))
+        def sample_step(
+            self,
+            random_key: RNGKey,
+            policy_params: Genotype,
+            env_state: Any,
+        ) -> Tuple[Any, Any, Any]:
+            """Samples a step using the environment and policy.
+
+            Args:
+                random_key: a random key.
+                policy_params: the current parameters of the policy network.
+                env_state: the current state of the environment.
+
+            Returns:
+                A tuple of the next environment state, the action, and log-probability of the action.
+            """
+            action, action_logp = self._policy.apply(
+                policy_params, env_state.obs, method=self._policy.sample
+            )
+            next_env_state = self._env.step(env_state, action)
+            
+            return next_env_state, action, action_logp
+        
+        @partial(jax.jit, static_argnames=("self",))
+        def get_return_standardized(self, reward: jnp.ndarray, mask: jnp.ndarray) -> jnp.ndarray:
+            """Compute the standardized return.
+
+            Args:
+                reward: the reward obtained.
+                mask: the mask to indicate the valid steps.
+
+            Returns:
+                The standardized return.
+            """
+            # compute the return
+            return_ = jax.vmap(self.get_return)(reward * mask)
+            return self.standardize(return_)
+        
+        @partial(jax.jit, static_argnames=("self",))
+        def get_return(self, reward):
+            """Computes the discounted return for each step in the trajectory.
+            Args:
+                reward: the reward array.
+            Returns:
+                The discounted return array.
+            """
+            def _body(carry, x):
+                (next_return,) = carry
+                (reward,) = x
+                current_return = reward + self._config.discount_rate * next_return
+                return (current_return,), (current_return,)
+            
+            _, (return_,) = jax.lax.scan(
+                _body,
+                (jnp.array(0.),),
+                (reward,),
+                length=self._env.episode_length,
+                reverse=True,
+            )
+            return return_
+        
+    def standardize(self, return_):
+        """Standardizes the return values.
+        Args:
+            return_: the return array.
+        Returns:
+            The standardized return array.
+        """
+        return (return_ - return_.mean()) / (return_.std() + 1e-8)
+
+    @partial(jax.jit, static_argnames=("self",))
+    def _update_policy(
+        self,
+        policy_params: Genotype,
+        policy_optimizer_state: optax.OptState,
+        obs,
+        action,
+        logp,
+        mask,
+        return_standardized
+    ):
+        """Updates the policy parameters using the optimizer.
+        Args:
+            policy_params: the current parameters of the policy network.
+            policy_optimizer_state: the current state of the optimizer.
+            obs: observations from the environment.
+            action: actions taken in the environment.
+            logp: log-probabilities of the actions.
+            mask: the mask array indicating valid steps.
+            return_standardized: the standardized return values.
+        Returns:
+            The updated optimizer state and policy parameters.
+        """
+        def loss_fn(params):
+            logp_ = self._policy.apply(params, obs, action, method=self._policy.logp)
+            return -jnp.mean(logp_ * mask * return_standardized)
+
+        grads = jax.grad(loss_fn)(policy_params)
+        updates, new_optimizer_state = self._policies_optimizer.update(grads, policy_optimizer_state)
+        new_policy_params = optax.apply_updates(policy_params, updates)
+        return new_optimizer_state, new_policy_params
