@@ -123,6 +123,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+my_env/
 
 # Spyder project settings
 .spyderproject
@@ -147,3 +148,10 @@ dmypy.json
 
 # Cython debug symbols
 cython_debug/
+
+
+# logs
+notebooks/mapelites-logs.csv
+
+.DS_Store
+qdax/.DS_Store

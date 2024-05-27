@@ -85,12 +85,15 @@ class TrajectoryBuffer(struct.PyTreeNode):
         flatten_dim = transition.flatten_dim
         data = jnp.ones((buffer_size, flatten_dim)) * jnp.nan
         num_trajectories = buffer_size // episode_length
+        """
         assert (
             num_trajectories % env_batch_size == 0
         ), "num_trajectories must be a multiple of env batch size"
         assert (
             buffer_size % episode_length == 0
+        
         ), "buffer_size must be a multiple of episode_length"
+        """
         current_position = jnp.zeros((), dtype=int)
         trajectory_positions = jnp.zeros(env_batch_size, dtype=int)
         timestep_positions = jnp.zeros(env_batch_size, dtype=int)

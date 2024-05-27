@@ -27,13 +27,13 @@ class MAPElites:
     elements explicit.
 
     Args:
-        scoring_function: a function that takes a batch of genotypes and compute
+        scoring_function: a function that takes a batch of genotypes and compute    # evaluate fitness & descriptor
             their fitnesses and descriptors
-        emitter: an emitter is used to suggest offsprings given a MAPELites
+        emitter: an emitter is used to suggest offsprings given a MAPELites         # select sols? & update them
             repertoire. It has two compulsory functions. A function that takes
             emits a new population, and a function that update the internal state
             of the emitter.
-        metrics_function: a function that takes a MAP-Elites repertoire and compute
+        metrics_function: a function that takes a MAP-Elites repertoire and compute  # evaluate the MAP-Elites repertoire
             any useful metric to track its evolution
     """
 
@@ -71,7 +71,7 @@ class MAPElites:
             An initialized MAP-Elite repertoire with the initial state of the emitter,
             and a random key.
         """
-        # score initial genotypes
+        # score initial genotypes      
         fitnesses, descriptors, extra_scores, random_key = self._scoring_function(
             genotypes, random_key
         )
@@ -86,6 +86,7 @@ class MAPElites:
         )
 
         # get initial state of the emitter
+        '''
         emitter_state, random_key = self._emitter.init(
             random_key=random_key,
             repertoire=repertoire,
@@ -93,6 +94,11 @@ class MAPElites:
             fitnesses=fitnesses,
             descriptors=descriptors,
             extra_scores=extra_scores,
+        )
+        '''
+        emitter_state, random_key = self._emitter.init(
+            init_genotypes=genotypes,
+            random_key=random_key,
         )
 
         return repertoire, emitter_state, random_key
@@ -124,7 +130,12 @@ class MAPElites:
             a new jax PRNG key
         """
         # generate offsprings with the emitter
+        '''
         genotypes, extra_info, random_key = self._emitter.emit(
+            repertoire, emitter_state, random_key
+        )
+        '''
+        genotypes, random_key = self._emitter.emit(
             repertoire, emitter_state, random_key
         )
 
@@ -143,7 +154,7 @@ class MAPElites:
             genotypes=genotypes,
             fitnesses=fitnesses,
             descriptors=descriptors,
-            extra_scores={**extra_scores, **extra_info},
+            extra_scores={**extra_scores}#, **extra_info},
         )
 
         # update the metrics

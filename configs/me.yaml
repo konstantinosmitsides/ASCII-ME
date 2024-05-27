@@ -7,7 +7,7 @@ hydra:
 
 seed: 0
 algo: me
-env: ...
+env: ant_omni
 
 num_generations: 20
 log_period: 40
@@ -16,6 +16,7 @@ batch_size: 256
 # Archive
 num_init_cvt_samples: 50_000
 num_centroids: 1024
+policy_hidden_layer_sizes: [128, 128]
 
 # GA emitter
 iso_sigma: 0.005
