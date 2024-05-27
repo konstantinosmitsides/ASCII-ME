@@ -55,6 +55,7 @@ class REINaiveConfig:
     discount_rate: float = 0.99
     adam_optimizer: bool = True
     learning_rate: float = 1e-3
+    temperature: float = 0.
 
 
 
@@ -90,7 +91,7 @@ class REINaiveEmitter(Emitter):
         
         # Init optimizers
         
-        self._policies_optmizer = optax.adam(
+        self._policies_optimizer = optax.adam(
             learning_rate=self._config.learning_rate
             )
         
@@ -177,7 +178,7 @@ class REINaiveEmitter(Emitter):
         
         genotypes = offsprings_rein
         
-        return genotypes, {}, random_key
+        return genotypes, random_key
     
     @partial(jax.jit, static_argnames=("self",))
     def emit_rein(
@@ -224,7 +225,7 @@ class REINaiveEmitter(Emitter):
         """
         
         # Define new policy optimizer state
-        policy_optimizer_state = self._policies_optmizer.init(policy_params)
+        policy_optimizer_state = self._policies_optimizer.init(policy_params)
         
         def scan_train_policy(
             carry: Tuple[REINaiveEmitterState, Genotype, optax.OptState],
@@ -337,7 +338,7 @@ class REINaiveEmitter(Emitter):
                 env_state.info["state_descriptor"],
             )
         print(f"Length : {self._env.episode_length}")
-        _, (obs, action, action_logp, reward, _, state_desc) = jax.lax.scan(
+        _, (obs, action, action_logp, reward, done, state_desc) = jax.lax.scan(
             _scan_sample_step,
             (policy_params, env_state_init),
             (random_keys[:self._env.episode_length],),
@@ -345,8 +346,7 @@ class REINaiveEmitter(Emitter):
         )
         
         # compute a mask to indicate the valid steps
-        mask = 1. - jnp.clip(jnp.cumsum(mask, axis=0), a_max=1.)
-        
+        mask = 1. - jnp.clip(jnp.cumsum(done), a_min=0., a_max=1.)        
         return obs, action, action_logp, reward, state_desc, mask
     
     @partial(jax.jit, static_argnames=("self",))
@@ -449,7 +449,7 @@ class REINaiveEmitter(Emitter):
             The updated optimizer state and policy parameters.
         """
         def loss_fn(params):
-            logp_ = self._policy.apply(params, obs, action, method=self._policy.logp)
+            logp_ = self._policy.logp(params, obs, action)
             return -jnp.mean(logp_ * mask * return_standardized)
 
         grads = jax.grad(loss_fn)(policy_params)

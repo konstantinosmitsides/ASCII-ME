@@ -275,39 +275,36 @@ class MLPRein(nn.Module):
 
     action_size: int
     layer_sizes: Tuple[int, ...]
-    activation: Callable[[jnp.ndarray], jnp.ndarray] = nn.relu
+    activation: Callable[[jnp.ndarray], jnp.ndarray] = nn.tanh
     kernel_init: Callable[..., Any] = jax.nn.initializers.lecun_uniform()
     final_activation: Optional[Callable[[jnp.ndarray], jnp.ndarray]] = None
     bias: bool = True
     kernel_init_final: Optional[Callable[..., Any]] = jax.nn.initializers.orthogonal(scale=0.01)
     
-
+    
     def setup(self):
         self.hidden_layers = [nn.Dense(size, kernel_init=self.kernel_init) for size in self.layer_sizes]
         self.mean = nn.Dense(self.action_size, kernel_init=self.kernel_init_final)
-        self.log_std = self.param("log_std", lambda key, shape: -1.0 * jnp.ones(shape), (self.action_size,))
+        self.log_std = self.param("log_std", lambda _, shape: -1.0 * jnp.ones(shape), (self.action_size,))
 
-    @nn.compact
-    def __call__(self, obs: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
+    def __call__(self, obs: jnp.ndarray) -> jnp.ndarray:
+        return self.distribution_params(obs)[-1]
+
+    def distribution_params(self, obs: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
         hidden = obs
         for hidden_layer in self.hidden_layers:
             hidden = self.activation(hidden_layer(hidden))
+
+
 
         mean = self.mean(hidden)
         log_std = self.log_std
         std = jnp.exp(log_std)
 
-        debug_trace(mean, "mean")
-        debug_trace(log_std, "log_std")
-        debug_trace(std, "std")
-
-        return hidden
-
-    def distribution_params(self, obs: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
-        return self(obs)
-
+        return mean, log_std, std, hidden
+    
     def logp(self, params, obs: jnp.ndarray, action: jnp.ndarray) -> jnp.ndarray:
-        mean, log_std, std = self.apply({'params': params}, obs, method=self.distribution_params)
+        mean, log_std, std, _ = self.apply(params, obs, method=self.distribution_params)
         debug_trace(mean, "mean in logp")
         debug_trace(log_std, "log_std in logp")
         debug_trace(std, "std in logp")
@@ -316,12 +313,12 @@ class MLPRein(nn.Module):
         return logp
 
     def entropy(self, params, obs: jnp.ndarray) -> jnp.ndarray:
-        _, _, std = self.apply({'params': params}, obs, method=self.distribution_params)
+        _, _, std, _ = self.apply(params, obs, method=self.distribution_params)
         entropy = self.action_size * (0.5 + _half_log2pi) + 0.5 * jnp.log(jnp.prod(std))
         return entropy
 
     def sample(self, params, random_key, obs: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray]:
-        mean, log_std, std = self.apply(params, obs, method=self.distribution_params)
+        mean, log_std, std, _ = self.apply(params, obs, method=self.distribution_params)
         debug_trace(mean, "mean in sample")
         debug_trace(log_std, "log_std in sample")
         debug_trace(std, "std in sample")

@@ -317,7 +317,7 @@ def train(config: ExperimentConfig) -> None:
     count_evals_fn = (
         lambda iteration: iteration
         * config.batch_size
-        * config.sample_number
+        * config.rollout_number
     )
     
     # All necessary functions and parameters
