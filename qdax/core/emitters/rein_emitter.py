@@ -265,14 +265,14 @@ class REINaiveEmitter(Emitter):
                     new_policy_optimizer_state,
                 ), ()
                 
-                (emitter_state, policy_params, policy_optimizer_state,), _ = jax.lax.scan(
-                    scan_train_policy,
-                    (emitter_state, policy_params, policy_optimizer_state),
-                    (),
-                    length=self._config.num_rein_training_steps,
-                )
-                
-                return policy_params
+            (emitter_state, policy_params, policy_optimizer_state,), _ = jax.lax.scan(
+                scan_train_policy,
+                (emitter_state, policy_params, policy_optimizer_state),
+                (),
+                length=self._config.num_rein_training_steps,
+            )
+            
+            return policy_params
             
         @partial(jax.jit, static_argnames=("self",))
         def _train_policy_(
@@ -281,7 +281,7 @@ class REINaiveEmitter(Emitter):
             policy_params: Genotype,
             policy_optimizer_state: optax.OptState,
         ) -> Tuple[REINaiveEmitterState, Genotype, optax.OptState]:
-            """Train the policy network with REINFORCE.
+            """Apply one gradient step to a policy (called policy_params).
 
             Args:
                 emitter_state: the current state of the emitter.
@@ -292,38 +292,176 @@ class REINaiveEmitter(Emitter):
                 The updated state of the emitter, the updated policy parameters
                 and the updated optimizer state.
             """
+
+            random_keys = jax.random.split(emitter_state.random_key, self._config.rollout_number)
+            obs, action, logp, reward, _, mask = jax.vmap(
+                self._sample_trajectory, in_axes=(0, None))(random_keys, emitter_state)
             
-            trajectory_buffer = emitter_state.trajectory_buffer
+            # Add entropy term to reward
+            reward += self._config.temperature * (-logp)
             
-            # Sample trajectories
-            transitions = trajectory_buffer.sample(
-                batch_size=self._config.batch_size,
-                random_key=emitter_state.random_key,
+            # Compute standardized return
+            return_standardized = self.get_return_standardized(reward, mask)
+            
+            # update policy
+            policy_optimizer_state, policy_params = self._update_policy(
+                policy_params=policy_params,
+                policy_optimizer_state=policy_optimizer_state,
+                obs=obs,
+                action=action,
+                logp=logp,
+                mask=mask,
+                return_standardized=return_standardized,
             )
             
-            # Compute the loss and the gradients
-            loss, grads = self.loss_reinforce(
-                policy_params,
-                transitions.observation,
-                transitions.action,
-                transitions.logp,
-                transitions.mask,
-                transitions.return_standardized,
+            new_emitter_state = emitter_state.replace(
+                random_key=random_keys[-1]
             )
             
-            # Apply gradients
-            updates, new_policy_optimizer_state = self._policies_optmizer.update(
-                grads,
-                policy_optimizer_state,
-            )
-            
-            new_policy_params = optax.apply_updates(policy_params, updates)
-            
-            # Update the emitter state
-            new_emitter_state = REINaiveEmitterState(
-                trajectory_buffer=trajectory_buffer,
-                random_key=emitter_state.random_key,
-            )
-            
-            return new_emitter_state, new_policy_params, new_policy_optimizer_state
+            return new_emitter_state, policy_params, policy_optimizer_state
         
+        @partial(jax.jit, static_argnames=("self",))
+        def _sample_trajectory(
+            self,
+            random_key: RNGKey,
+            policy_params: Genotype,
+        ):
+            """Samples a full trajectory using the environment and policy.
+            Args:
+                random_key: a random key.
+                policy_params: the current parameters of the policy network.
+            Returns:
+                A tuple of observation, action, log-probability, reward, state descriptor, and mask arrays.
+            """
+            random_keys = jax.rando.split(random_key, self._env.episode_length + 1)
+            env_state_init = self._env.reset(random_keys[-1])
+            
+            def _scan_sample_step(carry, x):
+                (policy_params, env_state) = carry
+                (random_key,) = x
+                
+                next_env_state, action, action_logp = self.sample_step(
+                    random_key, policy_params, env_state
+                )
+                return (policy_params, next_env_state), (
+                    env_state.obs,
+                    action,
+                    action_logp,
+                    next_env_state.reward,
+                    env_state.done,
+                    env_state.info["state_descriptor"],
+                )
+            _, (obs, action, action_logp, reward, _, state_desc) = jax.lax.scan(
+                _scan_sample_step,
+                (policy_params, env_state_init),
+                (random_keys[:self._env.episode_length],),
+                length=self._env.episode_length,
+            )
+            
+            # compute a mask to indicate the valid steps
+            mask = 1. - jnp.clip(jnp.cumsum(mask, axis=0), a_max=1.)
+            
+            return obs, action, action_logp, reward, state_desc, mask
+        
+        @partial(jax.jit, static_argnames=("self",))
+        def sample_step(
+            self,
+            random_key: RNGKey,
+            policy_params: Genotype,
+            env_state: Any,
+        ) -> Tuple[Any, Any, Any]:
+            """Samples a step using the environment and policy.
+
+            Args:
+                random_key: a random key.
+                policy_params: the current parameters of the policy network.
+                env_state: the current state of the environment.
+
+            Returns:
+                A tuple of the next environment state, the action, and log-probability of the action.
+            """
+            action, action_logp = self._policy.apply(
+                policy_params, env_state.obs, method=self._policy.sample
+            )
+            next_env_state = self._env.step(env_state, action)
+            
+            return next_env_state, action, action_logp
+        
+        @partial(jax.jit, static_argnames=("self",))
+        def get_return_standardized(self, reward: jnp.ndarray, mask: jnp.ndarray) -> jnp.ndarray:
+            """Compute the standardized return.
+
+            Args:
+                reward: the reward obtained.
+                mask: the mask to indicate the valid steps.
+
+            Returns:
+                The standardized return.
+            """
+            # compute the return
+            return_ = jax.vmap(self.get_return)(reward * mask)
+            return self.standardize(return_)
+        
+        @partial(jax.jit, static_argnames=("self",))
+        def get_return(self, reward):
+            """Computes the discounted return for each step in the trajectory.
+            Args:
+                reward: the reward array.
+            Returns:
+                The discounted return array.
+            """
+            def _body(carry, x):
+                (next_return,) = carry
+                (reward,) = x
+                current_return = reward + self._config.discount_rate * next_return
+                return (current_return,), (current_return,)
+            
+            _, (return_,) = jax.lax.scan(
+                _body,
+                (jnp.array(0.),),
+                (reward,),
+                length=self._env.episode_length,
+                reverse=True,
+            )
+            return return_
+        
+    def standardize(self, return_):
+        """Standardizes the return values.
+        Args:
+            return_: the return array.
+        Returns:
+            The standardized return array.
+        """
+        return (return_ - return_.mean()) / (return_.std() + 1e-8)
+
+    @partial(jax.jit, static_argnames=("self",))
+    def _update_policy(
+        self,
+        policy_params: Genotype,
+        policy_optimizer_state: optax.OptState,
+        obs,
+        action,
+        logp,
+        mask,
+        return_standardized
+    ):
+        """Updates the policy parameters using the optimizer.
+        Args:
+            policy_params: the current parameters of the policy network.
+            policy_optimizer_state: the current state of the optimizer.
+            obs: observations from the environment.
+            action: actions taken in the environment.
+            logp: log-probabilities of the actions.
+            mask: the mask array indicating valid steps.
+            return_standardized: the standardized return values.
+        Returns:
+            The updated optimizer state and policy parameters.
+        """
+        def loss_fn(params):
+            logp_ = self._policy.apply(params, obs, action, method=self._policy.logp)
+            return -jnp.mean(logp_ * mask * return_standardized)
+
+        grads = jax.grad(loss_fn)(policy_params)
+        updates, new_optimizer_state = self._policies_optimizer.update(grads, policy_optimizer_state)
+        new_policy_params = optax.apply_updates(policy_params, updates)
+        return new_optimizer_state, new_policy_params
