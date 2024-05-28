@@ -14,7 +14,26 @@ from qdax.core.containers.mapelites_repertoire import MapElitesRepertoire
 from omegaconf import OmegaConf
 
 
-def get_env(config):
+@dataclass
+class Config:
+    name: str
+    seed: int
+    num_iterations: int
+    batch_size: int
+
+    # Archive
+    num_init_cvt_samples: int
+    num_centroids: int
+    policy_hidden_layer_sizes: Tuple[int, ...]
+
+@dataclass
+class ConfigReproducibility:
+    env_name: str
+    algo_name: str
+    num_evaluations: int
+
+
+def get_env(config: Config):
     if config.env.version == "v1":
         if config.env.name == "hopper_uni":
             env = environments_v1.create(
@@ -161,36 +180,27 @@ def get_repertoire(run_dir):
 def get_df(results_dir):
     metrics_list = []
     for env_dir in results_dir.iterdir():
+        if env_dir.is_file() or env_dir.name not in ["ant_omni", "anttrap_omni", "humanoid_omni", "walker2d_uni", "halfcheetah_uni", "ant_uni", "humanoid_uni"]:
+            continue
         for algo_dir in env_dir.iterdir():
-            if algo_dir.name == "pga_me_old":
-                continue
             for run_dir in algo_dir.iterdir():
                 # Get config and metrics
                 config = get_config(run_dir)
                 metrics = get_metrics(run_dir)
 
-                # Run
-                metrics["run"] = run_dir.name
-
                 # Env
                 metrics["env"] = config.env.name
 
                 # Algo
-                if "dc_actor" not in config.algo:
-                    config.algo.dc_actor = True
-                if config.algo.name == "dcg_me" and config.algo.dc_actor == False and config.algo.ai_batch_size == 0:
-                    metrics["algo"] = "ablation_1"  # Ablation Actor
-                elif config.algo.name == "dcg_me" and config.algo.actor_batch_size == 0 and config.algo.qpg_batch_size == 128 and config.algo.ai_batch_size == 0:
-                    metrics["algo"] = "ablation_2"  # Ablation AI
-                elif config.algo.name == "dcg_me" and config.algo.actor_batch_size == 64 and config.algo.qpg_batch_size == 128 and config.algo.ai_batch_size == 0:
-                    metrics["algo"] = "ablation_3"  # DCG-MAP-Elites GECCO
-                else:
-                    metrics["algo"] = config.algo.name
+                metrics["algo"] = config.algo.name
+
+                # Run
+                metrics["run"] = run_dir.name
 
                 # Number of Evaluations
                 if config.algo.name == "me_es":
                     metrics["num_evaluations"] = metrics["iteration"] * 1050
-                elif config.algo.name == "dcg_me":
+                elif config.algo.name == "dcg_me_gecco":
                     metrics["num_evaluations"] = metrics["iteration"] * (config.batch_size + config.algo.actor_batch_size)
                 else:
                     metrics["num_evaluations"] = metrics["iteration"] * config.batch_size
