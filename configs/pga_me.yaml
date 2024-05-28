@@ -6,7 +6,7 @@ hydra:
 
 defaults:
   - _self_
-  - env: ant_omni
+  - env: ant_uni
   - algo: pga_me
 
 seed: 42

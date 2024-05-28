@@ -12,7 +12,7 @@ from flax import serialization
 from qdax.core.containers.mapelites_repertoire import compute_cvt_centroids
 from qdax.tasks.brax_envs import reset_based_scoring_function_brax_envs as scoring_function
 from qdax.environments import behavior_descriptor_extractor
-from qdax.core.map_elites import MAPElites
+from qdax.core.map_elites_pga import MAPElites
 from qdax.core.emitters.mutation_operators import isoline_variation
 from qdax.core.emitters.pga_me_emitter import PGAMEConfig, PGAMEEmitter
 from qdax.core.neuroevolution.buffers.buffer import QDTransition
@@ -84,8 +84,8 @@ def main(config: Config) -> None:
             actions=actions,
             state_desc=state_desc,
             next_state_desc=next_state.info["state_descriptor"],
-            desc=jnp.zeros(env.behavior_descriptor_length,) * jnp.nan,
-            desc_prime=jnp.zeros(env.behavior_descriptor_length,) * jnp.nan,
+            #desc=jnp.zeros(env.behavior_descriptor_length,) * jnp.nan,
+            #desc_prime=jnp.zeros(env.behavior_descriptor_length,) * jnp.nan,
         )
 
         return next_state, policy_params, random_key, transition
@@ -150,7 +150,7 @@ def main(config: Config) -> None:
         discount=config.algo.discount,
         reward_scaling=config.algo.reward_scaling,
         critic_learning_rate=config.algo.critic_learning_rate,
-        actor_learning_rate=config.algo.actor_learning_rate,
+        #actor_learning_rate=config.algo.actor_learning_rate,
         policy_learning_rate=config.algo.policy_learning_rate,
         noise_clip=config.algo.noise_clip,
         policy_noise=config.algo.policy_noise,
@@ -183,7 +183,7 @@ def main(config: Config) -> None:
     log_period = 10
     num_loops = int(config.num_iterations / log_period)
 
-    metrics = dict.fromkeys(["iteration", "qd_score", "coverage", "max_fitness", "qd_score_repertoire", "dem_repertoire", "actor_fitness", "ga_offspring_added", "qpg_offspring_added", "ai_offspring_added", "time"], jnp.array([]))
+    metrics = dict.fromkeys(["iteration", "qd_score", "coverage", "max_fitness", "qd_score_repertoire", "dem_repertoire", "actor_fitness", "time"], jnp.array([]))
     csv_logger = CSVLogger(
         "./log.csv",
         header=list(metrics.keys())
@@ -210,15 +210,15 @@ def main(config: Config) -> None:
         current_metrics["qd_score_repertoire"] = jnp.repeat(qd_score_repertoire, log_period)
         current_metrics["dem_repertoire"] = jnp.repeat(dem_repertoire, log_period)
         current_metrics["actor_fitness"] = jnp.repeat(fitness_actor, log_period)
-        current_metrics["ga_offspring_added"], current_metrics["qpg_offspring_added"], current_metrics["ai_offspring_added"] = get_n_offspring_added(current_metrics)
-        del current_metrics["is_offspring_added"]
+        #current_metrics["ga_offspring_added"], current_metrics["qpg_offspring_added"], current_metrics["ai_offspring_added"] = get_n_offspring_added(current_metrics)
+        #del current_metrics["is_offspring_added"]
         metrics = jax.tree_util.tree_map(lambda metric, current_metric: jnp.concatenate([metric, current_metric], axis=0), metrics, current_metrics)
 
         # Log
         log_metrics = jax.tree_util.tree_map(lambda metric: metric[-1], metrics)
-        log_metrics["qpg_offspring_added"] = jnp.sum(current_metrics["qpg_offspring_added"])
-        log_metrics["ga_offspring_added"] = jnp.sum(current_metrics["ga_offspring_added"])
-        log_metrics["ai_offspring_added"] = jnp.sum(current_metrics["ai_offspring_added"])
+        #log_metrics["qpg_offspring_added"] = jnp.sum(current_metrics["qpg_offspring_added"])
+        #log_metrics["ga_offspring_added"] = jnp.sum(current_metrics["ga_offspring_added"])
+        #log_metrics["ai_offspring_added"] = jnp.sum(current_metrics["ai_offspring_added"])
         csv_logger.log(log_metrics)
         wandb.log(log_metrics)
 

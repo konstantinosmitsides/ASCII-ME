@@ -172,6 +172,7 @@ class REINaiveEmitter(Emitter):
         batch_size = self._config.batch_size
         
         # sample parents
+        print(type(repertoire))
         parents, random_key = repertoire.sample(random_key, batch_size)
         
         offsprings_rein = self.emit_rein(emitter_state, parents)
