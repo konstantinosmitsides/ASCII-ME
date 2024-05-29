@@ -1,3 +1,9 @@
+import os
+
+# Set environment variables to redirect cache directories
+os.environ['MPLCONFIGDIR'] = '/tmp/matplotlib'
+os.environ['WANDB_CACHE_DIR'] = '/tmp/wandb_cache'
+
 from typing import Tuple
 from dataclasses import dataclass
 import functools
@@ -25,6 +31,7 @@ from hydra.core.config_store import ConfigStore
 from omegaconf import OmegaConf
 import wandb
 from utils import Config, get_env
+from jax.lib import xla_bridge
 
 
 @hydra.main(version_base="1.2", config_path="configs/", config_name="pga_me")
@@ -34,7 +41,6 @@ def main(config: Config) -> None:
         name=config.algo.name,
         config=OmegaConf.to_container(config, resolve=True),
     )
-
     # Init a random key
     random_key = jax.random.PRNGKey(config.seed)
 
