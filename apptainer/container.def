@@ -39,7 +39,7 @@ From: ubuntu:22.04
 	mkdir /workspace/ && cd /workspace/
 
 	# Clone repository to /src/
-	git clone https://{{ gitlab_user }}:{{ gitlab_token }}@gitlab.doc.ic.ac.uk/AIRL/research_projects/maxence_faldor/reinforce-qd.git src/ && cd src/
+	git clone https://{{ gitlab_user }}:{{ gitlab_token }}@gitlab.doc.ic.ac.uk/AIRL/students_projects/2023-2024/konstantinos_mitsides/me-with-sample-based-drl.git src/ && cd src/
 	git checkout {{ commit }}
 
 	# Install requirements
@@ -47,4 +47,4 @@ From: ubuntu:22.04
 
 %runscript
 	# Run main
-	python /workspace/src/main.py "$@"
+	python /workspace/src/main_pga_me.py "$@"

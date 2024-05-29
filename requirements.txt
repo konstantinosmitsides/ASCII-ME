@@ -1,6 +1,8 @@
 --find-links https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
 
-jax[cuda11_pip]
+jax[cuda11_pip]==0.4.23
+jumanji
+scipy==1.12.0
 flax
 brax
 scikit-learn
