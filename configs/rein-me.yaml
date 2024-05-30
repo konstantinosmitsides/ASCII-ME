@@ -2,17 +2,21 @@ hydra:
     run:
         dir: ./${alg_name}_results/${env_name}/${now:%Y-%m-%d}/${now:%H-%M-%S}
 
+defaults:
+    - _self_
+    - env: ant_uni
+
 # Env config
 alg_name: rein-me
 seed: 0
 env_name: ant_uni
-episode_length: 250
+episode_length: 1000
 policy_hidden_layer_sizes: [64, 64]
 # ME config
 num_evaluations: 0
-num_iterations: 2000
+num_iterations: 40
 num_samples: 1
-batch_size: 2048
+batch_size: 512
 fixed_init_state: False
 discard_dead: False
 # Grid config
@@ -27,7 +31,7 @@ store_repertoire_log_period: 800
 
 
 # REINFORCE Parameters
-rollout_number: 5 # Num of episodes used for gradient estimate
+rollout_number: 20 # Num of episodes used for gradient estimate
 num_rein_training_steps: 10 # Num gradient steps per generation
 buffer_size: 102400 # Size of the replay buffer
 adam_optimizer: True
