@@ -121,7 +121,8 @@ def set_up_envs(
         return init_variables, random_key
 
     # Build all common parts
-    reward_offset = get_reward_offset_brax(env, config.env_name)
+    #reward_offset = get_reward_offset_brax(env, config.env_name)
+    reward_offset = 0.0
     behavior_descriptor_length = get_behavior_descriptor_length_brax(
         env, config.env_name
     )

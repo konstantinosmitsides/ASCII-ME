@@ -2,6 +2,7 @@ import os
 
 os.environ['MPLCONFIGDIR'] = '/tmp/matplotlib'
 os.environ['WANDB_CACHE_DIR'] = '/tmp/wandb_cache'
+os.environ['JAX_LOG_COMPILATION'] = '1'
 
 import logging
 import time
@@ -11,7 +12,7 @@ from math import floor
 from typing import Any, Dict, Tuple, List, Callable
 import pickle
 from flax import serialization
-
+logging.basicConfig(level=logging.DEBUG)
 import hydra
 from omegaconf import OmegaConf, DictConfig
 import jax
@@ -31,13 +32,7 @@ from qdax.core.emitters.mutation_operators import isoline_variation
 import wandb
 from qdax.utils.metrics import CSVLogger, default_qd_metrics
 from qdax.utils.plotting import plot_map_elites_results
-from set_up_brax import (
-    get_behavior_descriptor_length_brax,
-    get_environment_brax,
-    get_policy_struc_brax,
-    get_reward_offset_brax,
-    get_scoring_function_brax,
-)
+
 
 
 
