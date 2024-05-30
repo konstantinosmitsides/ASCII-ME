@@ -112,8 +112,12 @@ class REINaiveEmitter(Emitter):
     @partial(jax.jit, static_argnames=("self",))
     def init(
         self,
-        init_genotypes: Genotype,
         random_key: RNGKey,
+        repertoire: Repertoire,
+        genotypes: Genotype,
+        fitnesses: Fitness,
+        descriptors: Descriptor,
+        extra_scores: ExtraScores,
     ) -> Tuple[REINaiveEmitterState, RNGKey]:
         """Initializes the emitter.
 
@@ -179,7 +183,7 @@ class REINaiveEmitter(Emitter):
         
         genotypes = offsprings_rein
         
-        return genotypes, random_key
+        return genotypes, {}, random_key
     
     @partial(jax.jit, static_argnames=("self",))
     def emit_rein(

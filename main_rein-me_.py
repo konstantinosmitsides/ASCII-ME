@@ -17,16 +17,17 @@ from omegaconf import OmegaConf, DictConfig
 import jax
 import jax.numpy as jnp
 from hydra.core.config_store import ConfigStore
-from qdax.core.map_elites import MAPElites
+from qdax.core.map_elites_pga import MAPElites
 from qdax.types import RNGKey, Genotype
 from qdax.utils.sampling import sampling 
 from qdax.core.containers.mapelites_repertoire import compute_cvt_centroids, MapElitesRepertoire
 from qdax.core.neuroevolution.networks.networks import MLP, MLPRein
-from qdax.core.emitters.rein_emitter import REINaiveConfig, REINaiveEmitter
+from qdax.core.emitters.rein_var import REINConfig, REINEmitter
 from qdax.core.neuroevolution.buffers.buffer import QDTransition
 from qdax.environments import behavior_descriptor_extractor
 from qdax.tasks.brax_envs import reset_based_scoring_function_brax_envs as scoring_function
 from utils import Config, get_env
+from qdax.core.emitters.mutation_operators import isoline_variation
 import wandb
 from qdax.utils.metrics import CSVLogger, default_qd_metrics
 from qdax.utils.plotting import plot_map_elites_results
@@ -190,7 +191,8 @@ def main(config: Config) -> None:
     )
 
     # Define the PG-emitter config
-    rein_emitter_config = REINaiveConfig(
+    rein_emitter_config = REINConfig(
+        proportion_mutation_ga=config.proportion_mutation_ga,
         batch_size=config.batch_size,
         num_rein_training_steps=config.num_rein_training_steps,
         buffer_size=config.buffer_size,
@@ -206,10 +208,14 @@ def main(config: Config) -> None:
         isoline_variation, iso_sigma=config.algo.iso_sigma, line_sigma=config.algo.line_sigma
     )
     '''
-    rein_emitter = REINaiveEmitter(
+    variation_fn = partial(
+        isoline_variation, iso_sigma=config.iso_sigma, line_sigma=config.line_sigma
+    )
+    rein_emitter = REINEmitter(
         config=rein_emitter_config,
         policy_network=policy_network,
         env=env,
+        variation_fn=variation_fn,
         )
 
     # Instantiate MAP Elites
@@ -232,20 +238,16 @@ def main(config: Config) -> None:
     )
 
     # Main loop
-    map_elites_update_fn = partial(map_elites.update)
+    map_elites_scan_update = map_elites.scan_update
     for i in range(num_loops):
         print(f"Loop {i+1}/{num_loops}")
         start_time = time.time()
         
-        (
-            repertoire,
-            emitter_state,
-            current_metrics,
-            random_key,
-        ) = map_elites_update_fn(
-            repertoire,
-            emitter_state,
-            random_key,
+        (repertoire, emitter_state, random_key,), current_metrics = jax.lax.scan(
+            map_elites_scan_update,
+            (repertoire, emitter_state, random_key),
+            (),
+            length=log_period,
         )
         timelapse = time.time() - start_time
 
