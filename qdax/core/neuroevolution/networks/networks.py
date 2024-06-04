@@ -319,9 +319,6 @@ class MLPRein(nn.Module):
 
     def sample(self, params, random_key, obs: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray]:
         mean, log_std, std, _ = self.apply(params, obs, method=self.distribution_params)
-        debug_trace(mean, "mean in sample")
-        debug_trace(log_std, "log_std in sample")
-        debug_trace(std, "std in sample")
 
         rnd = jax.random.normal(random_key, shape=mean.shape)
         action = mean + rnd * std
