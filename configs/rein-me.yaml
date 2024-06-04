@@ -34,7 +34,7 @@ line_sigma: 0.05
 # REINFORCE Parameters
 proportion_mutation_ga: 0.5
 rollout_number: 1 # Num of episodes used for gradient estimate
-num_rein_training_steps: 10 # Num gradient steps per generation
+num_rein_training_steps: 5 # Num gradient steps per generation
 buffer_size: 102400 # Size of the replay buffer
 adam_optimizer: True
 learning_rate: 1e-3
