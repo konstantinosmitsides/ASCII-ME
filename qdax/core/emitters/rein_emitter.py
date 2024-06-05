@@ -4,6 +4,7 @@ from math import floor
 from typing import Callable, Tuple, Any
 
 import jax
+from jax import debug
 import jax.numpy as jnp
 import flax.linen as nn
 import optax
@@ -176,7 +177,6 @@ class REINaiveEmitter(Emitter):
         batch_size = self._config.batch_size
         
         # sample parents
-        print(type(repertoire))
         parents, random_key = repertoire.sample(random_key, batch_size)
         
         offsprings_rein = self.emit_rein(emitter_state, parents)
@@ -239,7 +239,7 @@ class REINaiveEmitter(Emitter):
             """Scans through the parents and applies REINFORCE training.
             """
             
-            emitter_state, parent, policy_optimizer_state = carry
+            emitter_state, policy_params, policy_optimizer_state = carry
             
             (
                 new_emitter_state,
@@ -288,6 +288,8 @@ class REINaiveEmitter(Emitter):
         obs, action, logp, reward, _, mask = jax.vmap(
             self._sample_trajectory, in_axes=(0, None))(random_keys, policy_params)
         
+        #debug.print("obs.shape: {}", obs.shape)
+        
         # Add entropy term to reward
         reward += self._config.temperature * (-logp)
         
@@ -328,7 +330,7 @@ class REINaiveEmitter(Emitter):
         env_state_init = self._env.reset(random_keys[-1])
         
         def _scan_sample_step(carry, x):
-            (policy_params, env_state) = carry
+            (policy_params, env_state,) = carry
             (random_key,) = x
             
             next_env_state, action, action_logp = self.sample_step(

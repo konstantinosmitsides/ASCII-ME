@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+#from dataclasses import dataclass
 from typing import Callable, Tuple
 
 import flax.linen as nn
@@ -8,7 +8,7 @@ from qdax.core.emitters.rein_emitter import REINaiveConfig, REINaiveEmitter
 from qdax.core.emitters.standard_emitters import MixingEmitter
 from qdax.environments.base_wrappers import QDEnv
 from qdax.types import Params, RNGKey
-
+from dataclasses import dataclass
 
 @dataclass
 class REINConfig:
@@ -38,6 +38,8 @@ class REINEmitter(MultiEmitter):
         self._policy_network = policy_network
         self._env = env
         self._variation_fn = variation_fn
+        
+        print(config.batch_size)
 
         ga_batch_size = int(self._config.proportion_mutation_ga * config.batch_size)
         rein_batch_size = config.batch_size - ga_batch_size
