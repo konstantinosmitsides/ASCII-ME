@@ -375,9 +375,15 @@ class REINaiveEmitter(Emitter):
         #print(f"policy_params: {policy_params}")
         #print(f"env_state.obs: {env_state.obs}")
         #print(f"env_state.obs type: {type(env_state.obs)}")
+        '''
         action, action_logp = self._policy.sample(
             policy_params, random_key, env_state.obs
         )
+        '''
+        action, action_logp = self._policy.apply(
+            policy_params, random_key, env_state.obs, method=self._policy.sample
+        )
+
         next_env_state = self._env.step(env_state, action)
         
         return next_env_state, action, action_logp
@@ -428,7 +434,8 @@ class REINaiveEmitter(Emitter):
         Returns:
             The standardized return array.
         """
-        return (return_ - return_.mean()) / (return_.std() + 1e-8)
+        #return (return_ - return_.mean()) / (return_.std() + 1e-8)
+        return jax.nn.standardize(return_, axis=0, variance=1., epsilon=EPS)
 
     @partial(jax.jit, static_argnames=("self",))
     def _update_policy(
@@ -454,8 +461,10 @@ class REINaiveEmitter(Emitter):
             The updated optimizer state and policy parameters.
         """
         def loss_fn(params):
-            logp_ = self._policy.logp(params, obs, action)
-            return -jnp.mean(logp_ * mask * return_standardized)
+            #logp_ = self._policy.logp(params, jax.lax.stop_gradient(obs), jax.lax.stop_gradient(action))
+            logp_ = self._policy.apply(params, jax.lax.stop_gradient(obs), jax.lax.stop_gradient(action), method=self._policy.logp)
+            #return -jnp.mean(logp_ * mask * return_standardized)
+            return -jnp.mean(jnp.multiply(logp_ * mask, jax.lax.stop_gradient(return_standardized)))
 
         grads = jax.grad(loss_fn)(policy_params)
         updates, new_optimizer_state = self._policies_optimizer.update(grads, policy_optimizer_state)

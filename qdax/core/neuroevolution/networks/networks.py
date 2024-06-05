@@ -288,8 +288,8 @@ class MLPRein(nn.Module):
         self.mean = nn.Dense(self.action_size, kernel_init=self.kernel_init_final)
         self.log_std = self.param("log_std", lambda _, shape: -1.0 * jnp.ones(shape), (self.action_size,))
 
-    def __call__(self, obs: jnp.ndarray) -> jnp.ndarray:
-        return self.distribution_params(obs)[-1]
+    def __call__(self, random_key, obs: jnp.ndarray) -> jnp.ndarray:
+        return self.sample(random_key, obs)[0]
 
     def distribution_params(self, obs: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
         hidden = obs
@@ -304,8 +304,9 @@ class MLPRein(nn.Module):
 
         return mean, log_std, std, hidden
     
-    def logp(self, params, obs: jnp.ndarray, action: jnp.ndarray) -> jnp.ndarray:
-        mean, log_std, std, _ = self.apply(params, obs, method=self.distribution_params)
+    def logp(self, obs: jnp.ndarray, action: jnp.ndarray) -> jnp.ndarray:
+        #mean, log_std, std, _ = self.apply(params, obs, method=self.distribution_params)
+        mean, log_std, std, _ = self.distribution_params(obs)
         debug_trace(mean, "mean in logp")
         debug_trace(log_std, "log_std in logp")
         debug_trace(std, "std in logp")
@@ -318,8 +319,9 @@ class MLPRein(nn.Module):
         entropy = self.action_size * (0.5 + _half_log2pi) + 0.5 * jnp.log(jnp.prod(std))
         return entropy
 
-    def sample(self, params, random_key, obs: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray]:
-        mean, log_std, std, _ = self.apply(params, obs, method=self.distribution_params)
+    def sample(self, random_key, obs: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        #mean, log_std, std, _ = self.apply(params, obs, method=self.distribution_params)
+        mean, log_std, std, _ = self.distribution_params(obs)
 
         rnd = jax.random.normal(random_key, shape=mean.shape)
         action = jax.lax.stop_gradient(mean + rnd * std)
