@@ -322,6 +322,6 @@ class MLPRein(nn.Module):
         mean, log_std, std, _ = self.apply(params, obs, method=self.distribution_params)
 
         rnd = jax.random.normal(random_key, shape=mean.shape)
-        action = mean + rnd * std
+        action = jax.lax.stop_gradient(mean + rnd * std)
         logp = jnp.sum(-0.5 * jnp.square((action - mean) / (std + EPS)) - _half_log2pi - log_std, axis=-1)
         return action, logp

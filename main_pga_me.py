@@ -59,6 +59,8 @@ def main(config: Config) -> None:
     )
 
     # Init policy network
+    print(type(env.action_size))
+    print(type(config.policy_hidden_layer_sizes))
     policy_layer_sizes = config.policy_hidden_layer_sizes + (env.action_size,)
     policy_network = MLP(
         layer_sizes=policy_layer_sizes,

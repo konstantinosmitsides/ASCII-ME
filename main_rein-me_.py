@@ -103,7 +103,8 @@ def main(config: Config) -> None:
         random_key=random_key,
     )
     # Init policy network
-    policy_layer_sizes = config.policy_hidden_layer_sizes + (env.action_size,)
+    policy_layer_sizes = config.policy_hidden_layer_sizes #+ (env.action_size,)
+    print(policy_layer_sizes)
     policy_network = MLPRein(
         action_size=env.action_size,
         layer_sizes=policy_layer_sizes,
@@ -112,6 +113,8 @@ def main(config: Config) -> None:
     )
 
     # Init population of controllers
+    
+    # maybe consider adding two random keys for each policy
     random_key, subkey = jax.random.split(random_key)
     keys = jax.random.split(subkey, num=config.batch_size)
     fake_batch_obs = jnp.zeros(shape=(config.batch_size, env.observation_size))
