@@ -11,12 +11,12 @@ alg_name: rein-me
 seed: 0
 env_name: ant_uni
 episode_length: 1000
-policy_hidden_layer_sizes: [128, 128]
+policy_hidden_layer_sizes: [64, 64]
 # ME config
 num_evaluations: 0
 num_iterations: 200
 num_samples: 1
-batch_size: 1024
+batch_size: 1
 fixed_init_state: False
 discard_dead: False
 # Grid config
@@ -33,8 +33,8 @@ line_sigma: 0.05
 
 # REINFORCE Parameters
 proportion_mutation_ga: 0.5
-rollout_number: 4 # Num of episodes used for gradient estimate
-num_rein_training_steps: 5 # Num gradient steps per generation
+rollout_number: 512 # Num of episodes used for gradient estimate
+num_rein_training_steps: 500 # Num gradient steps per generation
 buffer_size: 102400 # Size of the replay buffer
 adam_optimizer: True
 learning_rate: 1e-3

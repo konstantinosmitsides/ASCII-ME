@@ -155,3 +155,6 @@ notebooks/mapelites-logs.csv
 
 .DS_Store
 qdax/.DS_Store
+
+wandb/
+rein-me_results/

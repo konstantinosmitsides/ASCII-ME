@@ -24,6 +24,7 @@ from qdax.utils.sampling import sampling
 from qdax.core.containers.mapelites_repertoire import compute_cvt_centroids, MapElitesRepertoire
 from qdax.core.neuroevolution.networks.networks import MLP, MLPRein
 from qdax.core.emitters.rein_var import REINConfig, REINEmitter
+from qdax.core.emitters.rein_emitter import REINaiveConfig, REINaiveEmitter
 from qdax.core.neuroevolution.buffers.buffer import QDTransition
 from qdax.environments import behavior_descriptor_extractor
 from qdax.tasks.brax_envs import reset_based_scoring_function_brax_envs as scoring_function
@@ -191,6 +192,7 @@ def main(config: Config) -> None:
     )
 
     # Define the PG-emitter config
+    '''
     rein_emitter_config = REINConfig(
         proportion_mutation_ga=config.proportion_mutation_ga,
         batch_size=config.batch_size,
@@ -201,6 +203,17 @@ def main(config: Config) -> None:
         adam_optimizer=config.adam_optimizer,
         learning_rate=config.learning_rate,
     )
+    '''
+    rein_emitter_config = REINaiveConfig(
+        batch_size=config.batch_size,
+        num_rein_training_steps=config.num_rein_training_steps,
+        buffer_size=config.buffer_size,
+        rollout_number=config.rollout_number,
+        discount_rate=config.discount_rate,
+        adam_optimizer=config.adam_optimizer,
+        learning_rate=config.learning_rate,
+    )
+
 
     # Get the emitter
     '''
@@ -211,11 +224,18 @@ def main(config: Config) -> None:
     variation_fn = partial(
         isoline_variation, iso_sigma=config.iso_sigma, line_sigma=config.line_sigma
     )
+    '''
     rein_emitter = REINEmitter(
         config=rein_emitter_config,
         policy_network=policy_network,
         env=env,
         variation_fn=variation_fn,
+        )
+    '''
+    rein_emitter = REINaiveEmitter(
+        config=rein_emitter_config,
+        policy_network=policy_network,
+        env=env,
         )
 
     # Instantiate MAP Elites
@@ -228,7 +248,7 @@ def main(config: Config) -> None:
     # compute initial repertoire
     repertoire, emitter_state, random_key = map_elites.init(init_params, centroids, random_key)
 
-    log_period = 10
+    log_period = 1
     num_loops = int(config.num_iterations / log_period)
 
     metrics = dict.fromkeys(["iteration", "qd_score", "coverage", "max_fitness", "qd_score_repertoire", "dem_repertoire", "time"], jnp.array([]))
