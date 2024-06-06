@@ -310,7 +310,12 @@ class REINaiveEmitter(Emitter):
         new_emitter_state = emitter_state.replace(
             random_key=random_keys[-1]
         )
+        #print(reward * mask)
+        #print('-'*50)
         
+        average_reward = jnp.mean(jnp.sum(reward * mask, axis=-1))
+        debug.print("Average Reward: {}", average_reward)
+        debug.print('-'*50)        
         return new_emitter_state, policy_params, policy_optimizer_state
     
     @partial(jax.jit, static_argnames=("self",))
@@ -328,6 +333,8 @@ class REINaiveEmitter(Emitter):
         """
         random_keys = jax.random.split(random_key, self._env.episode_length + 1)
         env_state_init = self._env.reset(random_keys[-1])
+        #debug.print("env_state_init: {}", env_state_init)
+        #debug.print('-'*50)        
         
         def _scan_sample_step(carry, x):
             (policy_params, env_state,) = carry

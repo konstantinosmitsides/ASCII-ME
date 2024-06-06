@@ -267,8 +267,8 @@ class MLPRein(nn.Module):
 _half_log2pi = 0.5 * jnp.log(2 * jnp.pi)
 EPS = 1e-8
 
-def debug_trace(variable, name="Variable"):
-    print(f"{name}: type={type(variable)}, shape={getattr(variable, 'shape', 'N/A')}, is_jax_array={isinstance(variable, jnp.ndarray)}")
+#def debug_trace(variable, name="Variable"):
+#    print(f"{name}: type={type(variable)}, shape={getattr(variable, 'shape', 'N/A')}, is_jax_array={isinstance(variable, jnp.ndarray)}")
 
 class MLPRein(nn.Module):
     """MLP-REINFORCE module."""
@@ -307,9 +307,9 @@ class MLPRein(nn.Module):
     def logp(self, obs: jnp.ndarray, action: jnp.ndarray) -> jnp.ndarray:
         #mean, log_std, std, _ = self.apply(params, obs, method=self.distribution_params)
         mean, log_std, std, _ = self.distribution_params(obs)
-        debug_trace(mean, "mean in logp")
-        debug_trace(log_std, "log_std in logp")
-        debug_trace(std, "std in logp")
+        #debug_trace(mean, "mean in logp")
+        #debug_trace(log_std, "log_std in logp")
+        #debug_trace(std, "std in logp")
 
         logp = jnp.sum(-0.5 * jnp.square((action - mean) / (std + EPS)) - _half_log2pi - log_std, axis=-1)
         return logp

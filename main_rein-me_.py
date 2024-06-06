@@ -237,10 +237,16 @@ def main(config: Config) -> None:
         policy_network=policy_network,
         env=env,
         )
+    
+    me_scoring_fn = partial(
+        sampling,
+        scoring_fn=scoring_fn,
+        num_samples=config.num_samples,
+    )
 
     # Instantiate MAP Elites
     map_elites = MAPElites(
-        scoring_function=scoring_fn,
+        scoring_function=me_scoring_fn,
         emitter=rein_emitter,
         metrics_function=metrics_function,
     )

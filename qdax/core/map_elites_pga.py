@@ -6,6 +6,7 @@ from typing import Any, Callable, Optional, Tuple
 
 import jax
 import jax.numpy as jnp
+from jax import debug
 
 from qdax.core.containers.mapelites_repertoire import MapElitesRepertoire
 from qdax.core.emitters.emitter import Emitter, EmitterState
@@ -96,6 +97,7 @@ class MAPElites:
             extra_scores=extra_scores,
         )
         
+        '''
         _, extra_info, random_key = self._emitter.emit(
             repertoire, emitter_state, random_key
         )
@@ -109,6 +111,7 @@ class MAPElites:
             descriptors=descriptors,
             extra_scores=extra_scores | extra_info,
         )
+        '''
 
         return repertoire, emitter_state, random_key
 
@@ -142,10 +145,13 @@ class MAPElites:
         genotypes, extra_info, random_key = self._emitter.emit(
             repertoire, emitter_state, random_key
         )
+        
         # scores the offsprings
         fitnesses, descriptors, extra_scores, random_key = self._scoring_function(
             genotypes, random_key
         )
+        debug.print('-' * 100)
+        debug.print("Fitness to add: {}", fitnesses)
 
         # add genotypes in the repertoire
         repertoire = repertoire.add(genotypes, descriptors, fitnesses, extra_scores)
