@@ -128,7 +128,8 @@ def main(config: Config) -> None:
 
     # Define the fonction to play a step with the policy in the environment
     def play_step_fn(env_state, policy_params, random_key):
-        actions = policy_network.apply(policy_params, random_key, env_state.obs)
+        random_key, subkey = jax.random.split(random_key)
+        actions = policy_network.apply(policy_params, subkey, env_state.obs)
         state_desc = env_state.info["state_descriptor"]
         next_state = env.step(env_state, actions)
 
