@@ -313,11 +313,11 @@ class REINaiveEmitter(Emitter):
         #print(reward * mask)
         #print('-'*50)
         
-        average_reward = jnp.mean(jnp.sum(reward * mask, axis=-1))
-        av_mask = jnp.mean(jnp.sum(mask, axis=-1))
-        debug.print("Average Reward: {}", average_reward)
-        debug.print('-'*50)      
-        debug.print("Average mask: {}", av_mask)  
+        #average_reward = jnp.mean(jnp.sum(reward * mask, axis=-1))
+        #av_mask = jnp.mean(jnp.sum(mask, axis=-1))
+        #debug.print("Average Reward: {}", average_reward)
+        #debug.print('-'*50)      
+        #debug.print("Average mask: {}", av_mask)  
         return new_emitter_state, policy_params, policy_optimizer_state
     
     @partial(jax.jit, static_argnames=("self",))

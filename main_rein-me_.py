@@ -193,7 +193,7 @@ def main(config: Config) -> None:
     )
 
     # Define the PG-emitter config
-    '''
+    
     rein_emitter_config = REINConfig(
         proportion_mutation_ga=config.proportion_mutation_ga,
         batch_size=config.batch_size,
@@ -204,6 +204,7 @@ def main(config: Config) -> None:
         adam_optimizer=config.adam_optimizer,
         learning_rate=config.learning_rate,
     )
+    
     '''
     rein_emitter_config = REINaiveConfig(
         batch_size=config.batch_size,
@@ -214,6 +215,7 @@ def main(config: Config) -> None:
         adam_optimizer=config.adam_optimizer,
         learning_rate=config.learning_rate,
     )
+    '''
 
 
     # Get the emitter
@@ -225,19 +227,21 @@ def main(config: Config) -> None:
     variation_fn = partial(
         isoline_variation, iso_sigma=config.iso_sigma, line_sigma=config.line_sigma
     )
-    '''
+    
     rein_emitter = REINEmitter(
         config=rein_emitter_config,
         policy_network=policy_network,
         env=env,
         variation_fn=variation_fn,
         )
+    
     '''
     rein_emitter = REINaiveEmitter(
         config=rein_emitter_config,
         policy_network=policy_network,
         env=env,
         )
+    '''
     
     me_scoring_fn = partial(
         sampling,

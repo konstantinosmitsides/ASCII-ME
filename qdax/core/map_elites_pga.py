@@ -150,8 +150,8 @@ class MAPElites:
         fitnesses, descriptors, extra_scores, random_key = self._scoring_function(
             genotypes, random_key
         )
-        debug.print('-' * 100)
-        debug.print("Fitness to add: {}", fitnesses)
+        #debug.print('-' * 100)
+        #debug.print("Fitness to add: {}", fitnesses)
 
         # add genotypes in the repertoire
         repertoire = repertoire.add(genotypes, descriptors, fitnesses, extra_scores)

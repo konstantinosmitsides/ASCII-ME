@@ -222,7 +222,7 @@ class MapElitesRepertoire(flax.struct.PyTreeNode):
 
         random_key, subkey = jax.random.split(random_key)
         samples = jax.tree_util.tree_map(
-            lambda x: jax.random.choice(subkey, x, shape=(num_samples,), p=p, replace=True),
+            lambda x: jax.random.choice(subkey, x, shape=(num_samples,), p=p),
             self.genotypes,
         )
         
