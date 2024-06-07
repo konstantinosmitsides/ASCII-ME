@@ -287,6 +287,7 @@ def main(config: Config) -> None:
     # Main loop
     map_elites_scan_update = map_elites.scan_update
     for i in range(num_loops):
+        print(jax.devices())
         print(f"Loop {i+1}/{num_loops}")
         start_time = time.time()
         
