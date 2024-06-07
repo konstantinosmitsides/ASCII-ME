@@ -18,7 +18,7 @@ from omegaconf import OmegaConf, DictConfig
 import jax
 import jax.numpy as jnp
 from hydra.core.config_store import ConfigStore
-from qdax.core.map_elites_pga import MAPElites
+from qdax.core.map_elites import MAPElites
 from qdax.types import RNGKey, Genotype
 from qdax.utils.sampling import sampling 
 from qdax.core.containers.mapelites_repertoire import compute_cvt_centroids, MapElitesRepertoire
@@ -34,6 +34,7 @@ import wandb
 from qdax.utils.metrics import CSVLogger, default_qd_metrics
 from qdax.utils.plotting import plot_map_elites_results
 import matplotlib.pyplot as plt
+from set_up_brax import get_reward_offset_brax
 
 
 
@@ -185,7 +186,9 @@ def main(config: Config) -> None:
         return (jnp.sum(split[1], axis=-1), jnp.sum(qpg_offspring_added, axis=-1), jnp.sum(ai_offspring_added, axis=-1))
     '''
     # Get minimum reward value to make sure qd_score are positive
-    reward_offset = 0
+    #reward_offset = 0
+    reward_offset = get_reward_offset_brax(env, config.env_name)
+    print(f"Reward offset: {reward_offset}")
 
     # Define a metrics function
     metrics_function = partial(
