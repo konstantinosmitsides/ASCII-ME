@@ -14,7 +14,7 @@ episode_length: 1000
 policy_hidden_layer_sizes: [128, 128]
 # ME config
 num_evaluations: 0
-num_iterations: 200
+num_iterations: 5
 num_samples: 8
 batch_size: 32
 fixed_init_state: False
