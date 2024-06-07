@@ -2,7 +2,7 @@ hydra:
     job:
         chdir: True
     run:
-        dir: ./output/${env_name}/${now:%Y-%m-%d}/${now:%H-%M-%S}
+        dir: /workspace/output/${env_name}/${now:%Y-%m-%d}/${now:%H-%M-%S}
 
 defaults:
     - _self_
@@ -16,7 +16,7 @@ episode_length: 250
 policy_hidden_layer_sizes: [64, 64]
 # ME config
 num_evaluations: 0
-num_iterations: 400
+num_iterations: 10
 num_samples: 1
 batch_size: 32
 fixed_init_state: False
