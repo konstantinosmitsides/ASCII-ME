@@ -1,41 +1,94 @@
-from typing import Tuple
-from dataclasses import dataclass
-import functools
 import os
-import time
-import pickle
 
+os.environ['MPLCONFIGDIR'] = '/tmp/matplotlib'
+os.environ['WANDB_CACHE_DIR'] = '/tmp/wandb_cache'
+os.environ['JAX_LOG_COMPILATION'] = '1'
+
+import logging
+import time
+from dataclasses import dataclass
+from functools import partial
+from math import floor
+from typing import Any, Dict, Tuple, List, Callable
+import pickle
+from flax import serialization
+logging.basicConfig(level=logging.DEBUG)
+import hydra
+from omegaconf import OmegaConf, DictConfig
 import jax
 import jax.numpy as jnp
-
-from qdax.core.containers.mapelites_repertoire import compute_cvt_centroids
-from qdax.tasks.brax_envs import reset_based_scoring_function_brax_envs as scoring_function
-from qdax.environments import behavior_descriptor_extractor
+from hydra.core.config_store import ConfigStore
 from qdax.core.map_elites import MAPElites
-from qdax.core.emitters.mutation_operators import isoline_variation
-from qdax.core.emitters.standard_emitters import MixingEmitter
+from qdax.types import RNGKey, Genotype
+from qdax.utils.sampling import sampling 
+from qdax.core.containers.mapelites_repertoire import compute_cvt_centroids, MapElitesRepertoire
+from qdax.core.neuroevolution.networks.networks import MLP, MLPRein
+from qdax.core.emitters.rein_var import REINConfig, REINEmitter
+from qdax.core.emitters.rein_emitter import REINaiveConfig, REINaiveEmitter
 from qdax.core.neuroevolution.buffers.buffer import QDTransition
-from qdax.core.neuroevolution.networks.networks import MLP
+from qdax.environments import behavior_descriptor_extractor
+from qdax.tasks.brax_envs import reset_based_scoring_function_brax_envs as scoring_function
+from utils import Config, get_env
+from qdax.core.emitters.mutation_operators import isoline_variation
+import wandb
 from qdax.utils.metrics import CSVLogger, default_qd_metrics
 from qdax.utils.plotting import plot_map_elites_results
-
-import hydra
-from hydra.core.config_store import ConfigStore
-from omegaconf import OmegaConf
-import wandb
-from utils import Config, get_env
+import matplotlib.pyplot as plt
 from set_up_brax import get_reward_offset_brax
 
 
 
-@hydra.main(version_base="1.2", config_path="configs/", config_name="me")
+
+# HERE IMPORT YOUR EMITTER AND EMITTER CONFIG 
+
+
+@dataclass
+class ExperimentConfig:
+    """Configuration from this experiment script
+    """
+    # Env config
+    alg_name: str
+    seed: int
+    env_name: str
+    episode_length: int
+    policy_hidden_layer_sizes: Tuple[int, ...]   
+    # ME config
+    num_evaluations: int
+    num_iterations: int
+    batch_size: int
+    num_samples: int
+    fixed_init_state: bool
+    discard_dead: bool
+    # Emitter config
+    is_sigma: float
+    line_sigma: float
+    crossover_percentage: float
+    # Grid config 
+    grid_shape: Tuple[int, ...]
+    num_init_cvt_samples: int
+    num_centroids: int
+    # Log config
+    log_period: int
+    store_repertoire: bool
+    store_reperoire_log_period: int
+    
+    # REINFORCE Parameters
+    sample_number: int
+    num_in_optimizer_steps: int
+    adam_optimizer: bool
+    learning_rate: float
+    l2_coefficient: float
+    scan_batch_size: int
+    
+
+
+@hydra.main(version_base="1.2", config_path="configs", config_name="rein-me")
 def main(config: Config) -> None:
     wandb.init(
-        project="DCG-MAP-Elites",
-        name=config.algo.name,
+        project="rein-me",
+        name=config.alg_name,
         config=OmegaConf.to_container(config, resolve=True),
     )
-
     # Init a random key
     random_key = jax.random.PRNGKey(config.seed)
 
@@ -52,18 +105,23 @@ def main(config: Config) -> None:
         maxval=config.env.max_bd,
         random_key=random_key,
     )
-
     # Init policy network
-    policy_layer_sizes = config.policy_hidden_layer_sizes + (env.action_size,)
-    policy_network = MLP(
+    policy_layer_sizes = config.policy_hidden_layer_sizes #+ (env.action_size,)
+    print(policy_layer_sizes)
+    policy_network = MLPRein(
+        action_size=env.action_size,
         layer_sizes=policy_layer_sizes,
         kernel_init=jax.nn.initializers.lecun_uniform(),
         final_activation=jnp.tanh,
     )
 
     # Init population of controllers
+    
+    # maybe consider adding two random keys for each policy
     random_key, subkey = jax.random.split(random_key)
     keys = jax.random.split(subkey, num=config.batch_size)
+    #split_keys = jax.vmap(lambda k: jax.random.split(k, 2))(keys)
+    #keys1, keys2 = split_keys[:, 0], split_keys[:, 1]
     fake_batch_obs = jnp.zeros(shape=(config.batch_size, env.observation_size))
     init_params = jax.vmap(policy_network.init)(keys, fake_batch_obs)
 
@@ -72,6 +130,7 @@ def main(config: Config) -> None:
 
     # Define the fonction to play a step with the policy in the environment
     def play_step_fn(env_state, policy_params, random_key):
+        #random_key, subkey = jax.random.split(random_key)
         actions = policy_network.apply(policy_params, env_state.obs)
         state_desc = env_state.info["state_descriptor"]
         next_state = env.step(env_state, actions)
@@ -93,15 +152,15 @@ def main(config: Config) -> None:
 
     # Prepare the scoring function
     bd_extraction_fn = behavior_descriptor_extractor[config.env.name]
-    scoring_fn = functools.partial(
+    scoring_fn = partial(
         scoring_function,
         episode_length=config.env.episode_length,
         play_reset_fn=reset_fn,
         play_step_fn=play_step_fn,
         behavior_descriptor_extractor=bd_extraction_fn,
     )
-    
-    reward_offset = get_reward_offset_brax(env, config.env.name)
+    reward_offset = get_reward_offset_brax(env, config.env_name)
+    print(f"Reward offset: {reward_offset}")
 
     @jax.jit
     def evaluate_repertoire(random_key, repertoire):
@@ -115,44 +174,94 @@ def main(config: Config) -> None:
         qd_score = jnp.sum((1.0 - repertoire_empty) * fitnesses).astype(float)
         qd_score += reward_offset * config.env.episode_length * jnp.sum(1.0 - repertoire_empty)
 
-
         # Compute repertoire desc error mean
         error = jnp.linalg.norm(repertoire.descriptors - descriptors, axis=1)
         dem = (jnp.sum((1.0 - repertoire_empty) * error) / jnp.sum(1.0 - repertoire_empty)).astype(float)
 
         return random_key, qd_score, dem
 
+   
+    '''
     def get_n_offspring_added(metrics):
-        return jnp.sum(metrics["is_offspring_added"], axis=-1)
-
+        split = jnp.cumsum(jnp.array([emitter.batch_size for emitter in map_elites._emitter.emitters]))
+        split = jnp.split(metrics["is_offspring_added"], split, axis=-1)[:-1]
+        qpg_offspring_added, ai_offspring_added = jnp.split(split[0], (split[0].shape[1]-1,), axis=-1)
+        return (jnp.sum(split[1], axis=-1), jnp.sum(qpg_offspring_added, axis=-1), jnp.sum(ai_offspring_added, axis=-1))
+    '''
     # Get minimum reward value to make sure qd_score are positive
     #reward_offset = 0
-    reward_offset = get_reward_offset_brax(env, config.env.name)
+
     # Define a metrics function
-    metrics_function = functools.partial(
+    metrics_function = partial(
         default_qd_metrics,
         qd_offset=reward_offset * config.env.episode_length,
     )
 
-    # Define emitter
-    variation_fn = functools.partial(
+    # Define the PG-emitter config
+    
+    rein_emitter_config = REINConfig(
+        proportion_mutation_ga=config.proportion_mutation_ga,
+        batch_size=config.batch_size,
+        num_rein_training_steps=config.num_rein_training_steps,
+        buffer_size=config.buffer_size,
+        rollout_number=config.rollout_number,
+        discount_rate=config.discount_rate,
+        adam_optimizer=config.adam_optimizer,
+        learning_rate=config.learning_rate,
+    )
+    
+    '''
+    rein_emitter_config = REINaiveConfig(
+        batch_size=config.batch_size,
+        num_rein_training_steps=config.num_rein_training_steps,
+        buffer_size=config.buffer_size,
+        rollout_number=config.rollout_number,
+        discount_rate=config.discount_rate,
+        adam_optimizer=config.adam_optimizer,
+        learning_rate=config.learning_rate,
+    )
+    '''
+
+
+    # Get the emitter
+    '''
+    variation_fn = partial(
         isoline_variation, iso_sigma=config.algo.iso_sigma, line_sigma=config.algo.line_sigma
     )
-    mixing_emitter = MixingEmitter(
-        mutation_fn=None,
+    '''
+    variation_fn = partial(
+        isoline_variation, iso_sigma=config.iso_sigma, line_sigma=config.line_sigma
+    )
+    
+    rein_emitter = REINEmitter(
+        config=rein_emitter_config,
+        policy_network=policy_network,
+        env=env,
         variation_fn=variation_fn,
-        variation_percentage=1.0,
-        batch_size=config.batch_size
+        )
+    
+    '''
+    rein_emitter = REINaiveEmitter(
+        config=rein_emitter_config,
+        policy_network=policy_network,
+        env=env,
+        )
+    '''
+    
+    me_scoring_fn = partial(
+        sampling,
+        scoring_fn=scoring_fn,
+        num_samples=config.num_samples,
     )
 
-    # Instantiate MAP-Elites
+    # Instantiate MAP Elites
     map_elites = MAPElites(
-        scoring_function=scoring_fn,
-        emitter=mixing_emitter,
+        scoring_function=me_scoring_fn,
+        emitter=rein_emitter,
         metrics_function=metrics_function,
     )
 
-    # Compute initial repertoire and emitter state
+    # compute initial repertoire
     repertoire, emitter_state, random_key = map_elites.init(init_params, centroids, random_key)
 
     log_period = 1
@@ -163,11 +272,25 @@ def main(config: Config) -> None:
         "./log.csv",
         header=list(metrics.keys())
     )
+    def plot_metrics_vs_iterations(metrics, log_period):
+        iterations = jnp.arange(1, 1 + log_period * len(metrics["time"]), dtype=jnp.int32)
 
+        for metric_name, metric_values in metrics.items():
+            plt.figure()
+            plt.plot(iterations, metric_values, label=metric_name)
+            plt.xlabel("Iteration")
+            plt.ylabel(metric_name)
+            plt.title(f"{metric_name} vs Iterations")
+            plt.legend()
+            plt.savefig(f"./{metric_name}_vs_iterations.png")
+            plt.close()
     # Main loop
     map_elites_scan_update = map_elites.scan_update
     for i in range(num_loops):
+        print(jax.devices())
+        print(f"Loop {i+1}/{num_loops}")
         start_time = time.time()
+        
         (repertoire, emitter_state, random_key,), current_metrics = jax.lax.scan(
             map_elites_scan_update,
             (repertoire, emitter_state, random_key),
@@ -183,13 +306,15 @@ def main(config: Config) -> None:
         current_metrics["time"] = jnp.repeat(timelapse, log_period)
         current_metrics["qd_score_repertoire"] = jnp.repeat(qd_score_repertoire, log_period)
         current_metrics["dem_repertoire"] = jnp.repeat(dem_repertoire, log_period)
-        #current_metrics["ga_offspring_added"] = get_n_offspring_added(current_metrics)
+        #current_metrics["ga_offspring_added"], current_metrics["qpg_offspring_added"], current_metrics["ai_offspring_added"] = get_n_offspring_added(current_metrics)
         #del current_metrics["is_offspring_added"]
         metrics = jax.tree_util.tree_map(lambda metric, current_metric: jnp.concatenate([metric, current_metric], axis=0), metrics, current_metrics)
 
         # Log
         log_metrics = jax.tree_util.tree_map(lambda metric: metric[-1], metrics)
+        #log_metrics["qpg_offspring_added"] = jnp.sum(current_metrics["qpg_offspring_added"])
         #log_metrics["ga_offspring_added"] = jnp.sum(current_metrics["ga_offspring_added"])
+        #log_metrics["ai_offspring_added"] = jnp.sum(current_metrics["ai_offspring_added"])
         csv_logger.log(log_metrics)
         wandb.log(log_metrics)
 
@@ -201,6 +326,9 @@ def main(config: Config) -> None:
     os.mkdir("./repertoire/")
     repertoire.save(path="./repertoire/")
 
+    plot_metrics_vs_iterations(metrics, log_period)
+
+
     # Plot
     if env.behavior_descriptor_length == 2:
         env_steps = jnp.arange(config.num_iterations) * config.env.episode_length * config.batch_size
@@ -210,5 +338,5 @@ def main(config: Config) -> None:
 
 if __name__ == "__main__":
     cs = ConfigStore.instance()
-    cs.store(name="config", node=Config)
+    cs.store(name="main", node=Config)
     main()

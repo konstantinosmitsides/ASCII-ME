@@ -5,6 +5,8 @@ from functools import partial
 from typing import Any, Callable, Optional, Tuple
 
 import jax
+import jax.numpy as jnp
+from jax import debug
 
 from qdax.core.containers.mapelites_repertoire import MapElitesRepertoire
 from qdax.core.emitters.emitter import Emitter, EmitterState
@@ -27,13 +29,13 @@ class MAPElites:
     elements explicit.
 
     Args:
-        scoring_function: a function that takes a batch of genotypes and compute    # evaluate fitness & descriptor
+        scoring_function: a function that takes a batch of genotypes and compute
             their fitnesses and descriptors
-        emitter: an emitter is used to suggest offsprings given a MAPELites         # select sols? & update them
+        emitter: an emitter is used to suggest offsprings given a MAPELites
             repertoire. It has two compulsory functions. A function that takes
             emits a new population, and a function that update the internal state
             of the emitter.
-        metrics_function: a function that takes a MAP-Elites repertoire and compute  # evaluate the MAP-Elites repertoire
+        metrics_function: a function that takes a MAP-Elites repertoire and compute
             any useful metric to track its evolution
     """
 
@@ -52,7 +54,7 @@ class MAPElites:
     @partial(jax.jit, static_argnames=("self",))
     def init(
         self,
-        genotypes: Genotype,
+        init_genotypes: Genotype,
         centroids: Centroid,
         random_key: RNGKey,
     ) -> Tuple[MapElitesRepertoire, Optional[EmitterState], RNGKey]:
@@ -62,7 +64,7 @@ class MAPElites:
         such as CVT or Euclidean mapping.
 
         Args:
-            genotypes: initial genotypes, pytree in which leaves
+            init_genotypes: initial genotypes, pytree in which leaves
                 have shape (batch_size, num_features)
             centroids: tesselation centroids of shape (batch_size, num_descriptors)
             random_key: a random key used for stochastic operations.
@@ -71,41 +73,45 @@ class MAPElites:
             An initialized MAP-Elite repertoire with the initial state of the emitter,
             and a random key.
         """
-        # score initial genotypes      
+        # score initial genotypes
         fitnesses, descriptors, extra_scores, random_key = self._scoring_function(
-            genotypes, random_key
+            init_genotypes, random_key
         )
 
         # init the repertoire
         repertoire = MapElitesRepertoire.init(
-            genotypes=genotypes,
+            genotypes=init_genotypes,
             fitnesses=fitnesses,
             descriptors=descriptors,
             centroids=centroids,
             extra_scores=extra_scores,
         )
-
+        
         # get initial state of the emitter
-        '''
         emitter_state, random_key = self._emitter.init(
             random_key=random_key,
             repertoire=repertoire,
-            genotypes=genotypes,
+            genotypes=init_genotypes,
             fitnesses=fitnesses,
             descriptors=descriptors,
             extra_scores=extra_scores,
         )
+        
         '''
-        
-        
-        emitter_state, random_key = self._emitter.init(
-            random_key=random_key,
+        _, extra_info, random_key = self._emitter.emit(
+            repertoire, emitter_state, random_key
+        )
+
+        # update emitter state
+        emitter_state = self._emitter.state_update(
+            emitter_state=emitter_state,
             repertoire=repertoire,
-            genotypes=genotypes,
+            genotypes=init_genotypes,
             fitnesses=fitnesses,
             descriptors=descriptors,
-            extra_scores=extra_scores,
+            extra_scores=extra_scores | extra_info,
         )
+        '''
 
         return repertoire, emitter_state, random_key
 
@@ -136,19 +142,16 @@ class MAPElites:
             a new jax PRNG key
         """
         # generate offsprings with the emitter
-        '''
         genotypes, extra_info, random_key = self._emitter.emit(
             repertoire, emitter_state, random_key
         )
-        '''
-        genotypes, _, random_key = self._emitter.emit(
-            repertoire, emitter_state, random_key
-        )
-
+        
         # scores the offsprings
         fitnesses, descriptors, extra_scores, random_key = self._scoring_function(
             genotypes, random_key
         )
+        #debug.print('-' * 100)
+        #debug.print("Fitness to add: {}", fitnesses)
 
         # add genotypes in the repertoire
         repertoire = repertoire.add(genotypes, descriptors, fitnesses, extra_scores)
@@ -160,11 +163,12 @@ class MAPElites:
             genotypes=genotypes,
             fitnesses=fitnesses,
             descriptors=descriptors,
-            extra_scores={**extra_scores}#, **extra_info},
+            extra_scores=extra_scores | extra_info,
         )
 
         # update the metrics
         metrics = self._metrics_function(repertoire)
+        #metrics["is_offspring_added"] = is_offspring_added
 
         return repertoire, emitter_state, metrics, random_key
 

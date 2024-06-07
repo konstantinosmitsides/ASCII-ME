@@ -216,6 +216,7 @@ class QualityPGEmitter(Emitter):
 
         # sample parents
         mutation_pg_batch_size = int(batch_size - 1)
+        print(type(repertoire))
         parents, random_key = repertoire.sample(random_key, mutation_pg_batch_size)
 
         # apply the pg mutation

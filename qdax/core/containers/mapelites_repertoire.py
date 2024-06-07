@@ -225,6 +225,9 @@ class MapElitesRepertoire(flax.struct.PyTreeNode):
             lambda x: jax.random.choice(subkey, x, shape=(num_samples,), p=p),
             self.genotypes,
         )
+        
+
+        
 
         return samples, random_key
 

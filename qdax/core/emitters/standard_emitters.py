@@ -63,6 +63,9 @@ class MixingEmitter(Emitter):
         if n_mutation > 0:
             x1, random_key = repertoire.sample(random_key, n_mutation)
             x_mutation, random_key = self._mutation_fn(x1, random_key)
+            
+        #if n_variation == 0 and n_mutation == 0:
+        #    return {}, {}, random_key
 
         if n_variation == 0:
             genotypes = x_mutation

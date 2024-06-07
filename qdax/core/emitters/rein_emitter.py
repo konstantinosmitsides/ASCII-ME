@@ -4,6 +4,7 @@ from math import floor
 from typing import Callable, Tuple, Any
 
 import jax
+from jax import debug
 import jax.numpy as jnp
 import flax.linen as nn
 import optax
@@ -112,8 +113,12 @@ class REINaiveEmitter(Emitter):
     @partial(jax.jit, static_argnames=("self",))
     def init(
         self,
-        init_genotypes: Genotype,
         random_key: RNGKey,
+        repertoire: Repertoire,
+        genotypes: Genotype,
+        fitnesses: Fitness,
+        descriptors: Descriptor,
+        extra_scores: ExtraScores,
     ) -> Tuple[REINaiveEmitterState, RNGKey]:
         """Initializes the emitter.
 
@@ -178,7 +183,7 @@ class REINaiveEmitter(Emitter):
         
         genotypes = offsprings_rein
         
-        return genotypes, random_key
+        return genotypes, {}, random_key
     
     @partial(jax.jit, static_argnames=("self",))
     def emit_rein(
@@ -234,7 +239,7 @@ class REINaiveEmitter(Emitter):
             """Scans through the parents and applies REINFORCE training.
             """
             
-            emitter_state, parent, policy_optimizer_state = carry
+            emitter_state, policy_params, policy_optimizer_state = carry
             
             (
                 new_emitter_state,
@@ -283,6 +288,8 @@ class REINaiveEmitter(Emitter):
         obs, action, logp, reward, _, mask = jax.vmap(
             self._sample_trajectory, in_axes=(0, None))(random_keys, policy_params)
         
+        #debug.print("obs.shape: {}", obs.shape)
+        
         # Add entropy term to reward
         reward += self._config.temperature * (-logp)
         
@@ -303,7 +310,14 @@ class REINaiveEmitter(Emitter):
         new_emitter_state = emitter_state.replace(
             random_key=random_keys[-1]
         )
+        #print(reward * mask)
+        #print('-'*50)
         
+        #average_reward = jnp.mean(jnp.sum(reward * mask, axis=-1))
+        #av_mask = jnp.mean(jnp.sum(mask, axis=-1))
+        #debug.print("Average Reward: {}", average_reward)
+        #debug.print('-'*50)      
+        #debug.print("Average mask: {}", av_mask)  
         return new_emitter_state, policy_params, policy_optimizer_state
     
     @partial(jax.jit, static_argnames=("self",))
@@ -321,9 +335,11 @@ class REINaiveEmitter(Emitter):
         """
         random_keys = jax.random.split(random_key, self._env.episode_length + 1)
         env_state_init = self._env.reset(random_keys[-1])
+        #debug.print("env_state_init: {}", env_state_init)
+        #debug.print('-'*50)        
         
         def _scan_sample_step(carry, x):
-            (policy_params, env_state) = carry
+            (policy_params, env_state,) = carry
             (random_key,) = x
             
             next_env_state, action, action_logp = self.sample_step(
@@ -370,9 +386,15 @@ class REINaiveEmitter(Emitter):
         #print(f"policy_params: {policy_params}")
         #print(f"env_state.obs: {env_state.obs}")
         #print(f"env_state.obs type: {type(env_state.obs)}")
+        '''
         action, action_logp = self._policy.sample(
             policy_params, random_key, env_state.obs
         )
+        '''
+        action, action_logp = self._policy.apply(
+            policy_params, random_key, env_state.obs, method=self._policy.sample
+        )
+
         next_env_state = self._env.step(env_state, action)
         
         return next_env_state, action, action_logp
@@ -423,7 +445,8 @@ class REINaiveEmitter(Emitter):
         Returns:
             The standardized return array.
         """
-        return (return_ - return_.mean()) / (return_.std() + 1e-8)
+        #return (return_ - return_.mean()) / (return_.std() + 1e-8)
+        return jax.nn.standardize(return_, axis=0, variance=1., epsilon=EPS)
 
     @partial(jax.jit, static_argnames=("self",))
     def _update_policy(
@@ -449,8 +472,10 @@ class REINaiveEmitter(Emitter):
             The updated optimizer state and policy parameters.
         """
         def loss_fn(params):
-            logp_ = self._policy.logp(params, obs, action)
-            return -jnp.mean(logp_ * mask * return_standardized)
+            #logp_ = self._policy.logp(params, jax.lax.stop_gradient(obs), jax.lax.stop_gradient(action))
+            logp_ = self._policy.apply(params, jax.lax.stop_gradient(obs), jax.lax.stop_gradient(action), method=self._policy.logp)
+            #return -jnp.mean(logp_ * mask * return_standardized)
+            return -jnp.mean(jnp.multiply(logp_ * mask, jax.lax.stop_gradient(return_standardized)))
 
         grads = jax.grad(loss_fn)(policy_params)
         updates, new_optimizer_state = self._policies_optimizer.update(grads, policy_optimizer_state)
