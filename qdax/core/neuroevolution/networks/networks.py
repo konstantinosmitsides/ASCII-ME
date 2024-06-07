@@ -284,12 +284,23 @@ class MLPRein(nn.Module):
     
     def setup(self):
         # this is specific for ant_uni
-        self.hidden_layers = [nn.Dense(size, kernel_init=jax.nn.initializers.orthogonal(scale=jnp.sqrt(2))) for size in self.layer_sizes]
-        self.mean = nn.Dense(self.action_size, kernel_init=self.kernel_init_final)
+        self.hidden_layers = [nn.Dense(size, kernel_init=self.kernel_init, use_bias=self.bias) for size in self.layer_sizes]
+        self.mean = nn.Dense(self.action_size, kernel_init=self.kernel_init, use_bias=self.bias) #kernel_init=self.kernel_init_final)
         self.log_std = self.param("log_std", lambda _, shape: -1.0 * jnp.ones(shape), (self.action_size,))
 
-    def __call__(self, random_key, obs: jnp.ndarray) -> jnp.ndarray:
-        return self.sample(random_key, obs)[0]
+    def __call__(self, obs: jnp.ndarray) -> jnp.ndarray:
+        hidden = obs
+        for hidden_layer in self.hidden_layers:
+            hidden = self.activation(hidden_layer(hidden))
+
+
+
+        mean = self.mean(hidden)
+        
+        return mean
+        
+        
+        #return self.sample(random_key, obs)[0]
 
     def distribution_params(self, obs: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
         hidden = obs

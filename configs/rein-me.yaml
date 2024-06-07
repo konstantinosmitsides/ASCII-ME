@@ -14,9 +14,9 @@ episode_length: 250
 policy_hidden_layer_sizes: [64, 64]
 # ME config
 num_evaluations: 0
-num_iterations: 100
+num_iterations: 400
 num_samples: 1
-batch_size: 64
+batch_size: 32
 fixed_init_state: False
 discard_dead: False
 # Grid config

@@ -99,8 +99,12 @@ class MAPElites:
         
         
         emitter_state, random_key = self._emitter.init(
-            init_genotypes=genotypes,
             random_key=random_key,
+            repertoire=repertoire,
+            genotypes=genotypes,
+            fitnesses=fitnesses,
+            descriptors=descriptors,
+            extra_scores=extra_scores,
         )
 
         return repertoire, emitter_state, random_key
@@ -137,7 +141,7 @@ class MAPElites:
             repertoire, emitter_state, random_key
         )
         '''
-        genotypes, random_key = self._emitter.emit(
+        genotypes, _, random_key = self._emitter.emit(
             repertoire, emitter_state, random_key
         )
 

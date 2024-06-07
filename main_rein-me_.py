@@ -120,18 +120,18 @@ def main(config: Config) -> None:
     # maybe consider adding two random keys for each policy
     random_key, subkey = jax.random.split(random_key)
     keys = jax.random.split(subkey, num=config.batch_size)
-    split_keys = jax.vmap(lambda k: jax.random.split(k, 2))(keys)
-    keys1, keys2 = split_keys[:, 0], split_keys[:, 1]
+    #split_keys = jax.vmap(lambda k: jax.random.split(k, 2))(keys)
+    #keys1, keys2 = split_keys[:, 0], split_keys[:, 1]
     fake_batch_obs = jnp.zeros(shape=(config.batch_size, env.observation_size))
-    init_params = jax.vmap(policy_network.init)(keys1, keys2, fake_batch_obs)
+    init_params = jax.vmap(policy_network.init)(keys, fake_batch_obs)
 
     param_count = sum(x[0].size for x in jax.tree_util.tree_leaves(init_params))
     print("Number of parameters in policy_network: ", param_count)
 
     # Define the fonction to play a step with the policy in the environment
     def play_step_fn(env_state, policy_params, random_key):
-        random_key, subkey = jax.random.split(random_key)
-        actions = policy_network.apply(policy_params, subkey, env_state.obs)
+        #random_key, subkey = jax.random.split(random_key)
+        actions = policy_network.apply(policy_params, env_state.obs)
         state_desc = env_state.info["state_descriptor"]
         next_state = env.step(env_state, actions)
 
