@@ -10,7 +10,7 @@ defaults:
 alg_name: rein-me
 seed: 0
 env_name: ant_uni
-episode_length: 1000
+episode_length: 250
 policy_hidden_layer_sizes: [128, 128]
 # ME config
 num_evaluations: 0

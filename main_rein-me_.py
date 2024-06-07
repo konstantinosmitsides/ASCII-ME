@@ -33,6 +33,7 @@ from qdax.core.emitters.mutation_operators import isoline_variation
 import wandb
 from qdax.utils.metrics import CSVLogger, default_qd_metrics
 from qdax.utils.plotting import plot_map_elites_results
+import matplotlib.pyplot as plt
 
 
 
@@ -267,7 +268,18 @@ def main(config: Config) -> None:
         "./log.csv",
         header=list(metrics.keys())
     )
+    def plot_metrics_vs_iterations(metrics, log_period):
+        iterations = jnp.arange(1, 1 + log_period * len(metrics["time"]), dtype=jnp.int32)
 
+        for metric_name, metric_values in metrics.items():
+            plt.figure()
+            plt.plot(iterations, metric_values, label=metric_name)
+            plt.xlabel("Iteration")
+            plt.ylabel(metric_name)
+            plt.title(f"{metric_name} vs Iterations")
+            plt.legend()
+            plt.savefig(f"./{metric_name}_vs_iterations.png")
+            plt.close()
     # Main loop
     map_elites_scan_update = map_elites.scan_update
     for i in range(num_loops):
@@ -309,6 +321,7 @@ def main(config: Config) -> None:
     os.mkdir("./repertoire/")
     repertoire.save(path="./repertoire/")
 
+    plot_metrics_vs_iterations(metrics, log_period)
 
 
     # Plot
