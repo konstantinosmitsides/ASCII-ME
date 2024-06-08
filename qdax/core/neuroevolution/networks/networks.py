@@ -327,7 +327,7 @@ class MLPRein(nn.Module):
 
     def entropy(self, params, obs: jnp.ndarray) -> jnp.ndarray:
         _, _, std, _ = self.apply(params, obs, method=self.distribution_params)
-        entropy = self.action_size * (0.5 + _half_log2pi) + 0.5 * jnp.log(jnp.prod(std))
+        entropy = self.action_size * (0.5 + _half_log2pi) + jnp.log(jnp.prod(std))
         return entropy
 
     def sample(self, random_key, obs: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray]:
