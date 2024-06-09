@@ -12,7 +12,7 @@ from math import floor
 from typing import Any, Dict, Tuple, List, Callable
 import pickle
 from flax import serialization
-logging.basicConfig(level=logging.DEBUG)
+#logging.basicConfig(level=logging.DEBUG)
 import hydra
 from omegaconf import OmegaConf, DictConfig
 import jax
@@ -287,7 +287,6 @@ def main(config: Config) -> None:
     # Main loop
     map_elites_scan_update = map_elites.scan_update
     for i in range(num_loops):
-        print(jax.devices())
         print(f"Loop {i+1}/{num_loops}")
         start_time = time.time()
         
