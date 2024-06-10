@@ -159,8 +159,8 @@ def main(config: Config) -> None:
         play_step_fn=play_step_fn,
         behavior_descriptor_extractor=bd_extraction_fn,
     )
-    reward_offset = get_reward_offset_brax(env, config.env_name)
-    print(f"Reward offset: {reward_offset}")
+    #reward_offset = get_reward_offset_brax(env, config.env_name)
+    #print(f"Reward offset: {reward_offset}")
 
     @jax.jit
     def evaluate_repertoire(random_key, repertoire):
@@ -172,7 +172,7 @@ def main(config: Config) -> None:
 
         # Compute repertoire QD score
         qd_score = jnp.sum((1.0 - repertoire_empty) * fitnesses).astype(float)
-        qd_score += reward_offset * config.env.episode_length * jnp.sum(1.0 - repertoire_empty)
+        #qd_score += reward_offset * config.env.episode_length * jnp.sum(1.0 - repertoire_empty)
 
         # Compute repertoire desc error mean
         error = jnp.linalg.norm(repertoire.descriptors - descriptors, axis=1)
@@ -189,7 +189,7 @@ def main(config: Config) -> None:
         return (jnp.sum(split[1], axis=-1), jnp.sum(qpg_offspring_added, axis=-1), jnp.sum(ai_offspring_added, axis=-1))
     '''
     # Get minimum reward value to make sure qd_score are positive
-    #reward_offset = 0
+    reward_offset = 0
 
     # Define a metrics function
     metrics_function = partial(
