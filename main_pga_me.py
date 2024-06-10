@@ -109,7 +109,7 @@ def main(config: Config) -> None:
         play_step_fn=play_step_fn,
         behavior_descriptor_extractor=bd_extraction_fn,
     )
-    reward_offset = get_reward_offset_brax(env, config.env_name)
+    reward_offset = get_reward_offset_brax(env, config.env.name)
     print(f"Reward offset: {reward_offset}")
     
     @jax.jit
