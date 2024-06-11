@@ -12,7 +12,6 @@ defaults:
 alg_name: rein-me
 seed: 0
 env_name: halfcheetah_uni
-
 episode_length: 1000
 policy_hidden_layer_sizes: [128, 128]
 # ME config
