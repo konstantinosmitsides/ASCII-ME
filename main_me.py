@@ -31,7 +31,7 @@ from set_up_brax import get_reward_offset_brax
 @hydra.main(version_base="1.2", config_path="configs/", config_name="me")
 def main(config: Config) -> None:
     wandb.init(
-        project="DCG-MAP-Elites",
+        project="rein-me",
         name=config.algo.name,
         config=OmegaConf.to_container(config, resolve=True),
     )
