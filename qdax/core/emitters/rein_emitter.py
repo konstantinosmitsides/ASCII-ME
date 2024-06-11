@@ -284,9 +284,9 @@ class REINaiveEmitter(Emitter):
             and the updated optimizer state.
         """
 
-        random_keys = jax.random.split(emitter_state.random_key, self._config.rollout_number)
+        random_keys = jax.random.split(emitter_state.random_key, self._config.rollout_number+1)
         obs, action, logp, reward, _, mask = jax.vmap(
-            self._sample_trajectory, in_axes=(0, None))(random_keys, policy_params)
+            self._sample_trajectory, in_axes=(0, None))(random_keys[:-1], policy_params)
         
         #debug.print("obs.shape: {}", obs.shape)
         
