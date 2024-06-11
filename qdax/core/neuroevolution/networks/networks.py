@@ -275,7 +275,7 @@ class MLPRein(nn.Module):
 
     action_size: int
     layer_sizes: Tuple[int, ...]
-    activation: Callable[[jnp.ndarray], jnp.ndarray] = nn.relu
+    activation: Callable[[jnp.ndarray], jnp.ndarray] = nn.tanh
     kernel_init: Callable[..., Any] = jax.nn.initializers.lecun_uniform()
     final_activation: Optional[Callable[[jnp.ndarray], jnp.ndarray]] = None
     bias: bool = True

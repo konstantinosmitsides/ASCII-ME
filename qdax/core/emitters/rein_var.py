@@ -62,8 +62,8 @@ class REINEmitter(MultiEmitter):
 
         # define the GA emitter
         ga_emitter = MixingEmitter(
-            #mutation_fn = None,
-            mutation_fn=lambda x, r: (x, r),
+            mutation_fn = None,
+            #mutation_fn=lambda x, r: (x, r),
             variation_fn=variation_fn,
             variation_percentage=1.0,
             batch_size=ga_batch_size,

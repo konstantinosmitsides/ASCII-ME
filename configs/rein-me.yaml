@@ -16,7 +16,7 @@ episode_length: 1000
 policy_hidden_layer_sizes: [128, 128]
 # ME config
 num_evaluations: 0
-num_iterations: 250
+num_iterations: 200
 num_samples: 1
 batch_size: 128
 fixed_init_state: False
@@ -35,10 +35,10 @@ line_sigma: 0.05
 
 # REINFORCE Parameters
 proportion_mutation_ga: 0.5
-rollout_number: 128 # Num of episodes used for gradient estimate
-num_rein_training_steps: 10 # Num gradient steps per generation
+rollout_number: 64 # Num of episodes used for gradient estimate
+num_rein_training_steps: 100 # Num gradient steps per generation
 buffer_size: 102400 # Size of the replay buffer
 adam_optimizer: True
-learning_rate: 5e-3
+learning_rate: 1e-3
 discount_rate: 0.99
 temperature: 0.
