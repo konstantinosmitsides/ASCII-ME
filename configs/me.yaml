@@ -2,18 +2,19 @@ hydra:
   job:
     chdir: True
   run:
-    dir: ./output/${env.name}/${algo.name}/${now:%Y-%m-%d_%H%M%S_%f}
+    dir: ./Results/${env.name}/${algo.name}/${now:%Y-%m-%d_%H%M%S_%f}
 
 defaults:
   - _self_
-  - env: halfcheetah_uni
+  - env: ant_uni
   - algo: me
 
 seed: 0
 num_iterations: 200
 batch_size: 64
+num_samples: 32
 
 # Archive
 num_init_cvt_samples: 50000
-num_centroids: 1024
+num_centroids: 1296
 policy_hidden_layer_sizes: [128, 128]
