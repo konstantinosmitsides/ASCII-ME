@@ -295,7 +295,7 @@ def main(config: Config) -> None:
     if env.behavior_descriptor_length == 2:
         env_steps = jnp.arange(config.num_iterations) * config.env.episode_length * config.batch_size
         fig, _ = plot_map_elites_results(env_steps=env_steps, metrics=metrics, repertoire=repertoire, min_bd=config.env.min_bd, max_bd=config.env.max_bd)
-        fig.savefig(".Plots/repertoire_plot.png")
+        fig.savefig("./Plots/repertoire_plot.png")
 
     recreate_repertoire(repertoire, centroids, metrics_function, random_key)
 
