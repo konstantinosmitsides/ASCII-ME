@@ -6,16 +6,17 @@ hydra:
 
 defaults:
   - _self_
-  - env: ant_uni
+  - env: walker2d_uni
   - algo: pga_me
 
 seed: 0
 num_iterations: 200
-batch_size: 256
+batch_size: 64
+num_samples: 32
 
 # Archive
 num_init_cvt_samples: 50000
-num_centroids: 1296
+num_centroids: 1024
 policy_hidden_layer_sizes: [128, 128]
 
 #ssss
