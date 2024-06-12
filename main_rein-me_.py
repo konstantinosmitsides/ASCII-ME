@@ -32,7 +32,7 @@ from utils import Config, get_env
 from qdax.core.emitters.mutation_operators import isoline_variation
 import wandb
 from qdax.utils.metrics import CSVLogger, default_qd_metrics
-from qdax.utils.plotting import plot_map_elites_results
+from qdax.utils.plotting import plot_map_elites_results, plot_2d_map_elites_repertoire
 import matplotlib.pyplot as plt
 from set_up_brax import get_reward_offset_brax
 
@@ -161,6 +161,12 @@ def main(config: Config) -> None:
     )
     #reward_offset = get_reward_offset_brax(env, config.env_name)
     #print(f"Reward offset: {reward_offset}")
+    
+    me_scoring_fn = partial(
+    sampling,
+    scoring_fn=scoring_fn,
+    num_samples=config.num_samples,
+)
 
     @jax.jit
     def evaluate_repertoire(random_key, repertoire):
@@ -179,6 +185,75 @@ def main(config: Config) -> None:
         dem = (jnp.sum((1.0 - repertoire_empty) * error) / jnp.sum(1.0 - repertoire_empty)).astype(float)
 
         return random_key, qd_score, dem
+    
+    reward_offset = 0
+    
+    def recreate_repertoire(
+        repertoire: MapElitesRepertoire,
+        centroids: jnp.ndarray,
+        metrics_fn: Callable,
+        random_key: RNGKey,
+    ) -> MapElitesRepertoire:
+        
+        (
+            old_qd_score,
+            old_max_fitness,
+            old_coverage
+        ) = metrics_fn(repertoire).values()
+        fitnesses, descriptors, extra_scores, random_key = me_scoring_fn(
+            repertoire.genotypes, random_key
+        )
+        new_repertoire = MapElitesRepertoire.init(
+            genotypes=repertoire.genotypes,
+            fitnesses=fitnesses,
+            descriptors=descriptors,
+            centroids=centroids,
+            extra_scores=extra_scores,
+        )
+        
+        (
+            new_qd_score,
+            new_max_fitness,
+            new_coverage,
+        ) = metrics_fn(new_repertoire).values()
+        
+        
+        fig, _ = plot_2d_map_elites_repertoire(
+            centroids=new_repertoire.centroids,
+            repertoire_fitnesses=new_repertoire.fitnesses,
+            minval=config.env.min_bd,
+            maxval=config.env.max_bd,
+            repertoire_descriptors=new_repertoire.descriptors,
+        )
+        
+        fig.savefig("./recreated_repertoire_plot.png")
+
+        def calculate_percentage_difference(old, new):
+            return (abs(new - old) / ((new + old) / 2)) * 100
+
+        qd_score_difference = calculate_percentage_difference(old_qd_score, new_qd_score)
+        max_fitness_difference = calculate_percentage_difference(old_max_fitness, new_max_fitness)
+        coverage_difference = calculate_percentage_difference(old_coverage, new_coverage)
+        
+        # Save scores and percentage differences to a file
+        with open("./recreated_scores.txt", "w") as file:
+            file.write(f"Old QD Score: {old_qd_score}\n")
+            file.write(f"New QD Score: {new_qd_score}\n")
+            file.write(f"QD Score Percentage Difference: {qd_score_difference}%\n")
+            file.write(f"Old Max Fitness: {old_max_fitness}\n")
+            file.write(f"New Max Fitness: {new_max_fitness}\n")
+            file.write(f"Max Fitness Percentage Difference: {max_fitness_difference}%\n")
+            file.write(f"Old Coverage: {old_coverage}\n")
+            file.write(f"New Coverage: {new_coverage}\n")
+            file.write(f"Coverage Percentage Difference: {coverage_difference}%\n")
+        
+        
+        
+        
+        
+        
+    
+        
 
    
     '''
@@ -189,7 +264,7 @@ def main(config: Config) -> None:
         return (jnp.sum(split[1], axis=-1), jnp.sum(qpg_offspring_added, axis=-1), jnp.sum(ai_offspring_added, axis=-1))
     '''
     # Get minimum reward value to make sure qd_score are positive
-    reward_offset = 0
+    
 
     # Define a metrics function
     metrics_function = partial(
@@ -247,16 +322,17 @@ def main(config: Config) -> None:
         env=env,
         )
     '''
-    
+    '''
     me_scoring_fn = partial(
         sampling,
         scoring_fn=scoring_fn,
         num_samples=config.num_samples,
     )
+    '''
 
     # Instantiate MAP Elites
     map_elites = MAPElites(
-        scoring_function=me_scoring_fn,
+        scoring_function=scoring_fn,
         emitter=rein_emitter,
         metrics_function=metrics_function,
     )
@@ -282,7 +358,7 @@ def main(config: Config) -> None:
             plt.ylabel(metric_name)
             plt.title(f"{metric_name} vs Iterations")
             plt.legend()
-            plt.savefig(f"./{metric_name}_vs_iterations.png")
+            plt.savefig(f"./Plots/{metric_name}_vs_iterations.png")
             plt.close()
     # Main loop
     map_elites_scan_update = map_elites.scan_update
@@ -323,6 +399,7 @@ def main(config: Config) -> None:
 
     # Repertoire
     os.mkdir("./repertoire/")
+    os.mkdir("./Plots/")
     repertoire.save(path="./repertoire/")
 
     plot_metrics_vs_iterations(metrics, log_period)
@@ -332,7 +409,11 @@ def main(config: Config) -> None:
     if env.behavior_descriptor_length == 2:
         env_steps = jnp.arange(config.num_iterations) * config.env.episode_length * config.batch_size
         fig, _ = plot_map_elites_results(env_steps=env_steps, metrics=metrics, repertoire=repertoire, min_bd=config.env.min_bd, max_bd=config.env.max_bd)
-        fig.savefig("./plot.png")
+        fig.savefig("./Plots/repertoire_plot.png")
+        
+        recreate_repertoire(repertoire, centroids, metrics_function, random_key)
+        
+    
 
 
 if __name__ == "__main__":
