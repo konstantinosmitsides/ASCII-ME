@@ -218,16 +218,6 @@ def main(config: Config) -> None:
         ) = metrics_fn(new_repertoire).values()
         
         
-        fig, _ = plot_2d_map_elites_repertoire(
-            centroids=new_repertoire.centroids,
-            repertoire_fitnesses=new_repertoire.fitnesses,
-            minval=config.env.min_bd,
-            maxval=config.env.max_bd,
-            repertoire_descriptors=new_repertoire.descriptors,
-        )
-        
-        fig.savefig("./recreated_repertoire_plot.png")
-
         def calculate_percentage_difference(old, new):
             return (abs(new - old) / ((new + old) / 2)) * 100
 
@@ -246,6 +236,16 @@ def main(config: Config) -> None:
             file.write(f"Old Coverage: {old_coverage}\n")
             file.write(f"New Coverage: {new_coverage}\n")
             file.write(f"Coverage Percentage Difference: {coverage_difference}%\n")
+            
+        fig, _ = plot_2d_map_elites_repertoire(
+            centroids=new_repertoire.centroids,
+            repertoire_fitnesses=new_repertoire.fitnesses,
+            minval=config.env.min_bd,
+            maxval=config.env.max_bd,
+            repertoire_descriptors=new_repertoire.descriptors,
+        )
+        
+        fig.savefig("./recreated_repertoire_plot.png")
         
         
         
@@ -411,7 +411,7 @@ def main(config: Config) -> None:
         fig, _ = plot_map_elites_results(env_steps=env_steps, metrics=metrics, repertoire=repertoire, min_bd=config.env.min_bd, max_bd=config.env.max_bd)
         fig.savefig("./Plots/repertoire_plot.png")
         
-        recreate_repertoire(repertoire, centroids, metrics_function, random_key)
+    recreate_repertoire(repertoire, centroids, metrics_function, random_key)
         
     
 

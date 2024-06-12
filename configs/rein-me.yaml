@@ -6,12 +6,12 @@ hydra:
 
 defaults:
     - _self_
-    - env: walker2d_uni
+    - env: ant_uni
 
 # Env config
 alg_name: rein-me
 seed: 0
-env_name: walker2d_uni
+env_name: ant_uni
 episode_length: 1000
 policy_hidden_layer_sizes: [128, 128]
 # ME config
@@ -24,7 +24,7 @@ discard_dead: False
 # Grid config
 grid_shape: [50, 50]
 num_init_cvt_samples: 50000
-num_centroids: 1024
+num_centroids: 1296
 # Log config
 log_period: 400
 store_repertoire: True
