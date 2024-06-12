@@ -221,6 +221,9 @@ class Reinforce:
 			_scan_train_step,
 			(train_state,),
 			(random_keys,),
-			length=num_steps,)
+			length=num_steps,) 
 
 		return (train_state,), (metrics,)
+
+
+
