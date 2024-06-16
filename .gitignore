@@ -164,3 +164,5 @@ Results/
 REIN_plots/
 REIN_results.pkl
 REIN_results_lr=0.001.pkl
+REIN_normalized_plots/
+REIN_normalized_results_lr=0.001.pkl
