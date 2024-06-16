@@ -161,3 +161,6 @@ rein-me_results/
 results/
 
 Results/
+REIN_plots/
+REIN_results.pkl
+REIN_results_lr=0.001.pkl
