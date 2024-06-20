@@ -16,14 +16,6 @@ from qdax.core.neuroevolution.buffers.buffer import QDTransition
 from qdax.core.neuroevolution.buffers.trajectory_buffer import TrajectoryBuffer
 from rein_related import *
 
-from qdax.core.emitters.es_novelty_archives import (
-    EmptyNoveltyArchive,
-    NoveltyArchive,
-    ParallelNoveltyArchive,
-    RepertoireNoveltyArchive,
-    SequentialNoveltyArchive,
-    SequentialScanNoveltyArchive,
-)
 from qdax.core.emitters.emitter import Emitter, EmitterState
 
 @dataclass
