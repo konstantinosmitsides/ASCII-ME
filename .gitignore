@@ -172,3 +172,6 @@ REIN_low_batch_plots/
 REIN_low_batch_results.pkl
 Execution_times/
 data.json
+REIN_IS/
+REIN_IS_Norm/
+data_.json

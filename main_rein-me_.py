@@ -111,9 +111,10 @@ def main(config: Config) -> None:
     policy_network = MLPRein(
         action_size=env.action_size,
         layer_sizes=policy_layer_sizes,
-        kernel_init=jax.nn.initializers.lecun_uniform(),
-        final_activation=jnp.tanh,
+        kernel_init=jax.nn.initializers.orthogonal(scale=jnp.sqrt(2)),
+        kernel_init_final=jax.nn.initializers.orthogonal(scale=0.01),
     )
+
 
     # Init population of controllers
     
