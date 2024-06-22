@@ -2,7 +2,7 @@ hydra:
     job:
         chdir: True
     run:
-        dir: ./Results/${env_name}/${now:%Y-%m-%d}/${now:%H-%M-%S}
+        dir: ./Results/${env_name}/${agl_name}/${now:%Y-%m-%d}/${now:%H-%M-%S}
 
 defaults:
     - _self_
@@ -36,9 +36,11 @@ line_sigma: 0.05
 # REINFORCE Parameters
 proportion_mutation_ga: 0.5
 rollout_number: 32 # Num of episodes used for gradient estimate
-num_rein_training_steps: 50 # Num gradient steps per generation
+num_rein_training_steps: 5 # Num gradient steps per generation
 buffer_size: 102400 # Size of the replay buffer
 adam_optimizer: True
 learning_rate: 1e-3
 discount_rate: 0.99
 temperature: 0.
+clip_norm: 0.2
+grad_steps: 10

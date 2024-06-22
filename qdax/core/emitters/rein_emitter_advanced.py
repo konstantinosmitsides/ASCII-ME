@@ -49,6 +49,8 @@ class REINaiveConfig:
     adam_optimizer: bool = True
     learning_rate: float = 1e-3
     temperature: float = 0.
+    clip_param: float = 0.2
+    grad_steps: int = 10
 
 
 
@@ -297,6 +299,7 @@ class REINaiveEmitter(Emitter):
             logp=logp,
             mask=mask,
             return_standardized=return_standardized,
+            grad_steps=self._config.grad_steps,
         )
         
         new_emitter_state = emitter_state.replace(
@@ -449,7 +452,8 @@ class REINaiveEmitter(Emitter):
         action,
         logp,
         mask,
-        return_standardized
+        return_standardized,
+        grad_steps,
     ):
         """Updates the policy parameters using the optimizer.
         Args:
@@ -463,13 +467,32 @@ class REINaiveEmitter(Emitter):
         Returns:
             The updated optimizer state and policy parameters.
         """
-        def loss_fn(params):
-            #logp_ = self._policy.logp(params, jax.lax.stop_gradient(obs), jax.lax.stop_gradient(action))
-            logp_ = self._policy.apply(params, jax.lax.stop_gradient(obs), jax.lax.stop_gradient(action), method=self._policy.logp)
-            #return -jnp.mean(logp_ * mask * return_standardized)
-            return -jnp.mean(jnp.multiply(logp_ * mask, jax.lax.stop_gradient(return_standardized)))
+        
 
-        grads = jax.grad(loss_fn)(policy_params)
-        updates, new_optimizer_state = self._policies_optimizer.update(grads, policy_optimizer_state)
-        new_policy_params = optax.apply_updates(policy_params, updates)
-        return new_optimizer_state, new_policy_params
+        
+        def loss_fn(params):
+            """ PPO loss function.
+            """
+            logp_ = self.logp_fn(params, jax.lax.stop_gradient(obs), jax.lax.stop_gradient(action))
+            ratio = jnp.exp(logp_ - jax.lax.stop_gradient(logp))
+
+            pg_loss_1 = jnp.multiply(ratio * mask, jax.lax.stop_gradient(return_standardized))
+            pg_loss_2 = jax.lax.stop_gradient(return_standardized) * jax.lax.clamp(1. - self._config.clip_param, ratio, 1. + self._config.clip_param)
+            return (-jnp.sum(jnp.minimum(pg_loss_1, pg_loss_2))) / jnp.sum(ratio * mask)
+
+        def _scan_update(carry, _):
+            (policy_params, policy_optimizer_state) = carry
+            grads = jax.grad(loss_fn)(policy_params)
+            updates, new_optimizer_state = self._policies_optimizer.update(grads, policy_optimizer_state)
+            new_policy_params = optax.apply_updates(policy_params, updates)
+            return (new_policy_params, new_optimizer_state), _
+        
+        
+        (final_policy_params, final_optimizer_state), _ = jax.lax.scan(
+            _scan_update,
+            (policy_params, policy_optimizer_state),
+            (),
+            length=grad_steps,
+        )
+        
+        return final_optimizer_state, final_policy_params

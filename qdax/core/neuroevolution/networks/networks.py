@@ -276,7 +276,7 @@ class MLPRein(nn.Module):
     action_size: int
     layer_sizes: Tuple[int, ...]
     activation: Callable[[jnp.ndarray], jnp.ndarray] = nn.tanh
-    kernel_init: Callable[..., Any] = jax.nn.initializers.lecun_uniform()
+    kernel_init: Callable[..., Any] = jax.nn.initializers.orthogonal(scale=jnp.sqrt(2))
     final_activation: Optional[Callable[[jnp.ndarray], jnp.ndarray]] = None
     bias: bool = True
     kernel_init_final: Optional[Callable[..., Any]] = jax.nn.initializers.orthogonal(scale=0.01) # this is specific for ant_uni
@@ -284,9 +284,10 @@ class MLPRein(nn.Module):
     
     def setup(self):
         # this is specific for ant_uni
-        self.hidden_layers = [nn.Dense(size, kernel_init=self.kernel_init, use_bias=self.bias) for size in self.layer_sizes]
-        self.mean = nn.Dense(self.action_size, kernel_init=self.kernel_init, use_bias=self.bias) #kernel_init=self.kernel_init_final)
-        self.log_std = self.param("log_std", lambda _, shape: -1.0 * jnp.ones(shape), (self.action_size,))
+        self.hidden_layers = [nn.Dense(size, kernel_init=self.kernel_init, bias_init=jax.nn.initializers.zeros) for size in self.layer_sizes]
+        self.mean = nn.Dense(self.action_size, kernel_init=self.kernel_init_final, bias_init=jax.nn.initializers.zeros) #kernel_init=self.kernel_init_final)
+        self.log_std = self.param("log_std", lambda _, shape: jnp.log(0.5) * jnp.ones(shape), (self.action_size,))
+
 
     def __call__(self, obs: jnp.ndarray) -> jnp.ndarray:
         hidden = obs

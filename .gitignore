@@ -170,3 +170,10 @@ REIN_lr_annealing_plots/
 REIN_lr_annealing_results_lr=0.001.pkl
 REIN_low_batch_plots/
 REIN_low_batch_results.pkl
+Execution_times/
+data.json
+REIN_IS/
+REIN_IS_Norm/
+data_.json
+PPO_experiments/
+REIN_PPO_Norm/
