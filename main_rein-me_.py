@@ -24,7 +24,7 @@ from qdax.utils.sampling import sampling
 from qdax.core.containers.mapelites_repertoire import compute_cvt_centroids, MapElitesRepertoire
 from qdax.core.neuroevolution.networks.networks import MLP, MLPRein
 from qdax.core.emitters.rein_var import REINConfig, REINEmitter
-from qdax.core.emitters.rein_emitter import REINaiveConfig, REINaiveEmitter
+#from qdax.core.emitters.rein_emitter_advanced import REINaiveConfig, REINaiveEmitter
 from qdax.core.neuroevolution.buffers.buffer import QDTransition
 from qdax.environments import behavior_descriptor_extractor
 from qdax.tasks.brax_envs import reset_based_scoring_function_brax_envs as scoring_function
