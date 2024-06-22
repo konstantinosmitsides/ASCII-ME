@@ -312,7 +312,7 @@ class MLPRein(nn.Module):
 
         mean = self.mean(hidden)
         log_std = self.log_std
-        std = jnp.exp(log_std)
+        std = jax.nn.softplus(log_std)
 
         return mean, log_std, std, hidden
     
