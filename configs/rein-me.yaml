@@ -42,3 +42,5 @@ adam_optimizer: True
 learning_rate: 1e-3
 discount_rate: 0.99
 temperature: 0.
+clip_norm: 0.2
+grad_steps: 10
