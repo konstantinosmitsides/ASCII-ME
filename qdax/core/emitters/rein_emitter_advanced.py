@@ -290,7 +290,23 @@ class REINaiveEmitter(Emitter):
         # Compute standardized return
         return_standardized = self.get_return_standardized(reward, mask)
         
+        def _scan_update(carry, _):
+            (policy_params, policy_optimizer_state) = carry
+            grads = jax.grad(self.loss_ppo)(policy_params, obs, action, logp, mask, return_standardized)
+            updates, new_optimizer_state = self._policies_optimizer.update(grads, policy_optimizer_state)
+            new_policy_params = optax.apply_updates(policy_params, updates)
+            return (new_policy_params, new_optimizer_state), None
+        
+        (final_policy_params, final_optimizer_state), _ = jax.lax.scan(
+            _scan_update,
+            (policy_params, policy_optimizer_state),
+            None,
+            length=self._config.grad_steps,
+        )
+    
+        
         # update policy
+        '''
         policy_optimizer_state, policy_params = self._update_policy(
             policy_params=policy_params,
             policy_optimizer_state=policy_optimizer_state,
@@ -301,6 +317,7 @@ class REINaiveEmitter(Emitter):
             return_standardized=return_standardized,
             grad_steps=self._config.grad_steps,
         )
+        '''
         
         new_emitter_state = emitter_state.replace(
             random_key=random_keys[-1]
@@ -313,7 +330,7 @@ class REINaiveEmitter(Emitter):
         #debug.print("Average Reward: {}", average_reward)
         #debug.print('-'*50)      
         #debug.print("Average mask: {}", av_mask)  
-        return new_emitter_state, policy_params, policy_optimizer_state
+        return new_emitter_state, final_policy_params, final_optimizer_state
     
     @partial(jax.jit, static_argnames=("self",))
     def _sample_trajectory(
@@ -442,7 +459,7 @@ class REINaiveEmitter(Emitter):
         """
         #return (return_ - return_.mean()) / (return_.std() + 1e-8)
         return jax.nn.standardize(return_, axis=0, variance=1., epsilon=EPS)
-
+    '''
     @partial(jax.jit, static_argnames=("self",))
     def _update_policy(
         self,
@@ -470,29 +487,33 @@ class REINaiveEmitter(Emitter):
         
 
         
-        def loss_fn(params):
-            """ PPO loss function.
-            """
-            logp_ = self.logp_fn(params, jax.lax.stop_gradient(obs), jax.lax.stop_gradient(action))
-            ratio = jnp.exp(logp_ - jax.lax.stop_gradient(logp))
-
-            pg_loss_1 = jnp.multiply(ratio * mask, jax.lax.stop_gradient(return_standardized))
-            pg_loss_2 = jax.lax.stop_gradient(return_standardized) * jax.lax.clamp(1. - self._config.clip_param, ratio, 1. + self._config.clip_param)
-            return (-jnp.sum(jnp.minimum(pg_loss_1, pg_loss_2))) / jnp.sum(ratio * mask)
+        
 
         def _scan_update(carry, _):
             (policy_params, policy_optimizer_state) = carry
             grads = jax.grad(loss_fn)(policy_params)
             updates, new_optimizer_state = self._policies_optimizer.update(grads, policy_optimizer_state)
             new_policy_params = optax.apply_updates(policy_params, updates)
-            return (new_policy_params, new_optimizer_state), _
+            return (new_policy_params, new_optimizer_state), None
         
         
         (final_policy_params, final_optimizer_state), _ = jax.lax.scan(
             _scan_update,
             (policy_params, policy_optimizer_state),
-            (),
+            None,
             length=grad_steps,
         )
         
         return final_optimizer_state, final_policy_params
+    '''
+    
+    @partial(jax.jit, static_argnames=("self",))
+    def loss_ppo(self, params, obs, action, logp, mask, return_standardized):
+        """ PPO loss function.
+        """
+        logp_ = self._policy.apply(params, jax.lax.stop_gradient(obs), jax.lax.stop_gradient(action), method=self._policy.logp)
+        ratio = jnp.exp(logp_ - jax.lax.stop_gradient(logp))
+
+        pg_loss_1 = jnp.multiply(ratio * mask, jax.lax.stop_gradient(return_standardized))
+        pg_loss_2 = jax.lax.stop_gradient(return_standardized) * jax.lax.clamp(1. - self._config.clip_param, ratio, 1. + self._config.clip_param)
+        return -jnp.mean(jnp.minimum(pg_loss_1, pg_loss_2))
