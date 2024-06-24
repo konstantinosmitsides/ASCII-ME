@@ -60,9 +60,18 @@ def main(config: Config) -> None:
 
     # Init policy network
     policy_layer_sizes = config.policy_hidden_layer_sizes + (env.action_size,)
+    '''
     policy_network = MLP(
         layer_sizes=policy_layer_sizes,
         kernel_init=jax.nn.initializers.lecun_uniform(),
+        final_activation=jnp.tanh,
+    )
+    '''
+    
+    policy_network = MLP(
+        layer_sizes=policy_layer_sizes,
+        kernel_init=jax.nn.initializers.orthogonal(scale=jnp.sqrt(2)),
+        kernel_init_final=jax.nn.initializers.orthogonal(scale=0.01),
         final_activation=jnp.tanh,
     )
 
@@ -240,6 +249,8 @@ def main(config: Config) -> None:
         iterations = jnp.arange(1, 1 + log_period * len(metrics["time"]), dtype=jnp.int32)
 
         for metric_name, metric_values in metrics.items():
+            if metric_name in ["iteration", "evaluation"]:
+                continue
             plt.figure()
             plt.plot(iterations, metric_values, label=metric_name)
             plt.xlabel("Iteration")

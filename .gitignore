@@ -178,3 +178,4 @@ data_.json
 PPO_experiments/
 REIN_PPO_Norm/
 PPO_experiments_lr=3e-4/
+PPO_experiments_lr=3e-4_uniform_init/
