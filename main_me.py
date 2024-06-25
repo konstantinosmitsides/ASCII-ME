@@ -60,20 +60,21 @@ def main(config: Config) -> None:
 
     # Init policy network
     policy_layer_sizes = config.policy_hidden_layer_sizes + (env.action_size,)
-    '''
+    
     policy_network = MLP(
         layer_sizes=policy_layer_sizes,
         kernel_init=jax.nn.initializers.lecun_uniform(),
         final_activation=jnp.tanh,
     )
-    '''
     
+    '''
     policy_network = MLP(
         layer_sizes=policy_layer_sizes,
         kernel_init=jax.nn.initializers.orthogonal(scale=jnp.sqrt(2)),
         kernel_init_final=jax.nn.initializers.orthogonal(scale=0.01),
         final_activation=jnp.tanh,
     )
+    '''
 
     # Init population of controllers
     random_key, subkey = jax.random.split(random_key)

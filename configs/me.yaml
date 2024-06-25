@@ -10,9 +10,9 @@ defaults:
   - algo: me
 
 seed: 0
-num_iterations: 3906
-batch_size: 256
-num_samples: 32
+num_iterations: 1000
+batch_size: 1024
+num_samples: 16
 
 # Archive
 num_init_cvt_samples: 50000
