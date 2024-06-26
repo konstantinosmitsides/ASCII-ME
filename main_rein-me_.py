@@ -108,11 +108,20 @@ def main(config: Config) -> None:
     # Init policy network
     policy_layer_sizes = config.policy_hidden_layer_sizes #+ (env.action_size,)
     print(policy_layer_sizes)
+    
+    '''
     policy_network = MLPRein(
         action_size=env.action_size,
         layer_sizes=policy_layer_sizes,
         kernel_init=jax.nn.initializers.orthogonal(scale=jnp.sqrt(2)),
         kernel_init_final=jax.nn.initializers.orthogonal(scale=0.01),
+    )
+    '''
+    policy_network = MLPRein(
+        action_size=env.action_size,
+        layer_sizes=policy_layer_sizes,
+        kernel_init=jax.nn.initializers.lecun_uniform(),
+        kernel_init_final=jax.nn.initializers.lecun_uniform(),
     )
 
 
@@ -238,15 +247,17 @@ def main(config: Config) -> None:
             file.write(f"New Coverage: {new_coverage}\n")
             file.write(f"Coverage Percentage Difference: {coverage_difference}%\n")
             
-        fig, _ = plot_2d_map_elites_repertoire(
-            centroids=new_repertoire.centroids,
-            repertoire_fitnesses=new_repertoire.fitnesses,
-            minval=config.env.min_bd,
-            maxval=config.env.max_bd,
-            repertoire_descriptors=new_repertoire.descriptors,
-        )
-        
-        fig.savefig("./recreated_repertoire_plot.png")
+        if env.behavior_descriptor_length == 2:
+            
+            fig, _ = plot_2d_map_elites_repertoire(
+                centroids=new_repertoire.centroids,
+                repertoire_fitnesses=new_repertoire.fitnesses,
+                minval=config.env.min_bd,
+                maxval=config.env.max_bd,
+                repertoire_descriptors=new_repertoire.descriptors,
+            )
+            
+            fig.savefig("./recreated_repertoire_plot.png")
         
         
         
