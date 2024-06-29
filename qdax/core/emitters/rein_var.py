@@ -4,7 +4,7 @@ from typing import Callable, Tuple
 import flax.linen as nn
 
 from qdax.core.emitters.multi_emitter import MultiEmitter
-from qdax.core.emitters.rein_emitter_advanced import REINaiveConfig, REINaiveEmitter
+from qdax.core.emitters.rein_emitter import REINaiveConfig, REINaiveEmitter
 from qdax.core.emitters.standard_emitters import MixingEmitter
 from qdax.environments.base_wrappers import QDEnv
 from qdax.types import Params, RNGKey

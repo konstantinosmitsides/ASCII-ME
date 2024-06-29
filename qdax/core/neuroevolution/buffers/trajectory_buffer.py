@@ -193,6 +193,8 @@ class TrajectoryBuffer(struct.PyTreeNode):
             """
             # Step 1: reset episodes for override
             # We start by selecting the episodes that are currently being inserted
+            dones = flattened_transitions[:, (2 * (self.transition.observation_dim) + 1)].ravel()
+            jax.debug.print("Dones: {}", dones)  # Directly print dones to debug
             active_trajectories_indexes = (
                 jnp.arange(self.env_batch_size, dtype=int)
                 + (replay_buffer.trajectory_positions % self.num_trajectories)

@@ -136,7 +136,7 @@ class REINaiveEmitter(Emitter):
         trajectory_buffer = TrajectoryBuffer.init(
             buffer_size=self._config.buffer_size,
             transition=dummy_transition,
-            env_batch_size=self._config.batch_size,
+            env_batch_size=self._config.batch_size * 2,
             episode_length=self._env.episode_length,
         )
         
