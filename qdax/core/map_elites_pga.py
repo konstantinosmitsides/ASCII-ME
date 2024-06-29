@@ -97,7 +97,7 @@ class MAPElites:
             extra_scores=extra_scores,
         )
         
-        '''
+
         _, extra_info, random_key = self._emitter.emit(
             repertoire, emitter_state, random_key
         )
@@ -111,7 +111,7 @@ class MAPElites:
             descriptors=descriptors,
             extra_scores=extra_scores | extra_info,
         )
-        '''
+        
 
         return repertoire, emitter_state, random_key
 

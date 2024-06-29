@@ -205,6 +205,24 @@ class REINaiveEmitter(Emitter):
         return offsprings
     
     @partial(jax.jit, static_argnames=("self",))
+    def state_update(
+        self, emitter_state : REINaiveEmitterState,
+        repertoire: Optional[Repertoire],
+        genotypes: Optional[Genotype],
+        fitnesses: Optional[Fitness],
+        descriptors: Optional[Descriptor],
+        extra_scores: ExtraScores,
+    ) -> REINaiveEmitterState:
+        
+        assert "transitions" in extra_scores.keys(), "Missing transitions or wrong key"
+        transitions = extra_scores["transitions"]
+        
+        replay_buffer = emitter_state.trajectory_buffer.insert(transitions)
+        emitter_state = emitter_state.replace(trajectory_buffer=replay_buffer)
+        
+        return emitter_state
+    
+    @partial(jax.jit, static_argnames=("self",))
     def _mutation_function_rein(
         self,
         policy_params: Genotype,
