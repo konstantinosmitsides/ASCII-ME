@@ -118,7 +118,7 @@ class TrajectoryBuffer(struct.PyTreeNode):
             transition=transition,
             returns=returns,
         )
-
+        
     @partial(jax.jit, static_argnames=("sample_size"))
     def sample(
         self,
@@ -193,6 +193,7 @@ class TrajectoryBuffer(struct.PyTreeNode):
             """
             # Step 1: reset episodes for override
             # We start by selecting the episodes that are currently being inserted
+            jax.debug.print("Flattened transitions shape: {}", flattened_transitions.shape)
             dones = flattened_transitions[:, (2 * (self.transition.observation_dim) + 1)].ravel()
             jax.debug.print("Dones: {}", dones)  # Directly print dones to debug
             active_trajectories_indexes = (
@@ -285,10 +286,12 @@ class TrajectoryBuffer(struct.PyTreeNode):
             return replay_buffer, None
 
         flattened_transitions = transitions.flatten()
+        jax.debug.print("Flattened transitions pre-shape: {}", flattened_transitions.shape)
 
         flattened_transitions = flattened_transitions.reshape(
             (-1, self.env_batch_size, flattened_transitions.shape[-1])
         )
+        jax.debug.print("Flattened transitions post-shape: {}", flattened_transitions.shape)
 
         replay_buffer, _ = jax.lax.scan(
             insert_one_transition,
