@@ -18,6 +18,9 @@ from rein_related import *
 
 from qdax.core.emitters.emitter import Emitter, EmitterState
 
+EPS = 1e-8
+
+
 @dataclass
 class MCPGConfig:
     """Configuration for the REINaive emitter.
@@ -196,6 +199,62 @@ class MCPGEmitter(Emitter):
         return 1. - jnp.clip(jnp.cumsum(done), a_min=0., a_max=1.)
     
     @partial(jax.jit, static_argnames=("self",))
+    def compute_logps(
+        self,
+        policy_params,
+        obs,
+        actions,
+    ):
+        """Compute the log probabilities of the actions.
+        """
+        compute_logp = partial(
+            self._policy.apply,
+            params=policy_params,
+            obs=obs,
+            action=actions,
+            method=self._policy.logp,
+        )
+        
+        return jax.vmap(compute_logp)(obs, actions)
+        
+    @partial(jax.jit, static_argnames=("self",))
+    def get_return(
+        self,
+        rewards,
+    ):
+        def _body(carry, x):
+            (next_return,) = carry
+            (reward,) = x
+
+            current_return = reward + self._config.discount_rate * next_return
+            return (current_return,), current_return
+        
+        _, (return_,) = jax.lax.scan(
+            _body,
+            (jnp.array(0.),),
+            length=int(self._env.episode_length),
+            reverse=True,
+        )
+        
+        return return_
+    
+    @partial(jax.jit, static_argnames=("self",))
+    def standardize(
+        self,
+        return_,
+    ):
+        return jax.nn.standardize(return_, axis=0, variance=1, epsilon=EPS)
+    
+    @partial(jax.jit, static_argnames=("self",))
+    def get_standardized_return(
+        self,
+        rewards,
+        mask,
+    ):
+        return_ = jax.vmap(self.get_return)(rewards * mask)
+        return self.standardize(return_)
+    
+    @partial(jax.jit, static_argnames=("self",))
     def _mutation_function_mcpg(
         self,
         policy_params,
@@ -208,6 +267,8 @@ class MCPGEmitter(Emitter):
         
         policy_opt_state = self._policy_opt.init(policy_params)
         
+        random_key = emitter_state.random_key
+        
         #random_key, subkey = jax.random.split(emitter_state.random_key)
         sample_size = self._config.batch_size // self._env.episode_length
         episodic_data_size = int(buffer.current_episodic_data_size)
@@ -218,7 +279,7 @@ class MCPGEmitter(Emitter):
             episodic_data_size=episodic_data_size,
             sample_traj=True,
         )
-        
+        new_emitter_state = emitter_state.replace(random_key=random_key)
         # trans has shape (episde_length*sample_size, transition_dim)
         
         obs = trans.obs.reshape(sample_size, self._env.episode_length, -1)
@@ -227,5 +288,95 @@ class MCPGEmitter(Emitter):
         dones = trans.dones.reshape(sample_size, self._env.episode_length, -1)
         
         mask = jax.vmap(self.compute_mask, in_axes=0)(dones)
+        logps = jax.vmap(self.compute_logps, in_axes=(None, 0, 0))(policy_params, obs, actions)
         
+        standardized_returns = self.get_standardized_return(rewards, mask)
         
+        def scan_train_policy(
+            carry: Tuple[MCPGEmitterState, Genotype, optax.OptState],
+            unused: Any,
+        ) -> Tuple[Tuple[MCPGEmitterState, Genotype, optax.OptState], Any]:
+            
+            policy_params, policy_opt_state = carry
+            
+            (
+                new_policy_params,
+                new_policy_opt_state,
+            ) = self._train_policy_(
+                policy_params,
+                policy_opt_state,
+                obs,
+                actions,
+                standardized_returns,
+                mask,
+                logps,
+            )
+            
+            return (
+                new_policy_params,
+                new_policy_opt_state,
+            ), None
+
+        (policy_params, policy_opt_state), _ = jax.lax.scan(
+            scan_train_policy,
+            (policy_params, policy_opt_state),
+            None,
+            length=self._config.no_epochs,
+        )
+        
+        return policy_params, new_emitter_state
+    
+    
+    @partial(jax.jit, static_argnames=("self",))
+    def _train_policy_(
+        self,
+        policy_params,
+        policy_opt_state,
+        obs,
+        actions,
+        standardized_returns,
+        mask,
+        logps,
+    ):
+        """Train the policy.
+        """
+        
+        def _scan_update(carry, _):
+            policy_params, policy_opt_state = carry
+            grads = jax.grad(self.loss_ppo)(policy_params, obs, actions, logps, mask, standardized_returns)
+            updates, new_policy_opt_state = self._policy_opt.update(grads, policy_opt_state)
+            new_policy_params = optax.apply_updates(policy_params, updates)
+            return (new_policy_params, new_policy_opt_state), None
+        
+        (final_policy_params, final_policy_opt_state), _ = jax.lax.scan(
+            _scan_update,
+            (policy_params, policy_opt_state),
+            None,
+            length=1,
+        )
+
+        return final_policy_params, final_policy_opt_state
+    
+    @partial(jax.jit, static_argnames=("self",))
+    def loss_ppo(
+        self,
+        params,
+        obs,
+        actions,
+        logps,
+        mask,
+        standardized_returns,
+    ):
+        
+        logps_ = self._policy.apply(
+            params,
+            jax.lax.stop_gradient(obs),
+            jax.lax.stop_gradient(actions),
+            method=self._policy.logp,
+        )
+        ratio = jnp.exp(logps_ - jax.lax.stop_gradient(logps))
+        
+        pg_loss_1 = jnp.multiply(ratio * mask, jax.lax.stop_gradient(standardized_returns))
+        pg_loss_2 = jax.lax.stop_gradient(standardized_returns) * jax.lax.clamp(1. - self._config.clip_param, ratio, 1. + self._config.clip_param) * mask
+        
+        return -jnp.mean(jnp.minimum(pg_loss_1, pg_loss_2))

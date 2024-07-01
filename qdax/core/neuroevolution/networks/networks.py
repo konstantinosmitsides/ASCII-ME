@@ -339,3 +339,46 @@ class MLPRein(nn.Module):
         action = jax.lax.stop_gradient(mean + rnd * std)
         logp = jnp.sum(-0.5 * jnp.square((action - mean) / (std + EPS)) - _half_log2pi - log_std, axis=-1)
         return action, logp
+    
+    
+class MLPMCPG(nn.Module):
+    """MCPG MLP module"""
+    hidden_layers_size: Tuple[int, ...]
+    action_size: int
+    activation: Callable[[jnp.ndarray], jnp.ndarray] = nn.tanh
+    bias_init: Callable[[jnp.ndarray, Any], jnp.ndarray] = jax.nn.initializers.zeros
+    hidden_init: Callable[[jnp.ndarray, Any], jnp.ndarray] = jax.nn.initializers.lecun_uniform()
+    mean_init: Callable[[jnp.ndarray, Any], jnp.ndarray] = jax.nn.initializers.lecun_uniform()
+    
+    def setup(self):
+        self.hidden_layers = [nn.Dense(features, kernel_init=self.hidden_init, bias_init=self.bias_init) for features in self.hidden_layers_size]
+        self.mean = nn.Dense(self.action_size, kernel_init=self.mean_init, bias_init=self.bias_init)
+        self.log_std = self.param("log_std", lambda _, shape: jnp.log(0.5)*jnp.ones(shape), (self.action_size,))
+        
+    def distribution_params(self, obs: jnp.ndarray):
+        hidden = obs
+        for hidden_layer in self.hidden_layers:
+            hidden = self.activation(hidden_layer(hidden))
+            
+        mean = self.mean(hidden)
+        log_std = self.log_std
+        std = jnp.exp(log_std)
+        
+        return mean, log_std, std
+    
+    def logp(self, obs: jnp.ndarray, action: jnp.ndarray):
+        mean, _, std = self.distribution_params(obs)
+        logp = jax.scipy.stats.norm.logpdf(action, mean, std)
+        return logp.sum(axis=-1)
+    
+    def __call__(self, obs: jnp.ndarray):
+        mean, _, std = self.distribution_params(obs)
+        action = jax.lax.stop_gradient(mean)
+        
+        # Sample action
+        #rnd = jax.random.normal(random_key, shape = (self.action_size,))
+        #action = jax.lax.stop_gradient(mean + rnd * std)
+        
+        #logp = jnp.sum(jax.scipy.stats.norm.logpdf(action, mean, std), axis=-1) 
+                
+        return action
