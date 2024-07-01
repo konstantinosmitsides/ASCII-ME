@@ -286,12 +286,15 @@ class TrajectoryBuffer(struct.PyTreeNode):
             return replay_buffer, None
 
         flattened_transitions = transitions.flatten()
-        jax.debug.print("Flattened transitions pre-shape: {}", flattened_transitions.shape)
+        jax.debug.print("Flattened transitions pre: {}", flattened_transitions)
+        #jax.debug.print("Flattened transitions pre-shape: {}", flattened_transitions.shape)
 
         flattened_transitions = flattened_transitions.reshape(
             (-1, self.env_batch_size, flattened_transitions.shape[-1])
         )
-        jax.debug.print("Flattened transitions post-shape: {}", flattened_transitions.shape)
+        flattened_transitions = jnp.transpose(flattened_transitions, axes=(1, 0, 2))
+        jax.debug.print("Flattened transitions post: {}", flattened_transitions)
+        #jax.debug.print("Flattened transitions post-shape: {}", flattened_transitions.shape)
 
         replay_buffer, _ = jax.lax.scan(
             insert_one_transition,
