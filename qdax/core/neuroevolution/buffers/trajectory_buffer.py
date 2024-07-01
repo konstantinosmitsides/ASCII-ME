@@ -97,7 +97,7 @@ class TrajectoryBuffer(struct.PyTreeNode):
         current_position = jnp.zeros((), dtype=int)
         trajectory_positions = jnp.zeros(env_batch_size, dtype=int)
         timestep_positions = jnp.zeros(env_batch_size, dtype=int)
-        episodic_data = jnp.ones((num_trajectories, episode_length)) * jnp.nan
+        episodic_data = jnp.ones((num_trajectories, episode_length), dtype=int) * jnp.nan
         current_size = jnp.array(0, dtype=int)
         current_episodic_data_size = jnp.array(0, dtype=int)
         returns = jnp.ones(
@@ -119,11 +119,13 @@ class TrajectoryBuffer(struct.PyTreeNode):
             returns=returns,
         )
         
-    @partial(jax.jit, static_argnames=("sample_size"))
+    @partial(jax.jit, static_argnames=("sample_size", "sample_traj", "episodic_data_size"))
     def sample(
         self,
         random_key: RNGKey,
         sample_size: int,
+        episodic_data_size: int,
+        sample_traj: bool = False,
     ) -> Tuple[Transition, RNGKey]:
         """
         Sample transitions from the buffer. If sample_traj=False, returns stacked
@@ -133,6 +135,39 @@ class TrajectoryBuffer(struct.PyTreeNode):
 
         # Here we want to sample single transitions
         # We sample uniformly at random the indexes of valid transitions
+        if sample_traj:
+            random_key, subkey = jax.random.split(random_key)
+            '''
+            # with replacement
+            idx = jax.random.randint(
+                subkey,
+                shape=(sample_size,),
+                minval=0,
+                maxval=self.current_episodic_data_size,
+            )
+            '''
+            # without replacement
+            idx = jax.random.choice(
+                subkey,
+                episodic_data_size,
+                shape=(sample_size,),
+                replace=False,
+            )
+            
+            #jax.debug.print("Idx: {}", idx)
+            episodic_idx = jnp.take(self.episodic_data, idx, mode="clip", axis=0)
+            #jax.debug.print("Episodic idx pre: {}", episodic_idx)
+            episodic_idx = jnp.array(episodic_idx, dtype=jnp.int32)
+            #jax.debug.print("Episodic idx post: {}", episodic_idx)
+            episodic_idx = episodic_idx.ravel()
+            #ax.debug.print("Episodic idx ravel: {}", episodic_idx)
+            
+            samples = jnp.take(self.data, episodic_idx, axis=0, mode="clip")
+            
+            transitions = self.transition.__class__.from_flatten(samples, self.transition)
+            
+            return transitions, random_key
+            
         random_key, subkey = jax.random.split(random_key)
         idx = jax.random.randint(
             subkey,
@@ -146,11 +181,14 @@ class TrajectoryBuffer(struct.PyTreeNode):
         # (sample_size, concat_dim)
         transitions = self.transition.__class__.from_flatten(samples, self.transition)
         return transitions, random_key
-
+    
+    @partial(jax.jit, static_argnames=("sample_size", "sample_traj", "episodic_data_size"))
     def sample_with_returns(
         self,
         random_key: RNGKey,
         sample_size: int,
+        episodic_data_size: int,
+        sample_traj: bool = False,
     ) -> Tuple[Transition, Reward, RNGKey]:
         """Sample transitions and the return corresponding to their episode. The returns
         are compute by the method `compute_returns`.
@@ -164,6 +202,28 @@ class TrajectoryBuffer(struct.PyTreeNode):
         """
         # Here we want to sample single transitions
         # We sample uniformly at random the indexes of valid transitions
+        
+        if sample_traj:
+            random_key, subkey = jax.random.split(random_key)
+            
+            idx = jax.random.choice(
+                subkey,
+                episodic_data_size,
+                shape=(sample_size,),
+                replace=False,
+            )
+            
+            episodic_idx = jnp.take(self.episodic_data, idx, mode="clip", axis=0)
+            episodic_idx = jnp.array(episodic_idx, dtype=jnp.int32)
+            episodic_idx = episodic_idx.ravel()
+            
+            samples = jnp.take(self.data, episodic_idx, axis=0, mode="clip")
+            returns = jnp.take(self.returns, episodic_idx, mode="clip")
+
+            transitions = self.transition.__class__.from_flatten(samples, self.transition)
+            return transitions, returns, random_key
+
+            
         random_key, subkey = jax.random.split(random_key)
         idx = jax.random.randint(
             subkey,
