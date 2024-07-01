@@ -47,7 +47,7 @@ class MCPGConfig:
     no_agents: int = 256
     batch_size: int = 1000*256
     mini_batch_size: int = 1000*256
-    no_epochs: 16
+    no_epochs: int = 16
     learning_rate: float = 3e-4
     discount_rate: float = 0.99
     adam_optimizer: bool = True
@@ -58,7 +58,7 @@ class MCPGEmitterState(EmitterState):
     """Containes the trajectory buffer.
     """
     buffer: TrajectoryBuffer
-    random_ket: RNGKey
+    random_key: RNGKey
     
 class MCPGEmitter(Emitter):
     
@@ -83,7 +83,7 @@ class MCPGEmitter(Emitter):
         Returns:
             int: the batch size emitted by the emitter.
         """
-        return self._config.batch_size
+        return self._config.no_agents
     
     @property
     def use_all_data(self) -> bool:
@@ -197,7 +197,7 @@ class MCPGEmitter(Emitter):
         done,
     ):
         return 1. - jnp.clip(jnp.cumsum(done), a_min=0., a_max=1.)
-    
+    '''
     @partial(jax.jit, static_argnames=("self",))
     def compute_logps(
         self,
@@ -210,13 +210,22 @@ class MCPGEmitter(Emitter):
         compute_logp = partial(
             self._policy.apply,
             params=policy_params,
-            obs=obs,
-            action=actions,
             method=self._policy.logp,
         )
         
         return jax.vmap(compute_logp)(obs, actions)
-        
+    '''
+    
+    @partial(jax.jit, static_argnames=("self",))
+    def compute_logps(self, policy_params, obs, actions):
+        def compute_logp(single_obs, single_action):
+            # Correctly handle operations on single_obs and single_action
+            # Ensure no inappropriate method calls like .items() are made
+            return self._policy.apply(policy_params, single_obs, single_action, method=self._policy.logp)
+
+        # Use jax.vmap to apply compute_logp across batches of obs and actions
+        return jax.vmap(compute_logp, in_axes=(0, 0))(obs, actions)
+    '''    
     @partial(jax.jit, static_argnames=("self",))
     def get_return(
         self,
@@ -224,18 +233,38 @@ class MCPGEmitter(Emitter):
     ):
         def _body(carry, x):
             (next_return,) = carry
-            (reward,) = x
+            (rewards,) = x
 
-            current_return = reward + self._config.discount_rate * next_return
-            return (current_return,), current_return
+            current_return = rewards + self._config.discount_rate * next_return
+            return (current_return,), (current_return,)
         
         _, (return_,) = jax.lax.scan(
             _body,
             (jnp.array(0.),),
+            (rewards,),
             length=int(self._env.episode_length),
             reverse=True,
         )
         
+        return return_
+        '''
+        
+    @partial(jax.jit, static_argnames=("self",))
+    def get_return(self, rewards):
+        def _body(carry, reward):
+            next_return = carry  # carry should be unpacked directly if it's a single element
+            current_return = reward + self._config.discount_rate * next_return
+            return current_return, current_return  # Maintain the same shape and type
+
+        initial_return = jnp.array(0.0)  # Ensure initial_return is correctly shaped as a scalar
+        _, return_ = jax.lax.scan(
+            _body,
+            initial_return,
+            rewards,  # Pass rewards directly without extra tuple wrapping
+            length=int(self._env.episode_length),
+            reverse=True,
+        )
+
         return return_
     
     @partial(jax.jit, static_argnames=("self",))
@@ -251,6 +280,7 @@ class MCPGEmitter(Emitter):
         rewards,
         mask,
     ):
+        mask = jnp.expand_dims(mask, axis=-1)
         return_ = jax.vmap(self.get_return)(rewards * mask)
         return self.standardize(return_)
     
@@ -270,13 +300,14 @@ class MCPGEmitter(Emitter):
         random_key = emitter_state.random_key
         
         #random_key, subkey = jax.random.split(emitter_state.random_key)
-        sample_size = self._config.batch_size // self._env.episode_length
-        episodic_data_size = int(buffer.current_episodic_data_size)
+        sample_size = int(self._config.batch_size) // int(self._env.episode_length)
+        #print(f"episodic_data_size: {int(buffer.current_episodic_data_size)}")
+        #episodic_data_size = buffer.current_episodic_data_size.item()
         
         trans, random_key = buffer.sample(
             random_key=random_key,
             sample_size=sample_size,
-            episodic_data_size=episodic_data_size,
+            episodic_data_size=256,
             sample_traj=True,
         )
         new_emitter_state = emitter_state.replace(random_key=random_key)
