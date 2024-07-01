@@ -114,7 +114,7 @@ class MCPGEmitter(Emitter):
         buffer = TrajectoryBuffer.init(
             buffer_size=self._config.buffer_size,
             transition=dummy_transition,
-            env_batch_size=self._config.batch_size*2,
+            env_batch_size=self._config.no_agents*2,
             episode_length=self._env.episode_length,
         )
         
@@ -126,3 +126,106 @@ class MCPGEmitter(Emitter):
         
         return emitter_state, random_key
     
+    @partial(jax.jit, static_argnames=("self",))
+    def emit(
+        self,
+        repertoire: Repertoire,
+        emitter_state: MCPGEmitterState,
+        random_key: RNGKey,
+    ) -> Tuple[Genotype, RNGKey]:
+        """Do a step of MCPG emission.
+        """
+        
+        no_agents = self._config.no_agents
+        
+        # sample parents
+        parents, random_key = repertoire.sample(
+            random_key=random_key,
+            num_samples=no_agents,
+        )
+        
+        offsprings_mcpg = self.emit_mcpg(emitter_state, parents)
+        
+        return offsprings_mcpg, {}, random_key
+    
+    @partial(jax.jit, static_argnames=("self",))
+    def emit_mcpg(
+        self,
+        emitter_state: MCPGEmitterState,
+        parents: Genotype,
+    ) -> Genotype:
+        """Emit the offsprings generated through MCPG mutation.
+        """
+        
+        mutation_fn = partial(
+            self._mutation_function_mcpg,
+            emitter_state=emitter_state,
+        )
+        
+        offsprings = jax.vmap(mutation_fn)(parents)
+        
+        return offsprings
+    
+    @partial(jax.jit, static_argnames=("self",))
+    def state_update(
+        self,
+        emitter_state: MCPGEmitterState,
+        repertoire: Optional[Repertoire],
+        genotypes: Optional[Genotype],
+        fitnesses: Optional[Fitness],
+        descriptors: Optional[Descriptor],
+        extra_scores: ExtraScores,
+    ) -> MCPGEmitterState:
+        """Update the emitter state.
+        """
+        
+        assert "transitions" in extra_scores.keys(), "Missing transtitions or wrong key"
+        transitions = extra_scores["transitions"]
+        
+        # update the buffer
+        replay_buffer = emitter_state.buffer.insert(transitions)
+        emitter_state = emitter_state.replace(buffer=replay_buffer)
+        
+        return emitter_state
+    
+    @partial(jax.jit, static_argnames=("self",))
+    def compute_mask(
+        self,
+        done,
+    ):
+        return 1. - jnp.clip(jnp.cumsum(done), a_min=0., a_max=1.)
+    
+    @partial(jax.jit, static_argnames=("self",))
+    def _mutation_function_mcpg(
+        self,
+        policy_params,
+        emitter_state: MCPGEmitterState,
+    ) -> Genotype:
+        """Mutation function for MCPG.
+        """
+        
+        buffer = emitter_state.buffer
+        
+        policy_opt_state = self._policy_opt.init(policy_params)
+        
+        #random_key, subkey = jax.random.split(emitter_state.random_key)
+        sample_size = self._config.batch_size // self._env.episode_length
+        episodic_data_size = int(buffer.current_episodic_data_size)
+        
+        trans, random_key = buffer.sample(
+            random_key=random_key,
+            sample_size=sample_size,
+            episodic_data_size=episodic_data_size,
+            sample_traj=True,
+        )
+        
+        # trans has shape (episde_length*sample_size, transition_dim)
+        
+        obs = trans.obs.reshape(sample_size, self._env.episode_length, -1)
+        actions = trans.actions.reshape(sample_size, self._env.episode_length, -1)
+        rewards = trans.rewards.reshape(sample_size, self._env.episode_length, -1)
+        dones = trans.dones.reshape(sample_size, self._env.episode_length, -1)
+        
+        mask = jax.vmap(self.compute_mask, in_axes=0)(dones)
+        
+        
