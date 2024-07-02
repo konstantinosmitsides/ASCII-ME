@@ -37,7 +37,7 @@ line_sigma: 0.05
 proportion_mutation_ga: 0.5
 rollout_number: 64 # Num of episodes used for gradient estimate
 num_rein_training_steps: 1 # Num gradient steps per generation
-buffer_size: 102400 # Size of the replay buffer
+buffer_size: 32000 # Size of the replay buffer
 adam_optimizer: True
 learning_rate: 3e-4
 discount_rate: 0.99

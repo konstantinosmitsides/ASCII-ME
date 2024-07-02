@@ -421,6 +421,7 @@ class REINaiveEmitter(Emitter):
             The standardized return.
         """
         # compute the return
+        print(f"reward*mask shape: {(reward*mask).shape}")
         return_ = jax.vmap(self.get_return)(reward * mask)
         return self.standardize(return_)
     

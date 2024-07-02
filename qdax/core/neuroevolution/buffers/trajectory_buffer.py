@@ -304,9 +304,14 @@ class TrajectoryBuffer(struct.PyTreeNode):
             ].set(inserted_indexes)
 
             # Step 3: update the counters
+            
+            print(f"Flattened transitions shape IN: {flattened_transitions.shape}")
+            
             dones = flattened_transitions[
                 :, (2 * (self.transition.observation_dim) + 1)
             ].ravel()
+            
+            print(f"Dones shape: {dones.shape}")
 
             # Increment the trajectory counter if done
             new_trajectory_positions = replay_buffer.trajectory_positions + dones
@@ -346,14 +351,18 @@ class TrajectoryBuffer(struct.PyTreeNode):
             return replay_buffer, None
 
         flattened_transitions = transitions.flatten()
-        jax.debug.print("Flattened transitions pre: {}", flattened_transitions)
+        print(f"Flattened transitions shape pre: {flattened_transitions.shape}")
         #jax.debug.print("Flattened transitions pre-shape: {}", flattened_transitions.shape)
 
-        flattened_transitions = flattened_transitions.reshape(
-            (-1, self.env_batch_size, flattened_transitions.shape[-1])
-        )
+        #flattened_transitions = flattened_transitions.reshape(
+        #    (-1, self.env_batch_size, flattened_transitions.shape[-1])
+        #)
+        
+        #print(f"Flattened transitions shape post: {flattened_transitions.shape}")
+        
         flattened_transitions = jnp.transpose(flattened_transitions, axes=(1, 0, 2))
-        jax.debug.print("Flattened transitions post: {}", flattened_transitions)
+        print(f"Flattened transitions shape post: {flattened_transitions.shape}")
+        #jax.debug.print("Flattened transitions post: {}", flattened_transitions)
         #jax.debug.print("Flattened transitions post-shape: {}", flattened_transitions.shape)
 
         replay_buffer, _ = jax.lax.scan(

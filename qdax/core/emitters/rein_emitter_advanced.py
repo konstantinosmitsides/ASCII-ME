@@ -225,7 +225,7 @@ class MCPGEmitter(Emitter):
 
         # Use jax.vmap to apply compute_logp across batches of obs and actions
         return jax.vmap(compute_logp, in_axes=(0, 0))(obs, actions)
-    '''    
+       
     @partial(jax.jit, static_argnames=("self",))
     def get_return(
         self,
@@ -238,17 +238,22 @@ class MCPGEmitter(Emitter):
             current_return = rewards + self._config.discount_rate * next_return
             return (current_return,), (current_return,)
         
+        
+        
+        #jax.debug.print("rewards", rewards.shape)
+        
         _, (return_,) = jax.lax.scan(
             _body,
             (jnp.array(0.),),
             (rewards,),
-            length=int(self._env.episode_length),
+            length=self._env.episode_length,
             reverse=True,
         )
         
         return return_
-        '''
-        
+    
+    
+    '''
     @partial(jax.jit, static_argnames=("self",))
     def get_return(self, rewards):
         def _body(carry, reward):
@@ -266,6 +271,7 @@ class MCPGEmitter(Emitter):
         )
 
         return return_
+    '''
     
     @partial(jax.jit, static_argnames=("self",))
     def standardize(
@@ -281,7 +287,10 @@ class MCPGEmitter(Emitter):
         mask,
     ):
         mask = jnp.expand_dims(mask, axis=-1)
-        return_ = jax.vmap(self.get_return)(rewards * mask)
+        valid_rewards = (rewards * mask).squeeze(axis=-1)
+        #jax.debug.print("mask: {}", mask.shape)
+        #jax.debug.print("rewards*mask: {}", (rewards * mask).shape)
+        return_ = jax.vmap(self.get_return)(valid_rewards)
         return self.standardize(return_)
     
     @partial(jax.jit, static_argnames=("self",))
@@ -316,6 +325,8 @@ class MCPGEmitter(Emitter):
         obs = trans.obs.reshape(sample_size, self._env.episode_length, -1)
         actions = trans.actions.reshape(sample_size, self._env.episode_length, -1)
         rewards = trans.rewards.reshape(sample_size, self._env.episode_length, -1)
+        #jax.debug.print("rewards shape: {}", rewards.shape)
+        print(f"rewards shape: {rewards.shape}")
         dones = trans.dones.reshape(sample_size, self._env.episode_length, -1)
         
         mask = jax.vmap(self.compute_mask, in_axes=0)(dones)
@@ -355,7 +366,7 @@ class MCPGEmitter(Emitter):
             length=self._config.no_epochs,
         )
         
-        return policy_params, new_emitter_state
+        return policy_params
     
     
     @partial(jax.jit, static_argnames=("self",))
