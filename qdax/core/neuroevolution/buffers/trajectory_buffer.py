@@ -253,9 +253,9 @@ class TrajectoryBuffer(struct.PyTreeNode):
             """
             # Step 1: reset episodes for override
             # We start by selecting the episodes that are currently being inserted
-            jax.debug.print("Flattened transitions shape: {}", flattened_transitions.shape)
-            dones = flattened_transitions[:, (2 * (self.transition.observation_dim) + 1)].ravel()
-            jax.debug.print("Dones: {}", dones)  # Directly print dones to debug
+            #jax.debug.print("Flattened transitions shape: {}", flattened_transitions.shape)
+            #dones = flattened_transitions[:, (2 * (self.transition.observation_dim) + 1)].ravel()
+            #jax.debug.print("Dones: {}", dones)  # Directly print dones to debug
             active_trajectories_indexes = (
                 jnp.arange(self.env_batch_size, dtype=int)
                 + (replay_buffer.trajectory_positions % self.num_trajectories)
@@ -305,13 +305,13 @@ class TrajectoryBuffer(struct.PyTreeNode):
 
             # Step 3: update the counters
             
-            print(f"Flattened transitions shape IN: {flattened_transitions.shape}")
+            #print(f"Flattened transitions shape IN: {flattened_transitions.shape}")
             
             dones = flattened_transitions[
                 :, (2 * (self.transition.observation_dim) + 1)
             ].ravel()
             
-            print(f"Dones shape: {dones.shape}")
+            #print(f"Dones shape: {dones.shape}")
 
             # Increment the trajectory counter if done
             new_trajectory_positions = replay_buffer.trajectory_positions + dones

@@ -316,7 +316,7 @@ class MCPGEmitter(Emitter):
         trans, random_key = buffer.sample(
             random_key=random_key,
             sample_size=sample_size,
-            episodic_data_size=256,
+            episodic_data_size=64,
             sample_traj=True,
         )
         new_emitter_state = emitter_state.replace(random_key=random_key)
@@ -326,7 +326,7 @@ class MCPGEmitter(Emitter):
         actions = trans.actions.reshape(sample_size, self._env.episode_length, -1)
         rewards = trans.rewards.reshape(sample_size, self._env.episode_length, -1)
         #jax.debug.print("rewards shape: {}", rewards.shape)
-        print(f"rewards shape: {rewards.shape}")
+        #print(f"rewards shape: {rewards.shape}")
         dones = trans.dones.reshape(sample_size, self._env.episode_length, -1)
         
         mask = jax.vmap(self.compute_mask, in_axes=0)(dones)

@@ -75,6 +75,8 @@ class MAPElites:
         fitnesses, descriptors, extra_scores, random_key = self._scoring_function(
             genotypes, random_key
         )
+        
+        print(extra_scores["transitions"])
 
         # init the repertoire
         repertoire = MapElitesRepertoire.init(
@@ -105,6 +107,15 @@ class MAPElites:
             fitnesses=fitnesses,
             descriptors=descriptors,
             extra_scores=extra_scores,
+        )
+        
+        emitter_state = self._emitter.state_update(
+            emitter_state=emitter_state,
+            repertoire=repertoire,
+            genotypes=genotypes,
+            fitnesses=fitnesses,
+            descriptors=descriptors,
+            extra_scores={**extra_scores}#, **extra_info},
         )
 
         return repertoire, emitter_state, random_key
