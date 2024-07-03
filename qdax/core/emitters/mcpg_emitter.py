@@ -24,25 +24,6 @@ EPS = 1e-8
 @dataclass
 class MCPGConfig:
     """Configuration for the REINaive emitter.
-    
-    Args:
-        rollout_number: num of rollouts for gradient estimate
-        sample_sigma: std to sample the samples for gradient estimate  (IS THIS PARAMETER SPACE EXPLORATION?)
-        sample_mirror: if True, use mirroring sampling
-        sample_rank_norm: if True, use normalisation
-        
-        num_generations_sample: frequency of archive-sampling
-        
-        adam_optimizer: if True, use ADAM, if False, use SGD
-        learning_rate: obvious
-        l2_coefficient: coefficient for regularisation
-        
-        novelty_nearest_neighbors: num of nearest neigbors for novelty computation
-        use_novelty_archive: if True, use novelty archive for novelty (default is to use the content of the reperoire)
-        use_novelty_fifo: if True, use fifo archive for novelty (default is to use the content of the repertoire)
-        fifo_size: size of the novelty fifo bugger if used
-        
-        proprtion_explore: proportion of explore
     """
     no_agents: int = 256
     batch_size: int = 1000*256

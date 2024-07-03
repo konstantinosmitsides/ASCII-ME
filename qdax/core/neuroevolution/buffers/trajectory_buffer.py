@@ -16,7 +16,7 @@ class TrajectoryBuffer(struct.PyTreeNode):
     A buffer that stores transitions in the form of trajectories. Like `FlatBuffer`
     transitions are flattened before being stored and unflattened on the fly and the
     data shape is: (buffer_size, transition_concat_shape).
-    The speicificity lies in the additional episodic data buffer that maps transitions
+    The specificity lies in the additional episodic data buffer that maps transitions
     that belong to the same trajectory to their position in the main buffer.
 
     Example:
@@ -133,8 +133,7 @@ class TrajectoryBuffer(struct.PyTreeNode):
         in the shape (sample_size, episode_length,).
         """
 
-        # Here we want to sample single transitions
-        # We sample uniformly at random the indexes of valid transitions
+
         if sample_traj:
             random_key, subkey = jax.random.split(random_key)
             '''
@@ -167,6 +166,9 @@ class TrajectoryBuffer(struct.PyTreeNode):
             transitions = self.transition.__class__.from_flatten(samples, self.transition)
             
             return transitions, random_key
+
+        # Here we want to sample single transitions
+        # We sample uniformly at random the indexes of valid transitions
             
         random_key, subkey = jax.random.split(random_key)
         idx = jax.random.randint(
@@ -200,8 +202,6 @@ class TrajectoryBuffer(struct.PyTreeNode):
         Returns:
             The transitions, the associated returns and a new random key.
         """
-        # Here we want to sample single transitions
-        # We sample uniformly at random the indexes of valid transitions
         
         if sample_traj:
             random_key, subkey = jax.random.split(random_key)
@@ -223,6 +223,8 @@ class TrajectoryBuffer(struct.PyTreeNode):
             transitions = self.transition.__class__.from_flatten(samples, self.transition)
             return transitions, returns, random_key
 
+        # Here we want to sample single transitions
+        # We sample uniformly at random the indexes of valid transitions
             
         random_key, subkey = jax.random.split(random_key)
         idx = jax.random.randint(
@@ -237,7 +239,7 @@ class TrajectoryBuffer(struct.PyTreeNode):
         # (sample_size, concat_dim)
         transitions = self.transition.__class__.from_flatten(samples, self.transition)
         return transitions, returns, random_key
-
+    
     @jax.jit
     def insert(self, transitions: Transition) -> TrajectoryBuffer:
         """
@@ -373,6 +375,17 @@ class TrajectoryBuffer(struct.PyTreeNode):
 
         replay_buffer = replay_buffer.compute_returns()
         return replay_buffer  # type: ignore
+
+
+    @jax.jit
+    def insert_batch_trans(self: TrajectoryBuffer, flattened_transitions: jnp.ndarray) -> Tuple[TrajectoryBuffer, Any]:
+        active_trajectories_indexes = (
+            jnp.arange(self.env_batch_size, dtype=int)
+            + (self.trajectory_positions % self.num_trajectories)
+            * self.env_batch_size
+        ) % self.num_trajectories
+        
+        
 
     def compute_returns(
         self,
