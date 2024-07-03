@@ -351,7 +351,7 @@ class TrajectoryBuffer(struct.PyTreeNode):
             return replay_buffer, None
 
         flattened_transitions = transitions.flatten()
-        print(f"Flattened transitions shape pre: {flattened_transitions.shape}")
+        #print(f"Flattened transitions shape pre: {flattened_transitions.shape}")
         #jax.debug.print("Flattened transitions pre-shape: {}", flattened_transitions.shape)
 
         #flattened_transitions = flattened_transitions.reshape(
@@ -361,7 +361,7 @@ class TrajectoryBuffer(struct.PyTreeNode):
         #print(f"Flattened transitions shape post: {flattened_transitions.shape}")
         
         flattened_transitions = jnp.transpose(flattened_transitions, axes=(1, 0, 2))
-        print(f"Flattened transitions shape post: {flattened_transitions.shape}")
+        #print(f"Flattened transitions shape post: {flattened_transitions.shape}")
         #jax.debug.print("Flattened transitions post: {}", flattened_transitions)
         #jax.debug.print("Flattened transitions post-shape: {}", flattened_transitions.shape)
 

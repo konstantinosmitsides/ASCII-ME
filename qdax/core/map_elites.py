@@ -76,7 +76,7 @@ class MAPElites:
             genotypes, random_key
         )
         
-        print(extra_scores["transitions"])
+        #print(extra_scores["transitions"])
 
         # init the repertoire
         repertoire = MapElitesRepertoire.init(
@@ -160,7 +160,7 @@ class MAPElites:
         fitnesses, descriptors, extra_scores, random_key = self._scoring_function(
             genotypes, random_key
         )
-        jax.debug.print("dones : {}", extra_scores['transitions'].dones)
+        #jax.debug.print("dones : {}", extra_scores['transitions'].dones)
 
         # add genotypes in the repertoire
         repertoire = repertoire.add(genotypes, descriptors, fitnesses, extra_scores)

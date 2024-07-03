@@ -293,6 +293,47 @@ class MCPGEmitter(Emitter):
         return_ = jax.vmap(self.get_return)(valid_rewards)
         return self.standardize(return_)
     
+    def _mutation_function_mcpg(
+        self,
+        policy_params,
+        emitter_state: MCPGEmitterState,
+    ) -> Genotype:
+        """Mutation function for MCPG.
+        """
+        
+        policy_opt_state = self._policy_opt.init(policy_params)
+        
+        def scan_train_policy(
+            carry: Tuple[MCPGEmitterState, Genotype, optax.OptState],
+            unused: Any,
+        ) -> Tuple[Tuple[MCPGEmitterState, Genotype, optax.OptState], Any]:
+            
+            emitter_state, policy_params, policy_opt_state = carry
+            
+            (
+                new_emitter_state,
+                new_policy_params,
+                new_policy_opt_state,
+            ) = self._train_policy_(
+                emitter_state,
+                policy_params,
+                policy_opt_state,
+            )
+            return (
+                new_emitter_state,
+                new_policy_params,
+                new_policy_opt_state,
+            ), None
+            
+        (emitter_state, policy_params, policy_opt_state), _ = jax.lax.scan(
+            scan_train_policy,
+            (emitter_state, policy_params, policy_opt_state),
+            None,
+            length=self._config.no_epochs,
+        )
+        
+        return policy_params
+    '''
     @partial(jax.jit, static_argnames=("self",))
     def _mutation_function_mcpg(
         self,
@@ -367,8 +408,61 @@ class MCPGEmitter(Emitter):
         )
         
         return policy_params
+        
+    '''
     
+    @partial(jax.jit, static_argnames=("self",))
     
+    def _train_policy_(
+        self,
+        emitter_state: MCPGEmitterState,
+        policy_params,
+        policy_opt_state: optax.OptState,
+    ) -> Tuple[MCPGEmitterState, Genotype, optax.OptState]:
+        """Train the policy.
+        """
+        
+        random_key = emitter_state.random_key
+        replay_buffer = emitter_state.buffer
+        sample_size = int(self._config.batch_size) // int(self._env.episode_length)
+        trans, random_key = replay_buffer.sample(
+            random_key=random_key,
+            sample_size=sample_size,
+            episodic_data_size=64,
+            sample_traj=True,
+        )
+        
+        obs = trans.obs.reshape(sample_size, self._env.episode_length, -1)
+        actions = trans.actions.reshape(sample_size, self._env.episode_length, -1)
+        rewards = trans.rewards.reshape(sample_size, self._env.episode_length, -1)
+        #jax.debug.print("rewards shape: {}", rewards.shape)
+        #print(f"rewards shape: {rewards.shape}")
+        dones = trans.dones.reshape(sample_size, self._env.episode_length, -1)
+        
+        mask = jax.vmap(self.compute_mask, in_axes=0)(dones)
+        logps = jax.vmap(self.compute_logps, in_axes=(None, 0, 0))(policy_params, obs, actions)
+        
+        standardized_returns = self.get_standardized_return(rewards, mask)
+        
+        def scan_update(carry, _):
+            policy_params, policy_opt_state = carry
+            grads = jax.grad(self.loss_ppo)(policy_params, obs, actions, logps, mask, standardized_returns)
+            updates, new_policy_opt_state = self._policy_opt.update(grads, policy_opt_state)
+            new_policy_params = optax.apply_updates(policy_params, updates)
+            return (new_policy_params, new_policy_opt_state), None
+        
+        (final_policy_params, final_policy_opt_state), _ = jax.lax.scan(
+            scan_update,
+            (policy_params, policy_opt_state),
+            None,
+            length=1,
+        )
+        
+        new_emitter_state = emitter_state.replace(random_key=random_key, buffer=replay_buffer)
+        
+        return new_emitter_state, final_policy_params, final_policy_opt_state
+    
+    '''
     @partial(jax.jit, static_argnames=("self",))
     def _train_policy_(
         self,
@@ -398,6 +492,8 @@ class MCPGEmitter(Emitter):
         )
 
         return final_policy_params, final_policy_opt_state
+        
+    '''
     
     @partial(jax.jit, static_argnames=("self",))
     def loss_ppo(
