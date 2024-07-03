@@ -3,7 +3,7 @@ from typing import Callable, Tuple
 import flax.linen as nn
 
 from qdax.core.emitters.multi_emitter import MultiEmitter
-from qdax.core.emitters.rein_emitter_advanced import MCPGConfig, MCPGEmitter
+from qdax.core.emitters.mcpg_emitter import MCPGConfig, MCPGEmitter
 from qdax.core.emitters.standard_emitters import MixingEmitter
 from qdax.environments.base_wrappers import QDEnv
 from qdax.types import Params, RNGKey
@@ -38,7 +38,7 @@ class MEMCPGEmitter(MultiEmitter):
         self._env = env
         self._variation_fn = variation_fn
         
-        print(config.batch_size)
+        #print(config.batch_size)
 
         ga_no_agents = int(self._config.proportion_mutation_ga * config.no_agents)
         mcpg_no_agents = config.no_agents - ga_no_agents
