@@ -6,25 +6,25 @@ hydra:
 
 defaults:
     - _self_
-    - env: ant_uni
+    - env: walker2d_uni
 
 # Env config
 alg_name: me_mcpg
 seed: 0
-env_name: ant_uni
+env_name: walker2d_uni
 episode_length: 1000
 policy_hidden_layer_sizes: [128, 128]
 # ME config
 num_evaluations: 0
 num_iterations: 4000
 num_samples: 16
-no_agents: 128
+no_agents: 64
 fixed_init_state: False
 discard_dead: False
 # Grid config
 grid_shape: [50, 50]
 num_init_cvt_samples: 50000
-num_centroids: 1296
+num_centroids: 1024
 # Log config
 log_period: 400
 store_repertoire: True

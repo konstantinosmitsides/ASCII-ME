@@ -69,22 +69,41 @@ def main(config: Config) -> None:
     policy_layer_sizes = config.policy_hidden_layer_sizes #+ (env.action_size,)
     print(policy_layer_sizes)
     
-    '''
-    policy_network = MLPRein(
-        action_size=env.action_size,
-        layer_sizes=policy_layer_sizes,
-        kernel_init=jax.nn.initializers.orthogonal(scale=jnp.sqrt(2)),
-        kernel_init_final=jax.nn.initializers.orthogonal(scale=0.01),
-    )
+
+    
     '''
     policy_network = MLPMCPG(
         hidden_layers_size=policy_layer_sizes,
         action_size=env.action_size,
         activation=jax.nn.tanh,
         hidden_init=jax.nn.initializers.orthogonal(scale=jnp.sqrt(2)),
-        mean_init=jax.nn.initializers.orthogonal(scale=0.01),
+        mean_init=jax.nn.initializers.orthogonal(scale=0.04*jnp.sqrt(2)),
+    )
+    '''
+
+        
+    '''
+    policy_network = MLPMCPG(
+        hidden_layers_size=policy_layer_sizes,
+        action_size=env.action_size,
+        activation=jax.nn.tanh,
+        hidden_init=jax.nn.initializers.variance_scaling(scale=jnp.sqrt(2), mode='fan_in', distribution='uniform'),
+        mean_init=jax.nn.initializers.variance_scaling(scale=0.02*jnp.sqrt(2), mode='fan_in', distribution='uniform'),
+    )
+    '''
+
+    
+
+    policy_network = MLPMCPG(
+        hidden_layers_size=policy_layer_sizes,
+        action_size=env.action_size,
+        activation=jax.nn.tanh,
+        hidden_init=jax.nn.initializers.lecun_uniform(),
+        mean_init=jax.nn.initializers.lecun_uniform(),
     )
 
+    
+    
     # Init population of controllers
     
     # maybe consider adding two random keys for each policy
