@@ -118,6 +118,7 @@ class MCPGEmitter(Emitter):
         '''
         
         buffer_state = self._buffer.init(dummy_transition)
+        
         '''
         buffer = TrajectoryBuffer.init(
             buffer_size=self._config.buffer_size,
