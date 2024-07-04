@@ -134,6 +134,7 @@ class Transition(flax.struct.PyTreeNode):
             truncations=jnp.zeros(shape=(1,)),
             actions=jnp.zeros(shape=(1, action_dim)),
         )
+
         return dummy_transition
 
 
@@ -258,15 +259,18 @@ class QDTransition(Transition):
             a dummy transition
         """
         dummy_transition = QDTransition(
-            obs=jnp.zeros(shape=(1, observation_dim)),
-            next_obs=jnp.zeros(shape=(1, observation_dim)),
-            rewards=jnp.zeros(shape=(1,)),
-            dones=jnp.zeros(shape=(1,)),
-            truncations=jnp.zeros(shape=(1,)),
-            actions=jnp.zeros(shape=(1, action_dim)),
-            state_desc=jnp.zeros(shape=(1, descriptor_dim)),
-            next_state_desc=jnp.zeros(shape=(1, descriptor_dim)),
+            obs=jnp.zeros(shape=(observation_dim)),
+            next_obs=jnp.zeros(shape=(observation_dim)),
+            rewards=jnp.zeros(shape=()),
+            dones=jnp.zeros(shape=()),
+            truncations=jnp.zeros(shape=()),
+            actions=jnp.zeros(shape=(action_dim)),
+            state_desc=jnp.zeros(shape=(descriptor_dim)),
+            next_state_desc=jnp.zeros(shape=(descriptor_dim)),
         )
+        
+        #squeezed_transition = {key: jnp.squeeze(value, axis=0) for key, value in dummy_transition.items()}
+
         return dummy_transition
 
 
@@ -416,6 +420,7 @@ class DCGTransition(QDTransition):
             desc=jnp.zeros(shape=(1, descriptor_dim)),
             desc_prime=jnp.zeros(shape=(1, descriptor_dim)),
         )
+
         return dummy_transition
 
 
