@@ -71,7 +71,7 @@ def main(config: Config) -> None:
     
 
     
-    
+    '''
     policy_network = MLPMCPG(
         hidden_layers_size=policy_layer_sizes,
         action_size=env.action_size,
@@ -79,6 +79,7 @@ def main(config: Config) -> None:
         hidden_init=jax.nn.initializers.orthogonal(scale=jnp.sqrt(2)),
         mean_init=jax.nn.initializers.orthogonal(scale=0.01),
     )
+    '''
     
 
         
@@ -93,7 +94,7 @@ def main(config: Config) -> None:
     '''
 
     
-    '''
+    
     policy_network = MLPMCPG(
         hidden_layers_size=policy_layer_sizes,
         action_size=env.action_size,
@@ -101,7 +102,7 @@ def main(config: Config) -> None:
         hidden_init=jax.nn.initializers.lecun_uniform(),
         mean_init=jax.nn.initializers.lecun_uniform(),
     )
-    '''
+    
 
     
     
@@ -320,7 +321,7 @@ def main(config: Config) -> None:
     # compute initial repertoire
     repertoire, emitter_state, random_key = map_elites.init(init_params, centroids, random_key)
 
-    log_period = 1
+    log_period = 10
     num_loops = int(config.num_iterations / log_period)
 
     metrics = dict.fromkeys(["iteration", "qd_score", "coverage", "max_fitness", "qd_score_repertoire", "dem_repertoire", "time", "evaluation"], jnp.array([]))
