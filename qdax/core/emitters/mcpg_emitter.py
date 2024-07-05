@@ -12,7 +12,7 @@ from chex import ArrayTree
 from qdax.core.containers.repertoire import Repertoire
 from qdax.types import Descriptor, ExtraScores, Fitness, Genotype, RNGKey
 from qdax.environments.base_wrappers import QDEnv
-from qdax.core.neuroevolution.buffers.buffer import QDTransition
+from qdax.core.neuroevolution.buffers.buffer import QDTransition, QDMCTransition
 #from qdax.core.neuroevolution.buffers.trajectory_buffer import TrajectoryBuffer
 import flashbax as fbx
 import chex
@@ -101,11 +101,13 @@ class MCPGEmitter(Emitter):
         descriptor_size = self._env.state_descriptor_length
         
         # Init trajectory buffer
-        dummy_transition = QDTransition.init_dummy(
+
+        dummy_transition = QDMCTransition.init_dummy(
             observation_dim=obs_size,
             action_dim=action_size,
             descriptor_dim=descriptor_size,
         )
+
         '''
         buffer = fbx.make_trajectory_buffer(
             max_length_time_axis=self._env.episode_length,
@@ -191,10 +193,12 @@ class MCPGEmitter(Emitter):
         """Update the emitter state.
         """
         
+        random_key, _ = jax.random.split(emitter_state.random_key)
+        
         assert "transitions" in extra_scores.keys(), "Missing transtitions or wrong key"
         transitions = extra_scores["transitions"]
         new_buffer_state = self._buffer.add(emitter_state.buffer_state, transitions)
-        new_emitter_state = emitter_state.replace(buffer_state=new_buffer_state)
+        new_emitter_state = emitter_state.replace(random_key=random_key, buffer_state=new_buffer_state)
         
         return new_emitter_state
         
@@ -308,6 +312,8 @@ class MCPGEmitter(Emitter):
         return_ = jax.vmap(self.get_return)(valid_rewards)
         return self.standardize(return_)
     
+    
+    @partial(jax.jit, static_argnames=("self",))
     def _mutation_function_mcpg(
         self,
         policy_params,
@@ -318,31 +324,52 @@ class MCPGEmitter(Emitter):
         
         policy_opt_state = self._policy_opt.init(policy_params)
         
+        random_key = emitter_state.random_key
+        buffer_state = emitter_state.buffer_state
+        
+        # NOW YOU DONT CARE BUT AT SOME POINT YOU MIGH NEED DIFFERENT RANDOM KEY FRO SAMPLING FOR EACH GENOTYPE
+        batch = self._buffer.sample(buffer_state, random_key)
+        
+        trans = batch.experience
+
+        
+        obs = trans.obs
+        actions = trans.actions
+        rewards = trans.rewards
+        dones = trans.dones
+        
+        mask = jax.vmap(self.compute_mask, in_axes=0)(dones)
+        logps = trans.logp  
+         
+        standardized_returns = self.get_standardized_return(rewards, mask)
+        
         def scan_train_policy(
             carry: Tuple[MCPGEmitterState, Genotype, optax.OptState],
             unused: Any,
         ) -> Tuple[Tuple[MCPGEmitterState, Genotype, optax.OptState], Any]:
             
-            emitter_state, policy_params, policy_opt_state = carry
+            policy_params, policy_opt_state = carry
             
             (
-                new_emitter_state,
                 new_policy_params,
                 new_policy_opt_state,
             ) = self._train_policy_(
-                emitter_state,
                 policy_params,
                 policy_opt_state,
+                obs,
+                actions,
+                standardized_returns,
+                logps,
+                mask
             )
             return (
-                new_emitter_state,
                 new_policy_params,
                 new_policy_opt_state,
             ), None
             
-        (emitter_state, policy_params, policy_opt_state), _ = jax.lax.scan(
+        (policy_params, policy_opt_state), _ = jax.lax.scan(
             scan_train_policy,
-            (emitter_state, policy_params, policy_opt_state),
+            (policy_params, policy_opt_state),
             None,
             length=self._config.no_epochs,
         )
@@ -427,16 +454,20 @@ class MCPGEmitter(Emitter):
     '''
     
     @partial(jax.jit, static_argnames=("self",))
-    
     def _train_policy_(
         self,
-        emitter_state: MCPGEmitterState,
+        #emitter_state: MCPGEmitterState,
         policy_params,
         policy_opt_state: optax.OptState,
+        obs,
+        actions,
+        standardized_returns,
+        logps,
+        mask
     ) -> Tuple[MCPGEmitterState, Genotype, optax.OptState]:
         """Train the policy.
         """
-        
+        '''
         random_key, subkey = jax.random.split(emitter_state.random_key)
         buffer_state = emitter_state.buffer_state
         
@@ -462,6 +493,7 @@ class MCPGEmitter(Emitter):
         logps = jax.vmap(self.compute_logps, in_axes=(None, 0, 0))(policy_params, obs, actions)
         
         standardized_returns = self.get_standardized_return(rewards, mask)
+        '''
         
         def scan_update(carry, _):
             policy_params, policy_opt_state = carry
@@ -477,9 +509,9 @@ class MCPGEmitter(Emitter):
             length=1,
         )
         
-        new_emitter_state = emitter_state.replace(random_key=random_key)
+        #new_emitter_state = emitter_state.replace(random_key=random_key)
         
-        return new_emitter_state, final_policy_params, final_policy_opt_state
+        return final_policy_params, final_policy_opt_state
     
     '''
     @partial(jax.jit, static_argnames=("self",))
@@ -531,9 +563,15 @@ class MCPGEmitter(Emitter):
             jax.lax.stop_gradient(actions),
             method=self._policy.logp,
         )
+        
+        
         ratio = jnp.exp(logps_ - jax.lax.stop_gradient(logps))
         
         pg_loss_1 = jnp.multiply(ratio * mask, jax.lax.stop_gradient(standardized_returns))
         pg_loss_2 = jax.lax.stop_gradient(standardized_returns) * jax.lax.clamp(1. - self._config.clip_param, ratio, 1. + self._config.clip_param) * mask
         
-        return -jnp.mean(jnp.minimum(pg_loss_1, pg_loss_2))
+        #return -jnp.mean(jnp.minimum(pg_loss_1, pg_loss_2))
+        return (-jnp.sum(jnp.minimum(pg_loss_1, pg_loss_2))) / jnp.sum(ratio * mask)
+        
+    
+        

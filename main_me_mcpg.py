@@ -25,7 +25,7 @@ from qdax.core.containers.mapelites_repertoire import compute_cvt_centroids, Map
 from qdax.core.neuroevolution.networks.networks import MLPMCPG
 from qdax.core.emitters.me_mcpg_emitter import MEMCPGConfig, MEMCPGEmitter
 #from qdax.core.emitters.rein_emitter_advanced import REINaiveConfig, REINaiveEmitter
-from qdax.core.neuroevolution.buffers.buffer import QDTransition
+from qdax.core.neuroevolution.buffers.buffer import QDTransition, QDMCTransition
 from qdax.environments import behavior_descriptor_extractor
 from qdax.tasks.brax_envs import reset_based_scoring_function_brax_envs as scoring_function
 from utils import Config, get_env
@@ -71,15 +71,15 @@ def main(config: Config) -> None:
     
 
     
-    '''
+    
     policy_network = MLPMCPG(
         hidden_layers_size=policy_layer_sizes,
         action_size=env.action_size,
         activation=jax.nn.tanh,
         hidden_init=jax.nn.initializers.orthogonal(scale=jnp.sqrt(2)),
-        mean_init=jax.nn.initializers.orthogonal(scale=0.04*jnp.sqrt(2)),
+        mean_init=jax.nn.initializers.orthogonal(scale=0.01),
     )
-    '''
+    
 
         
     '''
@@ -93,7 +93,7 @@ def main(config: Config) -> None:
     '''
 
     
-
+    '''
     policy_network = MLPMCPG(
         hidden_layers_size=policy_layer_sizes,
         action_size=env.action_size,
@@ -101,6 +101,7 @@ def main(config: Config) -> None:
         hidden_init=jax.nn.initializers.lecun_uniform(),
         mean_init=jax.nn.initializers.lecun_uniform(),
     )
+    '''
 
     
     
@@ -118,13 +119,15 @@ def main(config: Config) -> None:
     print("Number of parameters in policy_network: ", param_count)
 
     # Define the fonction to play a step with the policy in the environment
+    @jax.jit
     def play_step_fn(env_state, policy_params, random_key):
         #random_key, subkey = jax.random.split(random_key)
-        actions = policy_network.apply(policy_params, env_state.obs)
+        actions, logp = policy_network.apply(policy_params, env_state.obs)
+        #logp = policy_network.apply(policy_params, env_state.obs, actions, method=policy_network.logp)
         state_desc = env_state.info["state_descriptor"]
         next_state = env.step(env_state, actions)
 
-        transition = QDTransition(
+        transition = QDMCTransition(
             obs=env_state.obs,
             next_obs=next_state.obs,
             rewards=next_state.reward,
@@ -133,11 +136,15 @@ def main(config: Config) -> None:
             actions=actions,
             state_desc=state_desc,
             next_state_desc=next_state.info["state_descriptor"],
+            logp=logp,
             #desc=jnp.zeros(env.behavior_descriptor_length,) * jnp.nan,
             #desc_prime=jnp.zeros(env.behavior_descriptor_length,) * jnp.nan,
         )
 
         return next_state, policy_params, random_key, transition
+
+
+
 
     # Prepare the scoring function
     bd_extraction_fn = behavior_descriptor_extractor[config.env.name]

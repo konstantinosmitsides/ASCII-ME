@@ -374,6 +374,9 @@ class MLPMCPG(nn.Module):
     def __call__(self, obs: jnp.ndarray):
         mean, _, std = self.distribution_params(obs)
         action = jax.lax.stop_gradient(mean)
+        logp = jnp.sum(jax.scipy.stats.norm.logpdf(action, mean, std), axis=-1)
+        
+        
         
         # Sample action
         #rnd = jax.random.normal(random_key, shape = (self.action_size,))
@@ -381,4 +384,5 @@ class MLPMCPG(nn.Module):
         
         #logp = jnp.sum(jax.scipy.stats.norm.logpdf(action, mean, std), axis=-1) 
                 
-        return action
+        #return action, logp
+        return action, logp
