@@ -306,13 +306,13 @@ class MCPGEmitter(Emitter):
         mask,
     ):
         #mask = jnp.expand_dims(mask, axis=-1)
-        valid_rewards = (rewards * mask)#.squeeze(axis=-1)
+        #valid_rewards = (rewards * mask)#.squeeze(axis=-1)
         #jax.debug.print("mask: {}", mask.shape)
         #jax.debug.print("rewards*mask: {}", (rewards * mask).shape)
-        return_ = jax.vmap(self.get_return)(valid_rewards)
+        return_ = jax.vmap(self.get_return)(rewards * mask)
         return self.standardize(return_)
     
-    
+    '''
     @partial(jax.jit, static_argnames=("self",))
     def _mutation_function_mcpg(
         self,
@@ -375,6 +375,53 @@ class MCPGEmitter(Emitter):
         )
         
         return policy_params
+        '''
+        
+    @partial(jax.jit, static_argnames=("self",))
+    def _mutation_function_mcpg(
+        self,
+        policy_params,
+        emitter_state: MCPGEmitterState,
+    ) -> Genotype:
+        """Mutation function for MCPG."""
+
+        policy_opt_state = self._policy_opt.init(policy_params)
+        
+        # Directly sample batch and use necessary components
+        batch = self._buffer.sample(emitter_state.buffer_state, emitter_state.random_key)
+        trans = batch.experience
+        mask = jax.vmap(self.compute_mask, in_axes=0)(trans.dones)
+        standardized_returns = self.get_standardized_return(trans.rewards, mask)
+        
+        def scan_train_policy(
+            carry: Tuple[MCPGEmitterState, Genotype, optax.OptState],
+            unused: Any,
+        ) -> Tuple[Tuple[MCPGEmitterState, Genotype, optax.OptState], Any]:
+            
+            policy_params, policy_opt_state = carry
+            
+            # Train policy with directly used transaction fields
+            new_policy_params, new_policy_opt_state = self._train_policy_(
+                policy_params,
+                policy_opt_state,
+                trans.obs,
+                trans.actions,
+                standardized_returns,
+                trans.logp,
+                mask
+            )
+            return (new_policy_params, new_policy_opt_state), None
+            
+        (policy_params, policy_opt_state), _ = jax.lax.scan(
+            scan_train_policy,
+            (policy_params, policy_opt_state),
+            None,
+            length=self._config.no_epochs,
+        )
+        
+        return policy_params
+        
+        
     '''
     @partial(jax.jit, static_argnames=("self",))
     def _mutation_function_mcpg(
