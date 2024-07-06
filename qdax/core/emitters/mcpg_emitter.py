@@ -28,8 +28,10 @@ class MCPGConfig:
     """Configuration for the REINaive emitter.
     """
     no_agents: int = 256
-    batch_size: int = 1000*256
-    mini_batch_size: int = 1000*256
+    buffer_sample_batch_size: int = 32
+    buffer_buffer_add_batch_size: int = 256
+    #batch_size: int = 1000*256
+    #mini_batch_size: int = 1000*256
     no_epochs: int = 16
     learning_rate: float = 3e-4
     discount_rate: float = 0.99
@@ -63,8 +65,8 @@ class MCPGEmitter(Emitter):
         buffer = fbx.make_trajectory_buffer(
             max_length_time_axis=self._env.episode_length,
             min_length_time_axis=self._env.episode_length,
-            sample_batch_size=2*self._config.no_agents,
-            add_batch_size=2*self._config.no_agents,
+            sample_batch_size=self._config.buffer_sample_batch_size,
+            add_batch_size=self._config.buffer_buffer_add_batch_size,
             sample_sequence_length=self._env.episode_length,
             period=self._env.episode_length,
         )
@@ -152,21 +154,25 @@ class MCPGEmitter(Emitter):
         
         no_agents = self._config.no_agents
         
+        random_keys = jax.random.split(random_key, no_agents+2)
+        
+        
         # sample parents
         parents, random_key = repertoire.sample(
-            random_key=random_key,
+            random_key=random_keys[-1],
             num_samples=no_agents,
         )
         
-        offsprings_mcpg = self.emit_mcpg(emitter_state, parents)
+        offsprings_mcpg = self.emit_mcpg(emitter_state, parents, random_keys[:no_agents])
         
-        return offsprings_mcpg, {}, random_key
+        return offsprings_mcpg, {}, random_keys[-2]
     
     @partial(jax.jit, static_argnames=("self",))
     def emit_mcpg(
         self,
         emitter_state: MCPGEmitterState,
         parents: Genotype,
+        random_keys: ArrayTree,
     ) -> Genotype:
         """Emit the offsprings generated through MCPG mutation.
         """
@@ -176,7 +182,7 @@ class MCPGEmitter(Emitter):
             emitter_state=emitter_state,
         )
         
-        offsprings = jax.vmap(mutation_fn)(parents)
+        offsprings = jax.vmap(mutation_fn, in_axes=(0, 0))(parents, random_keys)
         
         return offsprings
     
@@ -382,13 +388,14 @@ class MCPGEmitter(Emitter):
         self,
         policy_params,
         emitter_state: MCPGEmitterState,
+        random_key: RNGKey,
     ) -> Genotype:
         """Mutation function for MCPG."""
 
         policy_opt_state = self._policy_opt.init(policy_params)
         
         # Directly sample batch and use necessary components
-        batch = self._buffer.sample(emitter_state.buffer_state, emitter_state.random_key)
+        batch = self._buffer.sample(emitter_state.buffer_state, random_key)
         trans = batch.experience
         mask = jax.vmap(self.compute_mask, in_axes=0)(trans.dones)
         standardized_returns = self.get_standardized_return(trans.rewards, mask)

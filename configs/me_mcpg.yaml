@@ -18,13 +18,13 @@ policy_hidden_layer_sizes: [128, 128]
 num_evaluations: 0
 num_iterations: 16000
 num_samples: 16
-no_agents: 64
+no_agents: 256
 fixed_init_state: False
 discard_dead: False
 # Grid config
 grid_shape: [50, 50]
 num_init_cvt_samples: 50000
-num_centroids: 1296
+num_centroids: 1024
 # Log config
 log_period: 400
 store_repertoire: True
@@ -35,10 +35,12 @@ line_sigma: 0.05
 
 # MEMCPG Parameters
 proportion_mutation_ga: 0.5
-batch_size: 64000
-mini_batch_size: 64000 # Num of episodes used for gradient estimate
+buffer_sample_batch_size: 32
+buffer_add_batch_size: 256
+#batch_size: 64000
+#mini_batch_size: 64000 # Num of episodes used for gradient estimate
 no_epochs: 16 # Num gradient steps per generation
-buffer_size: 64000 # Size of the replay buffer
+#buffer_size: 64000 # Size of the replay buffer
 adam_optimizer: True
 learning_rate: 3e-4
 discount_rate: 0.99

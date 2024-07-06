@@ -15,8 +15,10 @@ class MEMCPGConfig:
 
     proportion_mutation_ga: float = 0.5
     no_agents: int = 256
-    batch_size: int = 1000*256
-    mini_batch_size: int = 1000*256
+    buffer_sample_batch_size: int = 32
+    buffer_add_batch_size: int = 256
+    #batch_size: int = 1000*256
+    #mini_batch_size: int = 1000*256
     no_epochs: int = 16
     buffer_size: int = 256000
     learning_rate: float = 3e-4

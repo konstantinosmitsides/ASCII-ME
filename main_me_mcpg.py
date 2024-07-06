@@ -276,8 +276,10 @@ def main(config: Config) -> None:
     me_mcpg_config = MEMCPGConfig(
         proportion_mutation_ga=config.proportion_mutation_ga,
         no_agents=config.no_agents,
-        batch_size=config.batch_size,
-        mini_batch_size=config.mini_batch_size,
+        buffer_sample_batch_size=config.buffer_sample_batch_size,
+        buffer_add_batch_size=config.buffer_add_batch_size,
+        #batch_size=config.batch_size,
+        #mini_batch_size=config.mini_batch_size,
         no_epochs=config.no_epochs,
         buffer_size=config.buffer_size,
         learning_rate=config.learning_rate,
