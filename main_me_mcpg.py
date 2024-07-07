@@ -281,7 +281,7 @@ def main(config: Config) -> None:
         #batch_size=config.batch_size,
         #mini_batch_size=config.mini_batch_size,
         no_epochs=config.no_epochs,
-        buffer_size=config.buffer_size,
+        #buffer_size=config.buffer_size,
         learning_rate=config.learning_rate,
         adam_optimizer=config.adam_optimizer,
         clip_param=config.clip_param,
@@ -332,7 +332,7 @@ def main(config: Config) -> None:
         header=list(metrics.keys())
     )
     def plot_metrics_vs_iterations(metrics, log_period):
-        iterations = jnp.arange(1, 1 + log_period * len(metrics["time"]), dtype=jnp.int32)
+        iterations = jnp.arange(1, 1 + len(metrics["time"]), dtype=jnp.int32)
 
         for metric_name, metric_values in metrics.items():
             if metric_name in ["iteration", "evaluation"]:

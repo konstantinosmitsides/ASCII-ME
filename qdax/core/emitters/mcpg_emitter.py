@@ -29,14 +29,14 @@ class MCPGConfig:
     """
     no_agents: int = 256
     buffer_sample_batch_size: int = 32
-    buffer_buffer_add_batch_size: int = 256
+    buffer_add_batch_size: int = 256
     #batch_size: int = 1000*256
     #mini_batch_size: int = 1000*256
     no_epochs: int = 16
     learning_rate: float = 3e-4
     discount_rate: float = 0.99
     adam_optimizer: bool = True
-    buffer_size: int = 256000
+    #buffer_size: int = 256000
     clip_param: float = 0.2
     
 class MCPGEmitterState(EmitterState):
@@ -66,7 +66,7 @@ class MCPGEmitter(Emitter):
             max_length_time_axis=self._env.episode_length,
             min_length_time_axis=self._env.episode_length,
             sample_batch_size=self._config.buffer_sample_batch_size,
-            add_batch_size=self._config.buffer_buffer_add_batch_size,
+            add_batch_size=self._config.buffer_add_batch_size,
             sample_sequence_length=self._env.episode_length,
             period=self._env.episode_length,
         )
@@ -176,13 +176,14 @@ class MCPGEmitter(Emitter):
     ) -> Genotype:
         """Emit the offsprings generated through MCPG mutation.
         """
-        
+        '''
         mutation_fn = partial(
             self._mutation_function_mcpg,
             emitter_state=emitter_state,
         )
+        '''
         
-        offsprings = jax.vmap(mutation_fn, in_axes=(0, 0))(parents, random_keys)
+        offsprings = jax.vmap(self._mutation_function_mcpg, in_axes=(0, None, 0))(parents, emitter_state, random_keys)
         
         return offsprings
     
