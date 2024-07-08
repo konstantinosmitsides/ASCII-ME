@@ -35,15 +35,19 @@ from qdax.utils.metrics import CSVLogger, default_qd_metrics
 from qdax.utils.plotting import plot_map_elites_results, plot_2d_map_elites_repertoire
 import matplotlib.pyplot as plt
 from set_up_brax import get_reward_offset_brax
+from jax import profiler
 
 
 
 
-    
+
+
 
 
 @hydra.main(version_base="1.2", config_path="configs", config_name="me_mcpg")
 def main(config: Config) -> None:
+    profiler_dir = "Memory_Investigation"
+    os.makedirs(profiler_dir, exist_ok=True)
     wandb.init(
         project="me-mcpg",
         name=config.alg_name,
@@ -349,6 +353,8 @@ def main(config: Config) -> None:
     map_elites_scan_update = map_elites.scan_update
     eval_num = config.no_agents 
     print(f"Number of evaluations per iteration: {eval_num}")
+    #profiler.start_trace(profiler_dir)
+    jax.profiler.start_server(9999)
     for i in range(num_loops):
         print(f"Loop {i+1}/{num_loops}")
         start_time = time.time()
@@ -380,7 +386,7 @@ def main(config: Config) -> None:
         #log_metrics["ai_offspring_added"] = jnp.sum(current_metrics["ai_offspring_added"])
         csv_logger.log(log_metrics)
         wandb.log(log_metrics)
-
+    #profiler.stop_trace()
     # Metrics
     with open("./metrics.pickle", "wb") as metrics_file:
         pickle.dump(metrics, metrics_file)

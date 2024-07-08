@@ -19,8 +19,13 @@ import chex
 from rein_related import *
 
 from qdax.core.emitters.emitter import Emitter, EmitterState
+from jax import profiler
+import os
 
 EPS = 1e-8
+
+#profiler_dir = "Memory_Investigation"
+#os.makedirs(profiler_dir, exist_ok=True)
 
 
 @dataclass
@@ -182,8 +187,11 @@ class MCPGEmitter(Emitter):
             emitter_state=emitter_state,
         )
         '''
+        #profiler.start_trace(profiler_dir)
         
         offsprings = jax.vmap(self._mutation_function_mcpg, in_axes=(0, None, 0))(parents, emitter_state, random_keys)
+        
+        #profiler.stop_trace()
         
         return offsprings
     
