@@ -16,9 +16,9 @@ episode_length: 1000
 policy_hidden_layer_sizes: [128, 128]
 # ME config
 num_evaluations: 0
-num_iterations: 20
+num_iterations: 100
 num_samples: 16
-no_agents: 64
+no_agents: 8
 fixed_init_state: False
 discard_dead: False
 # Grid config
@@ -35,8 +35,8 @@ line_sigma: 0.05
 
 # MEMCPG Parameters
 proportion_mutation_ga: 0.5
-buffer_sample_batch_size: 64
-buffer_add_batch_size: 64
+buffer_sample_batch_size: 8
+buffer_add_batch_size: 8
 #batch_size: 64000
 #mini_batch_size: 64000 # Num of episodes used for gradient estimate
 no_epochs: 16 # Num gradient steps per generation
