@@ -46,8 +46,8 @@ from jax import profiler
 
 @hydra.main(version_base="1.2", config_path="configs", config_name="me_mcpg")
 def main(config: Config) -> None:
-    profiler_dir = "Memory_Investigation"
-    os.makedirs(profiler_dir, exist_ok=True)
+    #profiler_dir = "Memory_Investigation"
+    #os.makedirs(profiler_dir, exist_ok=True)
     wandb.init(
         project="me-mcpg",
         name=config.alg_name,
@@ -75,7 +75,7 @@ def main(config: Config) -> None:
     
 
     
-    '''
+    
     policy_network = MLPMCPG(
         hidden_layers_size=policy_layer_sizes,
         action_size=env.action_size,
@@ -83,7 +83,7 @@ def main(config: Config) -> None:
         hidden_init=jax.nn.initializers.orthogonal(scale=jnp.sqrt(2)),
         mean_init=jax.nn.initializers.orthogonal(scale=0.01),
     )
-    '''
+    
     
 
         
@@ -98,7 +98,7 @@ def main(config: Config) -> None:
     '''
 
     
-    
+    '''
     policy_network = MLPMCPG(
         hidden_layers_size=policy_layer_sizes,
         action_size=env.action_size,
@@ -106,6 +106,7 @@ def main(config: Config) -> None:
         hidden_init=jax.nn.initializers.lecun_uniform(),
         mean_init=jax.nn.initializers.lecun_uniform(),
     )
+    '''
     
 
     
@@ -354,7 +355,7 @@ def main(config: Config) -> None:
     eval_num = config.no_agents 
     print(f"Number of evaluations per iteration: {eval_num}")
     #profiler.start_trace(profiler_dir)
-    jax.profiler.start_server(9999)
+    #jax.profiler.start_server(9999)
     for i in range(num_loops):
         print(f"Loop {i+1}/{num_loops}")
         start_time = time.time()
