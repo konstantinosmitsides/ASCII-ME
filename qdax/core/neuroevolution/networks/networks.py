@@ -346,6 +346,7 @@ class MLPMCPG(nn.Module):
     hidden_layers_size: Tuple[int, ...]
     action_size: int
     activation: Callable[[jnp.ndarray], jnp.ndarray] = nn.tanh
+    final_activation: Optional[Callable[[jnp.ndarray], jnp.ndarray]] = None
     bias_init: Callable[[jnp.ndarray, Any], jnp.ndarray] = jax.nn.initializers.zeros
     hidden_init: Callable[[jnp.ndarray, Any], jnp.ndarray] = jax.nn.initializers.lecun_uniform()
     mean_init: Callable[[jnp.ndarray, Any], jnp.ndarray] = jax.nn.initializers.lecun_uniform()
@@ -359,8 +360,11 @@ class MLPMCPG(nn.Module):
         hidden = obs
         for hidden_layer in self.hidden_layers:
             hidden = self.activation(hidden_layer(hidden))
-            
-        mean = self.mean(hidden)
+        
+        if self.final_activation is not None:    
+            mean = self.final_activation(self.mean(hidden))
+        else:
+            mean = self.mean(hidden)
         log_std = self.log_std
         std = jnp.exp(log_std)
         
@@ -374,6 +378,9 @@ class MLPMCPG(nn.Module):
     def __call__(self, obs: jnp.ndarray):
         mean, _, std = self.distribution_params(obs)
         action = jax.lax.stop_gradient(mean)
+        logp = jnp.sum(jax.scipy.stats.norm.logpdf(action, mean, std), axis=-1)
+        
+        
         
         # Sample action
         #rnd = jax.random.normal(random_key, shape = (self.action_size,))
@@ -381,4 +388,5 @@ class MLPMCPG(nn.Module):
         
         #logp = jnp.sum(jax.scipy.stats.norm.logpdf(action, mean, std), axis=-1) 
                 
-        return action
+        #return action, logp
+        return action, logp

@@ -15,10 +15,12 @@ class MEMCPGConfig:
 
     proportion_mutation_ga: float = 0.5
     no_agents: int = 256
-    batch_size: int = 1000*256
-    mini_batch_size: int = 1000*256
+    buffer_sample_batch_size: int = 32
+    buffer_add_batch_size: int = 256
+    #batch_size: int = 1000*256
+    #mini_batch_size: int = 1000*256
     no_epochs: int = 16
-    buffer_size: int = 256000
+    #buffer_size: int = 256000
     learning_rate: float = 3e-4
     adam_optimizer: bool = True
     clip_param: float = 0.2
@@ -45,10 +47,12 @@ class MEMCPGEmitter(MultiEmitter):
         
         mcpg_config = MCPGConfig(
             no_agents=mcpg_no_agents,
-            batch_size=config.batch_size,
-            mini_batch_size=config.mini_batch_size,
+            buffer_sample_batch_size=config.buffer_sample_batch_size,
+            buffer_add_batch_size=config.buffer_add_batch_size,
+            #batch_size=config.batch_size,
+            #mini_batch_size=config.mini_batch_size,
             no_epochs=config.no_epochs,
-            buffer_size=config.buffer_size,
+            #buffer_size=config.buffer_size,
             learning_rate=config.learning_rate,
             adam_optimizer=config.adam_optimizer,
             clip_param=config.clip_param

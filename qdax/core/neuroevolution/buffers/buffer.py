@@ -134,8 +134,8 @@ class Transition(flax.struct.PyTreeNode):
             truncations=jnp.zeros(shape=(1,)),
             actions=jnp.zeros(shape=(1, action_dim)),
         )
-        return dummy_transition
 
+        return dummy_transition    
 
 class QDTransition(Transition):
     """Stores data corresponding to a transition collected by a QD algorithm."""
@@ -258,15 +258,157 @@ class QDTransition(Transition):
             a dummy transition
         """
         dummy_transition = QDTransition(
-            obs=jnp.zeros(shape=(1, observation_dim)),
-            next_obs=jnp.zeros(shape=(1, observation_dim)),
-            rewards=jnp.zeros(shape=(1,)),
-            dones=jnp.zeros(shape=(1,)),
-            truncations=jnp.zeros(shape=(1,)),
-            actions=jnp.zeros(shape=(1, action_dim)),
-            state_desc=jnp.zeros(shape=(1, descriptor_dim)),
-            next_state_desc=jnp.zeros(shape=(1, descriptor_dim)),
+            obs=jnp.zeros(shape=(observation_dim)),
+            next_obs=jnp.zeros(shape=(observation_dim)),
+            rewards=jnp.zeros(shape=()),
+            dones=jnp.zeros(shape=()),
+            truncations=jnp.zeros(shape=()),
+            actions=jnp.zeros(shape=(action_dim)),
+            state_desc=jnp.zeros(shape=(descriptor_dim)),
+            next_state_desc=jnp.zeros(shape=(descriptor_dim)),
         )
+        
+        #squeezed_transition = {key: jnp.squeeze(value, axis=0) for key, value in dummy_transition.items()}
+
+        return dummy_transition
+    
+    
+class QDMCTransition(QDTransition):
+    
+    logp: jnp.ndarray
+    
+    @property
+    def logp_dim(self) -> int:
+        """
+        Returns:
+            the dimension of the logp.
+        """
+        return self.logp.shape[-1]
+    
+    @property
+    def flatten_dim(self) -> int:
+        """
+        Returns:
+            the dimension of the transition once flattened.
+        """
+        flatten_dim = (
+            2 * self.observation_dim
+            + self.action_dim
+            + 3
+            + 2 * self.state_descriptor_dim
+            + self.logp_dim
+        )
+        return flatten_dim
+    
+    def flatten(self) -> jnp.ndarray:
+        """
+        Returns:
+            a jnp.ndarray that corresponds to the flattened transition.
+        """
+        flatten_transition = jnp.concatenate(
+            [
+                self.obs,
+                self.next_obs,
+                jnp.expand_dims(self.rewards, axis=-1),
+                jnp.expand_dims(self.dones, axis=-1),
+                jnp.expand_dims(self.truncations, axis=-1),
+                self.actions,
+                self.state_desc,
+                self.next_state_desc,
+                self.logp,
+            ],
+            axis=-1,
+        )
+        return flatten_transition
+    
+    @classmethod
+    def from_flatten(
+        cls,
+        flattened_transition: jnp.ndarray,
+        transition: QDMCTransition,
+    ) -> QDMCTransition:
+        """
+        Creates a transition from a flattened transition in a jnp.ndarray.
+        Args:
+            flattened_transition: flattened transition in a jnp.ndarray of shape
+                (batch_size, flatten_dim)
+            transition: a transition object (might be a dummy one) to
+                get the dimensions right
+        Returns:
+            a Transition object
+        """
+        obs_dim = transition.observation_dim
+        action_dim = transition.action_dim
+        desc_dim = transition.state_descriptor_dim
+        logp_dim = transition.logp_dim
+
+        obs = flattened_transition[:, :obs_dim]
+        next_obs = flattened_transition[:, obs_dim : (2 * obs_dim)]
+        rewards = jnp.ravel(flattened_transition[:, (2 * obs_dim) : (2 * obs_dim + 1)])
+        dones = jnp.ravel(
+            flattened_transition[:, (2 * obs_dim + 1) : (2 * obs_dim + 2)]
+        )
+        truncations = jnp.ravel(
+            flattened_transition[:, (2 * obs_dim + 2) : (2 * obs_dim + 3)]
+        )
+        actions = flattened_transition[
+            :, (2 * obs_dim + 3) : (2 * obs_dim + 3 + action_dim)
+        ]
+        state_desc = flattened_transition[
+            :,
+            (2 * obs_dim + 3 + action_dim) : (2 * obs_dim + 3 + action_dim + desc_dim),
+        ]
+        next_state_desc = flattened_transition[
+            :,
+            (2 * obs_dim + 3 + action_dim + desc_dim) : (
+                2 * obs_dim + 3 + action_dim + 2 * desc_dim
+            ),
+        ]
+        logp = flattened_transition[
+            :,
+            (2 * obs_dim + 3 + action_dim + 2 * desc_dim) : (
+                2 * obs_dim + 3 + action_dim + 2 * desc_dim + logp_dim
+            ),
+        ]
+        return cls(
+            obs=obs,
+            next_obs=next_obs,
+            rewards=rewards,
+            dones=dones,
+            truncations=truncations,
+            actions=actions,
+            state_desc=state_desc,
+            next_state_desc=next_state_desc,
+            logp=logp,
+        )
+        
+    @classmethod
+    def init_dummy(  # type: ignore
+        cls, observation_dim: int, action_dim: int, descriptor_dim: int
+    ) -> QDMCTransition:
+        """
+        Initialize a dummy transition that then can be passed to constructors to get
+        all shapes right.
+        Args:
+            observation_dim: observation dimension
+            action_dim: action dimension
+        Returns:
+            a dummy transition
+        """
+        dummy_transition = QDMCTransition(
+            obs=jnp.zeros(shape=(observation_dim)),
+            next_obs=jnp.zeros(shape=(observation_dim)),
+            rewards=jnp.zeros(shape=()),
+            dones=jnp.zeros(shape=()),
+            truncations=jnp.zeros(shape=()),
+            actions=jnp.zeros(shape=(action_dim)),
+            state_desc=jnp.zeros(shape=(descriptor_dim)),
+            next_state_desc=jnp.zeros(shape=(descriptor_dim)),
+            logp=jnp.zeros(shape=()),
+        )
+        
+        #squeezed_transition = {key: jnp.squeeze(value, axis=0) for key, value in dummy_transition.items()}
+
         return dummy_transition
 
 
@@ -416,6 +558,7 @@ class DCGTransition(QDTransition):
             desc=jnp.zeros(shape=(1, descriptor_dim)),
             desc_prime=jnp.zeros(shape=(1, descriptor_dim)),
         )
+
         return dummy_transition
 
 

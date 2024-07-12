@@ -25,7 +25,7 @@ from qdax.core.containers.mapelites_repertoire import compute_cvt_centroids, Map
 from qdax.core.neuroevolution.networks.networks import MLPMCPG
 from qdax.core.emitters.me_mcpg_emitter import MEMCPGConfig, MEMCPGEmitter
 #from qdax.core.emitters.rein_emitter_advanced import REINaiveConfig, REINaiveEmitter
-from qdax.core.neuroevolution.buffers.buffer import QDTransition
+from qdax.core.neuroevolution.buffers.buffer import QDTransition, QDMCTransition
 from qdax.environments import behavior_descriptor_extractor
 from qdax.tasks.brax_envs import reset_based_scoring_function_brax_envs as scoring_function
 from utils import Config, get_env
@@ -35,15 +35,19 @@ from qdax.utils.metrics import CSVLogger, default_qd_metrics
 from qdax.utils.plotting import plot_map_elites_results, plot_2d_map_elites_repertoire
 import matplotlib.pyplot as plt
 from set_up_brax import get_reward_offset_brax
+from jax import profiler
 
 
 
 
-    
+
+
 
 
 @hydra.main(version_base="1.2", config_path="configs", config_name="me_mcpg")
 def main(config: Config) -> None:
+    #profiler_dir = "Memory_Investigation"
+    #os.makedirs(profiler_dir, exist_ok=True)
     wandb.init(
         project="me-mcpg",
         name=config.alg_name,
@@ -69,22 +73,46 @@ def main(config: Config) -> None:
     policy_layer_sizes = config.policy_hidden_layer_sizes #+ (env.action_size,)
     print(policy_layer_sizes)
     
-    '''
-    policy_network = MLPRein(
+
+    
+    
+    policy_network = MLPMCPG(
+        hidden_layers_size=policy_layer_sizes,
         action_size=env.action_size,
-        layer_sizes=policy_layer_sizes,
-        kernel_init=jax.nn.initializers.orthogonal(scale=jnp.sqrt(2)),
-        kernel_init_final=jax.nn.initializers.orthogonal(scale=0.01),
+        activation=jax.nn.tanh,
+        final_activation=None,
+        hidden_init=jax.nn.initializers.orthogonal(scale=jnp.sqrt(2)),
+        mean_init=jax.nn.initializers.orthogonal(scale=0.01),
     )
+
+    
+
+        
     '''
     policy_network = MLPMCPG(
         hidden_layers_size=policy_layer_sizes,
         action_size=env.action_size,
         activation=jax.nn.tanh,
-        hidden_init=jax.nn.initializers.orthogonal(scale=jnp.sqrt(2)),
-        mean_init=jax.nn.initializers.orthogonal(scale=0.01),
+        hidden_init=jax.nn.initializers.variance_scaling(scale=jnp.sqrt(2), mode='fan_in', distribution='uniform'),
+        mean_init=jax.nn.initializers.variance_scaling(scale=0.02*jnp.sqrt(2), mode='fan_in', distribution='uniform'),
     )
+    '''
 
+    
+    '''
+    policy_network = MLPMCPG(
+        hidden_layers_size=policy_layer_sizes,
+        action_size=env.action_size,
+        activation=jax.nn.relu,
+        hidden_init=jax.nn.initializers.lecun_uniform(),
+        mean_init=jax.nn.initializers.lecun_uniform(),
+    )
+    '''
+    
+    
+
+    
+    
     # Init population of controllers
     
     # maybe consider adding two random keys for each policy
@@ -99,13 +127,15 @@ def main(config: Config) -> None:
     print("Number of parameters in policy_network: ", param_count)
 
     # Define the fonction to play a step with the policy in the environment
+    @jax.jit
     def play_step_fn(env_state, policy_params, random_key):
         #random_key, subkey = jax.random.split(random_key)
-        actions = policy_network.apply(policy_params, env_state.obs)
+        actions, logp = policy_network.apply(policy_params, env_state.obs)
+        #logp = policy_network.apply(policy_params, env_state.obs, actions, method=policy_network.logp)
         state_desc = env_state.info["state_descriptor"]
         next_state = env.step(env_state, actions)
 
-        transition = QDTransition(
+        transition = QDMCTransition(
             obs=env_state.obs,
             next_obs=next_state.obs,
             rewards=next_state.reward,
@@ -114,11 +144,15 @@ def main(config: Config) -> None:
             actions=actions,
             state_desc=state_desc,
             next_state_desc=next_state.info["state_descriptor"],
+            logp=logp,
             #desc=jnp.zeros(env.behavior_descriptor_length,) * jnp.nan,
             #desc_prime=jnp.zeros(env.behavior_descriptor_length,) * jnp.nan,
         )
 
         return next_state, policy_params, random_key, transition
+
+
+
 
     # Prepare the scoring function
     bd_extraction_fn = behavior_descriptor_extractor[config.env.name]
@@ -249,10 +283,12 @@ def main(config: Config) -> None:
     me_mcpg_config = MEMCPGConfig(
         proportion_mutation_ga=config.proportion_mutation_ga,
         no_agents=config.no_agents,
-        batch_size=config.batch_size,
-        mini_batch_size=config.mini_batch_size,
+        buffer_sample_batch_size=config.buffer_sample_batch_size,
+        buffer_add_batch_size=config.buffer_add_batch_size,
+        #batch_size=config.batch_size,
+        #mini_batch_size=config.mini_batch_size,
         no_epochs=config.no_epochs,
-        buffer_size=config.buffer_size,
+        #buffer_size=config.buffer_size,
         learning_rate=config.learning_rate,
         adam_optimizer=config.adam_optimizer,
         clip_param=config.clip_param,
@@ -294,7 +330,7 @@ def main(config: Config) -> None:
     # compute initial repertoire
     repertoire, emitter_state, random_key = map_elites.init(init_params, centroids, random_key)
 
-    log_period = 1
+    log_period = 10
     num_loops = int(config.num_iterations / log_period)
 
     metrics = dict.fromkeys(["iteration", "qd_score", "coverage", "max_fitness", "qd_score_repertoire", "dem_repertoire", "time", "evaluation"], jnp.array([]))
@@ -303,7 +339,7 @@ def main(config: Config) -> None:
         header=list(metrics.keys())
     )
     def plot_metrics_vs_iterations(metrics, log_period):
-        iterations = jnp.arange(1, 1 + log_period * len(metrics["time"]), dtype=jnp.int32)
+        iterations = jnp.arange(1, 1 + len(metrics["time"]), dtype=jnp.int32)
 
         for metric_name, metric_values in metrics.items():
             if metric_name in ["iteration", "evaluation"]:
@@ -320,6 +356,8 @@ def main(config: Config) -> None:
     map_elites_scan_update = map_elites.scan_update
     eval_num = config.no_agents 
     print(f"Number of evaluations per iteration: {eval_num}")
+    #profiler.start_trace(profiler_dir)
+    #jax.profiler.start_server(9999)
     for i in range(num_loops):
         print(f"Loop {i+1}/{num_loops}")
         start_time = time.time()
@@ -336,7 +374,7 @@ def main(config: Config) -> None:
         random_key, qd_score_repertoire, dem_repertoire = evaluate_repertoire(random_key, repertoire)
 
         current_metrics["iteration"] = jnp.arange(1+log_period*i, 1+log_period*(i+1), dtype=jnp.int32)
-        current_metrics["evaluation"] = jnp.arange(log_period*eval_num*(i+1), log_period*eval_num*(i+2), dtype=jnp.int32)
+        current_metrics["evaluation"] = jnp.arange(1+log_period*eval_num*i, 1+log_period*eval_num*(i+1), dtype=jnp.int32)
         current_metrics["time"] = jnp.repeat(timelapse, log_period)
         current_metrics["qd_score_repertoire"] = jnp.repeat(qd_score_repertoire, log_period)
         current_metrics["dem_repertoire"] = jnp.repeat(dem_repertoire, log_period)
@@ -351,7 +389,7 @@ def main(config: Config) -> None:
         #log_metrics["ai_offspring_added"] = jnp.sum(current_metrics["ai_offspring_added"])
         csv_logger.log(log_metrics)
         wandb.log(log_metrics)
-
+    #profiler.stop_trace()
     # Metrics
     with open("./metrics.pickle", "wb") as metrics_file:
         pickle.dump(metrics, metrics_file)

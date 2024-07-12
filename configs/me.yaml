@@ -6,15 +6,15 @@ hydra:
 
 defaults:
   - _self_
-  - env: ant_uni
+  - env: halfcheetah_uni
   - algo: me
 
-seed: 0
-num_iterations: 1000
-batch_size: 1024
+seed: 1
+num_iterations: 2000
+batch_size: 512
 num_samples: 16
 
 # Archive
 num_init_cvt_samples: 50000
-num_centroids: 1296
+num_centroids: 1024
 policy_hidden_layer_sizes: [128, 128]
