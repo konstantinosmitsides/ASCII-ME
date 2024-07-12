@@ -1,0 +1,14 @@
+job_name: oped
+ 
+walltime: 47:59:00
+ 
+nnodes: 1
+ncpus: 32
+mem: 128gb
+ngpus: 1
+gpu_type: RTX6000
+ 
+queue: null  # -q express -P exp-00097
+njobs: 5
+args:
+  - "seed=\$RANDOM algo=me"

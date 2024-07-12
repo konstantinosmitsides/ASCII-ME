@@ -36,7 +36,7 @@ from typing import Any, Dict, Tuple, List, Callable
 @hydra.main(version_base="1.2", config_path="configs/", config_name="me")
 def main(config: Config) -> None:
     wandb.init(
-        project="rein-me",
+        project="me-mcpg",
         name=config.algo.name,
         config=OmegaConf.to_container(config, resolve=True),
     )
@@ -200,15 +200,17 @@ def main(config: Config) -> None:
             file.write(f"New Coverage: {new_coverage}\n")
             file.write(f"Coverage Percentage Difference: {coverage_difference}%\n")
             
-        fig, _ = plot_2d_map_elites_repertoire(
-            centroids=new_repertoire.centroids,
-            repertoire_fitnesses=new_repertoire.fitnesses,
-            minval=config.env.min_bd,
-            maxval=config.env.max_bd,
-            repertoire_descriptors=new_repertoire.descriptors,
-        )
-        
-        fig.savefig("./recreated_repertoire_plot.png")
+        if env.behavior_descriptor_length == 2:
+            
+            fig, _ = plot_2d_map_elites_repertoire(
+                centroids=new_repertoire.centroids,
+                repertoire_fitnesses=new_repertoire.fitnesses,
+                minval=config.env.min_bd,
+                maxval=config.env.max_bd,
+                repertoire_descriptors=new_repertoire.descriptors,
+            )
+            
+            fig.savefig("./recreated_repertoire_plot.png")
     #reward_offset = get_reward_offset_brax(env, config.env.name)
     # Define a metrics function
     metrics_function = functools.partial(
@@ -237,7 +239,7 @@ def main(config: Config) -> None:
     # Compute initial repertoire and emitter state
     repertoire, emitter_state, random_key = map_elites.init(init_params, centroids, random_key)
 
-    log_period = 1
+    log_period = 10
     num_loops = int(config.num_iterations / log_period)
 
     metrics = dict.fromkeys(["iteration", "qd_score", "coverage", "max_fitness", "qd_score_repertoire", "dem_repertoire", "time", "evaluation"], jnp.array([]))
@@ -247,7 +249,7 @@ def main(config: Config) -> None:
     )
 
     def plot_metrics_vs_iterations(metrics, log_period):
-        iterations = jnp.arange(1, 1 + log_period * len(metrics["time"]), dtype=jnp.int32)
+        iterations = jnp.arange(1, 1 + len(metrics["time"]), dtype=jnp.int32)
 
         for metric_name, metric_values in metrics.items():
             if metric_name in ["iteration", "evaluation"]:
@@ -279,7 +281,7 @@ def main(config: Config) -> None:
         random_key, qd_score_repertoire, dem_repertoire = evaluate_repertoire(random_key, repertoire)
 
         current_metrics["iteration"] = jnp.arange(1+log_period*i, 1+log_period*(i+1), dtype=jnp.int32)
-        current_metrics["evaluation"] = jnp.arange(log_period*eval_num*(i+1), log_period*eval_num*(i+2), dtype=jnp.int32)
+        current_metrics["evaluation"] = jnp.arange(1+log_period*eval_num*i, 1+log_period*eval_num*(i+1), dtype=jnp.int32)
         current_metrics["time"] = jnp.repeat(timelapse, log_period)
         current_metrics["qd_score_repertoire"] = jnp.repeat(qd_score_repertoire, log_period)
         current_metrics["dem_repertoire"] = jnp.repeat(dem_repertoire, log_period)

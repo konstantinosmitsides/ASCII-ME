@@ -1,4 +1,4 @@
-name: walker2d_uni
+name: hopper_uni
 version: v1
 backend: spring
 episode_length: 1000
