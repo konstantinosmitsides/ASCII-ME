@@ -1,6 +1,6 @@
 job_name: oped
  
-walltime: 47:59:00
+walltime: 7:59:00
  
 nnodes: 1
 ncpus: 32
@@ -11,4 +11,7 @@ gpu_type: RTX6000
 queue: null  # -q express -P exp-00097
 njobs: 5
 args:
-  - "seed=\$RANDOM env=ant_uni env_name=ant_uni"
+  # - "seed=\$RANDOM env=ant_uni env_name=ant_uni"
+  # - "seed=\$RANDOM env=hopper_uni env_name=hopper_uni"
+  # - "seed=\$RANDOM env=walker2d_uni env_name=walker2d_uni"
+  - "seed=\$RANDOM env=halfcheetah_uni env_name=halfcheetah_uni"
