@@ -34,7 +34,7 @@ class ConfigReproducibility:
 
 
 def get_env(config: Config):
-    if config.env.version == "v2":
+    if config.env.version == "v1":
         if config.env.name == "hopper_uni":
             env = environments_v1.create(
                 config.env.name,

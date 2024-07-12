@@ -11,4 +11,4 @@ gpu_type: RTX6000
 queue: null  # -q express -P exp-00097
 njobs: 5
 args:
-  - "seed=\$RANDOM algo=me"
+  - "seed=\$RANDOM env=ant_uni env_name=ant_uni"
