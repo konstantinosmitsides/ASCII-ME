@@ -14,4 +14,4 @@ args:
   - "seed=\$RANDOM env=ant_uni"
   - "seed=\$RANDOM env=hopper_uni"
   - "seed=\$RANDOM env=walker2d_uni"
-  - "seed=\$RANDOM env=halfcheetah_uni"
+  #- "seed=\$RANDOM env=halfcheetah_uni"
