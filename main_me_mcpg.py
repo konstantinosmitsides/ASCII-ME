@@ -48,6 +48,7 @@ from jax import profiler
 def main(config: Config) -> None:
     #profiler_dir = "Memory_Investigation"
     #os.makedirs(profiler_dir, exist_ok=True)
+    wandb.login(key="ab476069b53a15ad74ff1845e8dee5091d241297")
     wandb.init(
         project="me-mcpg",
         name=config.alg_name,
