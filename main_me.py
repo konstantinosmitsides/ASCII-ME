@@ -35,7 +35,7 @@ from typing import Any, Dict, Tuple, List, Callable
 
 @hydra.main(version_base="1.2", config_path="configs/", config_name="me")
 def main(config: Config) -> None:
-    wandb.login(key="your_api_key")
+    wandb.login(key="ab476069b53a15ad74ff1845e8dee5091d241297")
     wandb.init(
         project="me-mcpg",
         name=config.algo.name,
