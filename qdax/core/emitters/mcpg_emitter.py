@@ -569,7 +569,7 @@ class MCPGEmitter(Emitter):
             scan_update,
             (policy_params, policy_opt_state),
             None,
-            length=1,
+            length=16,
         )
         
         #new_emitter_state = emitter_state.replace(random_key=random_key)
