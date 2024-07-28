@@ -80,8 +80,8 @@ def main(config: Config) -> None:
     policy_network = MLPMCPG(
         hidden_layers_size=policy_layer_sizes,
         action_size=env.action_size,
-        activation=jax.nn.tanh,
-        final_activation=None,
+        activation=jax.nn.relu,
+        final_activation=jnp.tanh,
         hidden_init=jax.nn.initializers.orthogonal(scale=jnp.sqrt(2)),
         mean_init=jax.nn.initializers.orthogonal(scale=0.01),
     )
