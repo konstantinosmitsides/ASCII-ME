@@ -6,12 +6,12 @@ hydra:
 
 defaults:
     - _self_
-    - env: ant_uni
+    - env: halfcheetah_uni
 
 # Env config
 alg_name: me_mcpg
 seed: 0
-env_name: ant_uni
+env_name: halfcheetah_uni
 episode_length: 1000
 policy_hidden_layer_sizes: [128, 128]
 # ME config
