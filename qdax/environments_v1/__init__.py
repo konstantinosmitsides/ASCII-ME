@@ -126,7 +126,7 @@ def create(
 
     if episode_length is not None:
         env = brax.v1.envs.wrappers.EpisodeWrapper(env, episode_length, action_repeat)
-        env = TimeAwarenessWrapper(env)
+        # env = TimeAwarenessWrapper(env)
     if batch_size:
         env = brax.v1.envs.wrappers.VectorWrapper(env, batch_size)
     if auto_reset:
