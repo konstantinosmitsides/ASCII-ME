@@ -1,4 +1,4 @@
-python main_pga_me.py env=walker2d_uni seed=$RANDOM batch_size=256 num_iterations=4000
+#python main_pga_me.py env=walker2d_uni seed=$RANDOM batch_size=256 num_iterations=4000
 python main_pga_me.py env=walker2d_uni seed=$RANDOM batch_size=256 num_iterations=4000
 python main_pga_me.py env=walker2d_uni seed=$RANDOM batch_size=256 num_iterations=4000
 
