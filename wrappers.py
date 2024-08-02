@@ -229,6 +229,50 @@ class NormalizeVecObsEnvState:
     var: jnp.ndarray = None
     count: float = 1e-4
     env_state: environment.EnvState = None
+    
+   
+class NormalizeVecObservationEval(GymnaxWrapper):
+    def __init__(self, env, initial_stats=None):
+        super().__init__(env)
+        
+        self.stats = NormalizeVecObsEnvState(
+            mean=initial_stats[0],  # Initialized as None, set on first update
+            var=initial_stats[1],
+            count=initial_stats[2],
+            env_state=None
+        ) if initial_stats else NormalizeVecObsEnvState()
+
+    def update_stats(self, obs, stats):
+        if stats.mean is None or stats.var is None:
+            mean = obs  # Directly use observation as mean if first observation
+            var = jnp.zeros_like(obs)  # Initialize variance to zero if first observation
+            count = 1.0
+        else:
+            mean, var, count = stats.mean, stats.var, stats.count
+            delta = obs - mean
+            tot_count = count + 1
+
+            new_mean = mean + delta / tot_count
+            m_a = var * count
+            m_b = jnp.square(delta) * count / tot_count
+            M2 = m_a + m_b
+            var = M2 / tot_count
+            mean = new_mean
+            count = tot_count
+
+        return NormalizeVecObsEnvState(mean, var, count, stats.env_state)
+
+    def reset(self, key, params=None):
+        obs, env_state = self._env.reset(key, params)
+        new_stats = self.update_stats(obs, self.stats.replace(env_state=env_state))
+        normalized_obs = (obs - new_stats.mean) / jnp.sqrt(new_stats.var + 1e-8)
+        return normalized_obs, new_stats
+
+    def step(self, key, stats, action, params=None):
+        obs, env_state, reward, done, info = self._env.step(key, stats.env_state, action, params)
+        new_stats = self.update_stats(obs, stats.replace(env_state=env_state))
+        normalized_obs = (obs - new_stats.mean) / jnp.sqrt(new_stats.var + 1e-8)
+        return normalized_obs, new_stats, reward, done, info
 
 
 class NormalizeVecObservation(GymnaxWrapper):
@@ -269,20 +313,22 @@ class NormalizeVecObservation(GymnaxWrapper):
     def reset(self, key, params=None):
         obs, env_state = self._env.reset(key, params)
         new_stats = self.update_stats(obs, self.stats.replace(env_state=env_state))
-        self.stats = new_stats
+        #self.stats = new_stats
         normalized_obs = (obs - new_stats.mean) / jnp.sqrt(new_stats.var + 1e-8)
         return normalized_obs, new_stats
 
     def step(self, key, stats, action, params=None):
         obs, env_state, reward, done, info = self._env.step(key, stats.env_state, action, params)
         new_stats = self.update_stats(obs, stats.replace(env_state=env_state))
-        self.stats = new_stats
+        #self.stats = new_stats
         normalized_obs = (obs - new_stats.mean) / jnp.sqrt(new_stats.var + 1e-8)
         return normalized_obs, new_stats, reward, done, info
 
-    def get_statistics(self):
-        return self.stats
+
+
+
 '''
+
 class NormalizeVecObservation(GymnaxWrapper):
     def __init__(self, env):
         super().__init__(env)
