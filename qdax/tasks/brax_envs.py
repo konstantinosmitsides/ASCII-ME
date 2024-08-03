@@ -6,6 +6,7 @@ import brax.envs
 import flax.linen as nn
 import jax
 import jax.numpy as jnp
+from typing import Any
 
 import qdax.environments
 from qdax import environments
@@ -109,6 +110,7 @@ def scoring_function_brax_envs(
         [EnvState, Params, RNGKey], Tuple[EnvState, Params, RNGKey, QDTransition]
     ],
     behavior_descriptor_extractor: Callable[[QDTransition, jnp.ndarray], Descriptor],
+    normalizer: Optional[Any],
 ) -> Tuple[Fitness, Descriptor, ExtraScores, RNGKey]:
     """Evaluates policies contained in policies_params in parallel in
     deterministic or pseudo-deterministic environments.
@@ -149,7 +151,10 @@ def scoring_function_brax_envs(
     # scores
     fitnesses = jnp.sum(data.rewards * (1.0 - mask), axis=1)
     descriptors = behavior_descriptor_extractor(data, mask)
-
+    normalizer.update(data.obs)
+    normalized_obs = normalizer.normalize(data.obs)
+    data = data.replace(obs=normalized_obs)
+    
     return (
         fitnesses,
         descriptors,
@@ -253,6 +258,7 @@ def reset_based_scoring_function_brax_envs(
         [EnvState, Params, RNGKey], Tuple[EnvState, Params, RNGKey, QDTransition]
     ],
     behavior_descriptor_extractor: Callable[[QDTransition, jnp.ndarray], Descriptor],
+    normalizer: Optional[Any],
 ) -> Tuple[Fitness, Descriptor, ExtraScores, RNGKey]:
     """Evaluates policies contained in policies_params in parallel.
     The play_reset_fn function allows for a more general scoring_function that can be
@@ -295,6 +301,7 @@ def reset_based_scoring_function_brax_envs(
         episode_length=episode_length,
         play_step_fn=play_step_fn,
         behavior_descriptor_extractor=behavior_descriptor_extractor,
+        normalizer=normalizer,
     )
 
     return fitnesses, descriptors, extra_scores, random_key

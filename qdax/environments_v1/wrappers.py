@@ -110,3 +110,85 @@ class ClipRewardWrapper(Wrapper):
     def step(self, state: State, action: jnp.ndarray) -> State:
         state = self.env.step(state, action)
         return state.replace(reward=jnp.clip(state.reward, a_min=0.))
+    
+    
+class ClipActionWrapper(Wrapper):
+  """Clips actions to the action space."""
+
+  def __init__(self, env, low=-1.0, high=1.0):
+    super().__init__(env)
+    self.low = low
+    self.high = high
+    
+  def step(self, state, action):
+    action = jp.clip(action, self.low, self.high)
+    return self.env.step(state, action)
+
+@flax.struct.dataclass
+class NormalizeVecObsEnvState:
+    mean: jnp.ndarray = None
+    var: jnp.ndarray = None
+    count: float = 1e-4
+    env_state: Env = None
+    
+class NormalizeVecObservationWrapper(Wrapper):
+    def __init__(self, env, initial_stats=None):
+        super().__init__(env)
+        
+        self.stats = NormalizeVecObsEnvState(
+            mean=initial_stats[0],  # Initialized as None, set on first update
+            var=initial_stats[1],
+            count=initial_stats[2],
+            env_state=None
+        ) if initial_stats else NormalizeVecObsEnvState()
+
+    def update_stats(self, obs, stats):
+        if stats.mean is None or stats.var is None:
+            mean = obs  # Directly use observation as mean if first observation
+            var = jnp.zeros_like(obs)  # Initialize variance to zero if first observation
+            count = 1.0
+        else:
+            mean, var, count = stats.mean, stats.var, stats.count
+            delta = obs - mean
+            tot_count = count + 1
+
+            new_mean = mean + delta / tot_count
+            m_a = var * count
+            m_b = jnp.square(delta) * count / tot_count
+            M2 = m_a + m_b
+            var = M2 / tot_count
+            mean = new_mean
+            count = tot_count
+
+        return NormalizeVecObsEnvState(mean, var, count, stats.env_state)
+    '''
+    def reset(self, key):
+        env_state = self.env.reset(key)
+        new_stats = self.update_stats(env_state.obs, self.stats.replace(env_state=env_state))
+        normalized_obs = (env_state.obs - new_stats.mean) / jnp.sqrt(new_stats.var + 1e-8)
+        updated_env_state = env_state.replace(obs=normalized_obs)
+        return new_stats.replace(env_state=updated_env_state)
+
+    def step(self, stats, action):
+        obs, env_state, reward, done, info = self.env.step(stats.env_state, action)
+        new_stats = self.update_stats(obs, stats.replace(env_state=env_state))
+        normalized_obs = (obs - new_stats.mean) / jnp.sqrt(new_stats.var + 1e-8)
+        updated_env_state = env_state.replace(obs=normalized_obs)
+        return new_stats.replace(env_state=updated_env_state)
+    '''
+    
+    def reset(self, key):
+        env_state = self.env.reset(key)
+        new_stats = self.update_stats(env_state.obs, self.stats.replace(env_state=env_state))
+        normalized_obs = (env_state.obs - new_stats.mean) / jnp.sqrt(new_stats.var + 1e-8)
+        updated_env_state = env_state.replace(obs=normalized_obs)
+        self.stats = new_stats.replace(env_state=updated_env_state)
+        return updated_env_state  # Only return the updated environment state
+
+    def step(self, state, action):
+        env_state = self.env.step(state, action)
+        new_stats = self.update_stats(env_state.obs, self.stats.replace(env_state=env_state))
+        normalized_obs = (env_state.obs - new_stats.mean) / jnp.sqrt(new_stats.var + 1e-8)
+        updated_env_state = env_state.replace(obs=normalized_obs)
+        self.stats = new_stats.replace(env_state=updated_env_state)
+        return updated_env_state

@@ -17,7 +17,13 @@ from qdax.environments_v1.locomotion_wrappers import (
 )
 from qdax.environments_v1.anttrap import AntTrap
 from qdax.environments_v1.init_state_wrapper import FixedInitialStateWrapper
-from qdax.environments_v1.wrappers import CompletedEvalWrapper, TimeAwarenessWrapper, ClipRewardWrapper
+from qdax.environments_v1.wrappers import (
+    CompletedEvalWrapper, 
+    TimeAwarenessWrapper, 
+    ClipRewardWrapper, 
+    ClipActionWrapper,
+    NormalizeVecObservationWrapper,
+)
 
 
 # experimentally determinated offset (except for antmaze)
@@ -126,7 +132,7 @@ def create(
 
     if episode_length is not None:
         env = brax.v1.envs.wrappers.EpisodeWrapper(env, episode_length, action_repeat)
-        # env = TimeAwarenessWrapper(env)
+        env = TimeAwarenessWrapper(env)
     if batch_size:
         env = brax.v1.envs.wrappers.VectorWrapper(env, batch_size)
     if auto_reset:
@@ -139,6 +145,9 @@ def create(
         env = brax.v1.envs.wrappers.EvalWrapper(env)
         env = CompletedEvalWrapper(env)
     env = ClipRewardWrapper(env)
+    env = ClipActionWrapper(env)
+    #env = NormalizeVecObservationWrapper(env)
+    
     return env
 
 
