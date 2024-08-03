@@ -413,7 +413,7 @@ class NormalizeVecReward(GymnaxWrapper):
         self.gamma = gamma
 
     def reset(self, key, params=None):
-        obs, state = self._env.reset(key, params)
+        obs, state = self._env.reset(key, params) 
         batch_count = obs.shape[0]
         state = NormalizeVecRewEnvState(
             mean=0.0,
