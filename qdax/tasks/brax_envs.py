@@ -148,6 +148,7 @@ def scoring_function_brax_envs(
 
     # create a mask to extract data properly
     mask = get_mask_from_transitions(data)
+    rewards = data.rewards
 
     # scores
     fitnesses = jnp.sum(data.rewards * (1.0 - mask), axis=1)
@@ -170,6 +171,7 @@ def scoring_function_brax_envs(
         descriptors,
         {
             "transitions": data,
+            "rewards": rewards,
         },
         random_key,
         normalizer,
@@ -264,14 +266,14 @@ def scoring_actor_dc_function_brax_envs(
 def reset_based_scoring_function_brax_envs(
     policies_params: Genotype,
     random_key: RNGKey,
+    normalizer: Optional[Any],
+    reward_normalizer: Optional[Any],
     episode_length: int,
     play_reset_fn: Callable[[RNGKey], EnvState],
     play_step_fn: Callable[
         [EnvState, Params, RNGKey], Tuple[EnvState, Params, RNGKey, QDTransition]
     ],
     behavior_descriptor_extractor: Callable[[QDTransition, jnp.ndarray], Descriptor],
-    normalizer: Optional[Any],
-    reward_normalizer: Optional[Any],
 ) -> Tuple[Fitness, Descriptor, ExtraScores, RNGKey]:
     """Evaluates policies contained in policies_params in parallel.
     The play_reset_fn function allows for a more general scoring_function that can be
@@ -307,7 +309,7 @@ def reset_based_scoring_function_brax_envs(
     reset_fn = jax.vmap(play_reset_fn)
     init_states = reset_fn(keys)
 
-    fitnesses, descriptors, extra_scores, random_key = scoring_function_brax_envs(
+    fitnesses, descriptors, extra_scores, random_key, normalizer, reward_normalizer = scoring_function_brax_envs(
         policies_params=policies_params,
         random_key=random_key,
         init_states=init_states,
@@ -318,7 +320,7 @@ def reset_based_scoring_function_brax_envs(
         reward_normalizer=reward_normalizer,
     )
 
-    return fitnesses, descriptors, extra_scores, random_key
+    return fitnesses, descriptors, extra_scores, random_key, normalizer, reward_normalizer
 
 
 @partial(

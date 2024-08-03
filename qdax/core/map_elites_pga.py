@@ -4,7 +4,7 @@ from __future__ import annotations
 from functools import partial
 from typing import Any, Callable, Optional, Tuple
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 import jax
 import jax.numpy as jnp
@@ -49,7 +49,7 @@ class Normalizer:
         new_mean, new_var, new_count = self._update_mean_var_count(
             self.mean, self.var, self.count, batch_mean, batch_var, batch_count)
         
-        return self.replace(mean=new_mean, var=new_var, count=new_count)
+        return replace(self, mean=new_mean, var=new_var, count=new_count)
 
     def normalize(self, x):
         # Normalize maintaining the original shape, using broadcasting
@@ -67,6 +67,7 @@ class Normalizer:
         new_count = tot_count
 
         return new_mean, new_var, new_count
+
 
     def tree_flatten(self):
         return ((self.mean, self.var, self.count), self.size)
@@ -133,7 +134,7 @@ class RewardNormalizer:
         )
 
         
-        return self.replace(mean=new_mean, var=new_var, count=new_count), normalized_rewards.T
+        return replace(self, mean=new_mean, var=new_var, count=new_count), normalized_rewards.T
 
 
 
