@@ -246,10 +246,10 @@ def calculate_gae(data):
     _, advantages = jax.lax.scan(
         _scan_get_advantages,
         (jnp.zeros_like(data.val_adv), data.target[:, -1]),
-        (data.done.T, data.val.T, data.reward.T),
+        (data.dones.T, data.val_adv.T, data.rewards.T),
         reverse=True,
         unroll=16,
     )
     
-    return advantages.T, advantages.T + data.val
+    return advantages.T, advantages.T + data.val_adv
     

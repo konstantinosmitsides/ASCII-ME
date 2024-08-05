@@ -35,7 +35,7 @@ line_sigma: 0.05
 
 # MEMCPG Parameters
 proportion_mutation_ga: 0.5
-buffer_sample_batch_size: 8
+buffer_sample_batch_size: 2
 buffer_add_batch_size: 512
 #batch_size: 64000
 #mini_batch_size: 64000 # Num of episodes used for gradient estimate
@@ -47,6 +47,9 @@ discount_rate: 0.99
 clip_param: 0.2
 no_neurons: 64
 activation: tanh
+vf_coef: 0.5
+num_minibatches: 32
+max_grad_norm: 0.5
 
 
 

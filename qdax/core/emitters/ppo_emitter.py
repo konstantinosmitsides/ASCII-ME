@@ -17,6 +17,7 @@ from qdax.core.neuroevolution.buffers.buffer import QDTransition, QDMCTransition
 import flashbax as fbx
 import chex
 from rein_related import *
+from flax.training.train_state import TrainState
 
 from qdax.core.emitters.emitter import Emitter, EmitterState
 from jax import profiler
@@ -42,16 +43,19 @@ class PPOConfig:
     discount_rate: float = 0.99
     adam_optimizer: bool = True
     #buffer_size: int = 256000
+    num_minibatches: int = 32
+    vf_coef: float = 0.5
     clip_param: float = 0.2
+    max_grad_norm: float = 0.5
     
-class MCPGEmitterState(EmitterState):
+class PPOEmitterState(EmitterState):
     """Contains the trajectory buffer.
     """
     #buffer: Any
     buffer_state: Any
     random_key: RNGKey
     
-class MCPGEmitter(Emitter):
+class PPOEmitter(Emitter):
     
     def __init__(
         self,
@@ -100,7 +104,7 @@ class MCPGEmitter(Emitter):
         fitnesses: Fitness,
         descriptors: Descriptor,
         extra_scores: ExtraScores,
-    ) -> Tuple[MCPGEmitterState, RNGKey]:
+    ) -> Tuple[PPOEmitterState, RNGKey]:
         """Initializes the emitter state.
         """
         obs_size = self._env.observation_size
@@ -138,7 +142,7 @@ class MCPGEmitter(Emitter):
         '''
         
         random_key, subkey = jax.random.split(random_key)
-        emitter_state = MCPGEmitterState(
+        emitter_state = PPOEmitterState(
             #buffer=buffer,
             buffer_state=buffer_state,
             random_key=subkey,
@@ -151,7 +155,7 @@ class MCPGEmitter(Emitter):
     def emit(
         self,
         repertoire: Repertoire,
-        emitter_state: MCPGEmitterState,
+        emitter_state: PPOEmitterState,
         random_key: RNGKey,
     ) -> Tuple[Genotype, RNGKey]:
         """Do a step of MCPG emission.
@@ -175,7 +179,7 @@ class MCPGEmitter(Emitter):
     @partial(jax.jit, static_argnames=("self",))
     def emit_mcpg(
         self,
-        emitter_state: MCPGEmitterState,
+        emitter_state: PPOEmitterState,
         parents: Genotype,
         random_keys: ArrayTree,
     ) -> Genotype:
@@ -198,13 +202,13 @@ class MCPGEmitter(Emitter):
     @partial(jax.jit, static_argnames=("self",))
     def state_update(
         self,
-        emitter_state: MCPGEmitterState,
+        emitter_state: PPOEmitterState,
         repertoire: Optional[Repertoire],
         genotypes: Optional[Genotype],
         fitnesses: Optional[Fitness],
         descriptors: Optional[Descriptor],
         extra_scores: ExtraScores,
-    ) -> MCPGEmitterState:
+    ) -> PPOEmitterState:
         """Update the emitter state.
         """
         
@@ -242,106 +246,108 @@ class MCPGEmitter(Emitter):
     def _mutation_function_mcpg(
         self,
         policy_params,
-        emitter_state: MCPGEmitterState,
+        emitter_state: PPOEmitterState,
         random_key: RNGKey,
     ) -> Genotype:
         """Mutation function for MCPG."""
-
-        policy_opt_state = self._policy_opt.init(policy_params)
+        
+        tx = optax.chain(
+            optax.clip_by_global_norm(self._config.max_grad_norm),
+            optax.adam(
+                learning_rate=self._config.learning_rate),
+                eps=1e-5,
+        )        
+        
+        train_state = TrainState.create(
+            apply_fn=self._policy.apply,
+            params=policy_params,
+            tx=tx,
+        )
         
         # Directly sample batch and use necessary components
         batch = self._buffer.sample(emitter_state.buffer_state, random_key)
-        trans = batch.experience
+        traj_batch = batch.experience
+        #trans = trans.ravel().reshape(1, trans.shape[0]*trans.shape[1])
         #mask = jax.vmap(self.compute_mask, in_axes=0)(trans.dones)
         #standardized_returns = self.get_standardized_return(trans.rewards, mask)
         
-        def scan_train_policy(
-            carry: Tuple[MCPGEmitterState, Genotype, optax.OptState],
-            unused: Any,
-        ) -> Tuple[Tuple[MCPGEmitterState, Genotype, optax.OptState], Any]:
+        def _update_epoch(update_state, unused):
+            def _update_minibatch(train_state, batch_info):
+                traj_batch = batch_info
+                
+                def _loss_fn(params, traj_batch):
+                    pi, value = self._policy.apply(params, traj_batch.obs)
+                    logp_ = pi.log_prob(traj_batch.action)
+                    
+                    # see if you will clip the values
+                    value_losses = jnp.square(value - traj_batch.targets)
+                    value_loss = 0.5 * jnp.mean(value_losses)
+                    
+                    ratio = jnp.exp(logp_ - traj_batch.logp)
+                    gae = (traj_batch.val_adv - jnp.mean(traj_batch.val_adv)) / (jnp.std(traj_batch.val_adv) + EPS)
+                    loss_actor1 = ratio * gae
+                    loss_actor2 = jnp.clip(ratio, 1 - self._config.clip_param, 1 + self._config.clip_param) * gae
+                    loss_actor = -jnp.mean(jnp.minimum(loss_actor1, loss_actor2))
+                    
+                    total_loss = loss_actor + self._config.vf_coef * value_loss
+                    
+                    return total_loss, (value_loss, loss_actor)
+                
+                grad_fn = jax.value_and_grad(_loss_fn, has_aux=True)
+                total_loss, grad = grad_fn(
+                    train_state.params,
+                    traj_batch,
+                )
+                train_state = train_state.apply_gradients(grad)
+                return train_state, total_loss
             
-            policy_params, policy_opt_state = carry
+            train_state, traj_batch, rng = update_state
+            rng, _rng = jax.random.split(rng)
+            batch_size = traj_batch.rewards.shape[0]
             
-            # Train policy with directly used transaction fields
-            new_policy_params, new_policy_opt_state = self._train_policy_(
-                policy_params,
-                policy_opt_state,
-                trans.obs,
-                trans.actions,
-                standardized_returns,
-                trans.logp,
-                mask
+            permutation = jax.random.permutation(_rng, batch_size)
+            batch = jax.tree_util.tree_map(
+                lambda x: x.reshape((batch_size,) + x.shape[2:]), traj_batch
             )
-            return (new_policy_params, new_policy_opt_state), None
+            shuffled_batch = jax.tree_util.tree_map(
+                lambda x: jnp.take(x, permutation, axis=0), batch   
+            )
             
-        (policy_params, policy_opt_state), _ = jax.lax.scan(
-            scan_train_policy,
-            (policy_params, policy_opt_state),
+            minibatches = jax.tree_util.tree_map(
+                lambda x: jnp.reshape(
+                    x, [self._config.num_minibatches, -1] + list(x.shape[1:])
+                ),
+                shuffled_batch,
+            )
+            
+            
+            train_state, total_loss = jax.lax.scan(
+                _update_minibatch,
+                train_state,
+                minibatches,
+            )
+            
+            update_state = (train_state, traj_batch, rng)
+            return update_state, total_loss
+        
+        update_state = (train_state, traj_batch, random_key)
+        update_state, total_loss = jax.lax.scan(
+            _update_epoch,
+            update_state,
             None,
             length=self._config.no_epochs,
         )
         
-        return policy_params
+        train_state = update_state[0]
+        rng = update_state[-1]
         
-    @partial(jax.jit, static_argnames=("self",))
-    def _train_policy_(
-        self,
-        #emitter_state: MCPGEmitterState,
-        policy_params,
-        policy_opt_state: optax.OptState,
-        obs,
-        actions,
-        standardized_returns,
-        logps,
-        mask
-    ) -> Tuple[MCPGEmitterState, Genotype, optax.OptState]:
+        #runner_state = (train_state, rng)
+        return train_state.params
         
-        def scan_update(carry, _):
-            policy_params, policy_opt_state = carry
-            grads = jax.grad(self.loss_ppo)(policy_params, obs, actions, logps, mask, standardized_returns)
-            updates, new_policy_opt_state = self._policy_opt.update(grads, policy_opt_state)
-            new_policy_params = optax.apply_updates(policy_params, updates)
-            return (new_policy_params, new_policy_opt_state), None
-        
-        (final_policy_params, final_policy_opt_state), _ = jax.lax.scan(
-            scan_update,
-            (policy_params, policy_opt_state),
-            None,
-            length=1,
-        )
-        
-        #new_emitter_state = emitter_state.replace(random_key=random_key)
-        
-        return final_policy_params, final_policy_opt_state
-    
+            
 
     
-    @partial(jax.jit, static_argnames=("self",))
-    def loss_ppo(
-        self,
-        params,
-        obs,
-        actions,
-        logps,
-        mask,
-        standardized_returns,
-    ):
-        
-        logps_ = self._policy.apply(
-            params,
-            jax.lax.stop_gradient(obs),
-            jax.lax.stop_gradient(actions),
-            method=self._policy.logp,
-        )
-        
-        
-        ratio = jnp.exp(logps_ - jax.lax.stop_gradient(logps))
-        
-        pg_loss_1 = jnp.multiply(ratio * mask, jax.lax.stop_gradient(standardized_returns))
-        pg_loss_2 = jax.lax.stop_gradient(standardized_returns) * jax.lax.clamp(1. - self._config.clip_param, ratio, 1. + self._config.clip_param) * mask
-        
-        #return -jnp.mean(jnp.minimum(pg_loss_1, pg_loss_2))
-        return (-jnp.sum(jnp.minimum(pg_loss_1, pg_loss_2))) / jnp.sum(ratio * mask)
+
         
     
         

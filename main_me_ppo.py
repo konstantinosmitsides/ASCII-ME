@@ -24,6 +24,7 @@ from qdax.utils.sampling import sampling
 from qdax.core.containers.mapelites_repertoire import compute_cvt_centroids, MapElitesRepertoire
 from qdax.core.neuroevolution.networks.networks import MLPMCPG, MLPPPO
 from qdax.core.emitters.me_mcpg_emitter import MEMCPGConfig, MEMCPGEmitter
+from qdax.core.emitters.ppo_me_emitter import PPOMEConfig, PPOMEmitter
 #from qdax.core.emitters.rein_emitter_advanced import REINaiveConfig, REINaiveEmitter
 from qdax.core.neuroevolution.buffers.buffer import QDTransition, QDMCTransition, PPOTransition
 from qdax.environments import behavior_descriptor_extractor
@@ -97,9 +98,11 @@ def main(config: Config) -> None:
 
     # Define the fonction to play a step with the policy in the environment
     @jax.jit
-    def play_step_fn(env_state, policy_params, random_key, value=None):
+    def play_step_fn(env_state, policy_params, random_key):
         random_key, subkey = jax.random.split(random_key)
-        pi, val = policy_network.apply(policy_params, env_state.obs) if value is None else (policy_network.apply(policy_params, env_state.obs), value)
+      
+        pi, val = policy_network.apply(policy_params, env_state.obs)
+ 
         action = pi.sample(seed=subkey)
         logp = pi.log_prob(action)
         state_desc = env_state.info["state_descriptor"]
@@ -122,7 +125,7 @@ def main(config: Config) -> None:
             #desc_prime=jnp.zeros(env.behavior_descriptor_length,) * jnp.nan,
         )
 
-        return (next_state, policy_params, random_key, next_val), transition
+        return (next_state, policy_params, random_key), transition
 
 
 
@@ -253,7 +256,7 @@ def main(config: Config) -> None:
 
     # Define the PG-emitter config
     
-    me_mcpg_config = MEMCPGConfig(
+    ppo_me_config = PPOMEConfig(
         proportion_mutation_ga=config.proportion_mutation_ga,
         no_agents=config.no_agents,
         buffer_sample_batch_size=config.buffer_sample_batch_size,
@@ -265,38 +268,27 @@ def main(config: Config) -> None:
         learning_rate=config.learning_rate,
         adam_optimizer=config.adam_optimizer,
         clip_param=config.clip_param,
+        num_minibatches=config.num_minibatches,
+        vf_coef=config.vf_coef,
+        max_grad_norm=config.max_grad_norm,
     )
     
     variation_fn = partial(
         isoline_variation, iso_sigma=config.iso_sigma, line_sigma=config.line_sigma
     )
     
-    me_mcpg_emitter = MEMCPGEmitter(
-        config=me_mcpg_config,
+    ppo_me_emitter = PPOMEmitter(
+        config=ppo_me_config,
         policy_network=policy_network,
         env=env,
         variation_fn=variation_fn,
         )
-    
-    '''
-    rein_emitter = REINaiveEmitter(
-        config=rein_emitter_config,
-        policy_network=policy_network,
-        env=env,
-        )
-    '''
-    '''
-    me_scoring_fn = partial(
-        sampling,
-        scoring_fn=scoring_fn,
-        num_samples=config.num_samples,
-    )
-    '''
+
 
     # Instantiate MAP Elites
     map_elites = MAPElites(
         scoring_function=scoring_fn,
-        emitter=me_mcpg_emitter,
+        emitter=ppo_me_emitter,
         metrics_function=metrics_function,
     )
 
