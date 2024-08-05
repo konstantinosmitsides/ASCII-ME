@@ -25,7 +25,7 @@ from qdax.core.containers.mapelites_repertoire import compute_cvt_centroids, Map
 from qdax.core.neuroevolution.networks.networks import MLPMCPG, MLPPPO
 from qdax.core.emitters.me_mcpg_emitter import MEMCPGConfig, MEMCPGEmitter
 #from qdax.core.emitters.rein_emitter_advanced import REINaiveConfig, REINaiveEmitter
-from qdax.core.neuroevolution.buffers.buffer import QDTransition, QDMCTransition
+from qdax.core.neuroevolution.buffers.buffer import QDTransition, QDMCTransition, PPOTransition
 from qdax.environments import behavior_descriptor_extractor
 from qdax.tasks.brax_envs import reset_based_scoring_function_brax_envs as scoring_function
 from utils import Config, get_env
@@ -98,22 +98,25 @@ def main(config: Config) -> None:
     # Define the fonction to play a step with the policy in the environment
     @jax.jit
     def play_step_fn(env_state, policy_params, random_key):
-        #random_key, subkey = jax.random.split(random_key)
-        actions, logp = policy_network.apply(policy_params, env_state.obs)
+        random_key, subkey = jax.random.split(random_key)
+        pi, val = policy_network.apply(policy_params, env_state.obs)
+        action = pi.sample(seed=subkey)
         #logp = policy_network.apply(policy_params, env_state.obs, actions, method=policy_network.logp)
         state_desc = env_state.info["state_descriptor"]
-        next_state = env.step(env_state, actions)
+        next_state = env.step(env_state, action)
 
-        transition = QDMCTransition(
+        transition = PPOTransition(
             obs=env_state.obs,
             next_obs=next_state.obs,
             rewards=next_state.reward,
             dones=next_state.done,
             truncations=next_state.info["truncation"],
-            actions=actions,
+            actions=action,
             state_desc=state_desc,
             next_state_desc=next_state.info["state_descriptor"],
-            logp=logp,
+            pi=pi,
+            val_adv=val,
+            target=jnp.zeros(shape=(()))
             #desc=jnp.zeros(env.behavior_descriptor_length,) * jnp.nan,
             #desc_prime=jnp.zeros(env.behavior_descriptor_length,) * jnp.nan,
         )

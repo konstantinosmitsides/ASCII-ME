@@ -145,7 +145,7 @@ def create(
         env = brax.v1.envs.wrappers.EvalWrapper(env)
         env = CompletedEvalWrapper(env)
     env = ClipRewardWrapper(env)
-    env = ClipActionWrapper(env)
+    #env = ClipActionWrapper(env)
     #env = NormalizeVecObservationWrapper(env)
     
     return env

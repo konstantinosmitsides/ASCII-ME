@@ -166,6 +166,9 @@ def scoring_function_brax_envs(
     data = data.replace(obs=normalized_obs, rewards=normalized_rewards)
     
     
+    
+    
+    
     return (
         fitnesses,
         descriptors,

@@ -6,7 +6,8 @@ from typing import Tuple
 import flax
 import jax
 import jax.numpy as jnp
-
+from typing import Any
+import distrax
 from qdax.types import (
     Action,
     Descriptor,
@@ -408,6 +409,161 @@ class QDMCTransition(QDTransition):
         )
         
         #squeezed_transition = {key: jnp.squeeze(value, axis=0) for key, value in dummy_transition.items()}
+
+        return dummy_transition
+    
+    
+class PPOTransition(QDTransition):
+    
+    pi: Any
+    val_adv: Any
+    target: Any
+    
+    '''
+    @property
+    def pi_dim(self) -> int:
+        """
+        Returns:
+            the dimension of the pi.
+        """
+        return 2 * self.pi.event_shape[0]
+    
+    
+    @property
+    def flatten_dim(self) -> int:
+        """
+        Returns:
+            the dimension of the transition once flattened.
+        """
+        flatten_dim = (
+            2 * self.observation_dim
+            + self.action_dim
+            + 3
+            + 2 * self.state_descriptor_dim
+            + self.pi_dim
+        )
+        return flatten_dim
+    
+    def flatten(self) -> jnp.ndarray:
+        """
+        Returns:
+            a jnp.ndarray that corresponds to the flattened transition.
+        """
+        
+        pi_params = jnp.concatenate([self.pi.mean(), self.pi.stddev()], axis=-1)
+        
+        flatten_transition = jnp.concatenate(
+            [
+                self.obs,
+                self.next_obs,
+                jnp.expand_dims(self.rewards, axis=-1),
+                jnp.expand_dims(self.dones, axis=-1),
+                jnp.expand_dims(self.truncations, axis=-1),
+                self.actions,
+                self.state_desc,
+                self.next_state_desc,
+                pi_params,
+            ],
+            axis=-1,
+        )
+        return flatten_transition
+    
+    @classmethod
+    def from_flatten(
+        cls,
+        flattened_transition: jnp.ndarray,
+        transition: PPOTransition,
+    ) -> PPOTransition:
+        """
+        Creates a transition from a flattened transition in a jnp.ndarray.
+        Args:
+            flattened_transition: flattened transition in a jnp.ndarray of shape
+                (batch_size, flatten_dim)
+            transition: a transition object (might be a dummy one) to
+                get the dimensions right
+        Returns:
+            a Transition object
+        """
+        obs_dim = transition.observation_dim
+        action_dim = transition.action_dim
+        desc_dim = transition.state_descriptor_dim
+        pi_dim = transition.pi_dim // 2
+
+        obs = flattened_transition[:, :obs_dim]
+        next_obs = flattened_transition[:, obs_dim : (2 * obs_dim)]
+        rewards = jnp.ravel(flattened_transition[:, (2 * obs_dim) : (2 * obs_dim + 1)])
+        dones = jnp.ravel(
+            flattened_transition[:, (2 * obs_dim + 1) : (2 * obs_dim + 2)]
+        )
+        truncations = jnp.ravel(
+            flattened_transition[:, (2 * obs_dim + 2) : (2 * obs_dim + 3)]
+        )
+        actions = flattened_transition[
+            :, (2 * obs_dim + 3) : (2 * obs_dim + 3 + action_dim)
+        ]
+        state_desc = flattened_transition[
+            :,
+            (2 * obs_dim + 3 + action_dim) : (2 * obs_dim + 3 + action_dim + desc_dim),
+        ]
+        next_state_desc = flattened_transition[
+            :,
+            (2 * obs_dim + 3 + action_dim + desc_dim) : (
+                2 * obs_dim + 3 + action_dim + 2 * desc_dim
+            ),
+        ]
+        
+        pi_mean = flattened_transition[:, -2 * pi_dim: -pi_dim]
+        pi_scale_diag = flattened_transition[:, -pi_dim:]
+        
+        pi_distribution = distrax.MultivariateNormalDiag(loc=pi_mean, scale_diag=pi_scale_diag)
+        
+        return cls(
+            obs=obs,
+            next_obs=next_obs,
+            rewards=rewards,
+            dones=dones,
+            truncations=truncations,
+            actions=actions,
+            state_desc=state_desc,
+            next_state_desc=next_state_desc,
+            pi=pi_distribution,
+    )
+    
+    '''
+    
+    @classmethod
+    def init_dummy(
+        cls,
+        observation_dim: int,
+        action_dim: int,
+        descriptor_dim: int,
+        pi_dim: int,
+        val_adv_dim: int,
+        target_dim: int,
+    ) -> PPOTransition:
+        """
+        Initialize a dummy transition that then can be passed to constructors to get
+        all shapes right.
+        Args:
+            observation_dim: observation dimension
+            action_dim: action dimension
+        Returns:
+            a dummy transition
+        """
+        dummy_transition = PPOTransition(
+            obs=jnp.zeros(shape=(observation_dim)),
+            next_obs=jnp.zeros(shape=(observation_dim)),
+            rewards=jnp.zeros(shape=()),
+            dones=jnp.zeros(shape=()),
+            truncations=jnp.zeros(shape=()),
+            actions=jnp.zeros(shape=(action_dim)),
+            state_desc=jnp.zeros(shape=(descriptor_dim)),
+            next_state_desc=jnp.zeros(shape=(descriptor_dim)),
+            pi=distrax.MultivariateNormalDiag(loc=jnp.zeros(shape=(pi_dim//2)), scale_diag=jnp.zeros(shape=(pi_dim//2))),
+            val_adv=jnp.zeros(shape=(val_adv_dim)),
+            target=jnp.zeros(shape=(target_dim)),
+        )
+        
 
         return dummy_transition
 
