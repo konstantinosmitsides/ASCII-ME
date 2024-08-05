@@ -144,7 +144,7 @@ def scoring_function_brax_envs(
         random_key=subkey,
     )
 
-    _final_state, data = jax.vmap(unroll_fn)(init_states, policies_params)
+    _final_state, data, params_vectors = jax.vmap(unroll_fn)(init_states, policies_params)
 
     # create a mask to extract data properly
     mask = get_mask_from_transitions(data)
@@ -169,12 +169,15 @@ def scoring_function_brax_envs(
     
     
     
+    
+    
     return (
         fitnesses,
         descriptors,
         {
             "transitions": data,
             "rewards": rewards,
+            "params_vectors": params_vectors,
         },
         random_key,
         normalizer,

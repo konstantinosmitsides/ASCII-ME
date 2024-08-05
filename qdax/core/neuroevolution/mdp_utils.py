@@ -7,6 +7,7 @@ import jax
 import jax.numpy as jnp
 from brax.envs import State as EnvState
 from flax.struct import PyTreeNode
+from utils import flatten_policy_parameters
 
 from qdax.core.neuroevolution.buffers.buffer import Transition
 from qdax.types import Descriptor, Genotype, Params, RNGKey
@@ -51,21 +52,40 @@ def generate_unroll(
     Returns:
         A new state, the experienced transition.
     """
-
+    '''
     def _scan_play_step_fn(
         carry: Tuple[EnvState, Params, RNGKey], unused_arg: Any
     ) -> Tuple[Tuple[EnvState, Params, RNGKey], Transition]:
-        env_state, policy_params, random_key, transitions = play_step_fn(*carry)
-        return (env_state, policy_params, random_key), transitions
+        env_state, policy_params, random_key, transitions, next_val, param_vector = play_step_fn(*carry)
+        return (env_state, policy_params, random_key, next_val), (transitions, param_vector)
 
-    (state, _, _), transitions = jax.lax.scan(
+    (state, _, _, _), (transitions, param_vector) = jax.lax.scan(
         _scan_play_step_fn,
         (init_state, policy_params, random_key),
         (),
         length=episode_length,
     )
+    
+    
     return state, transitions
+    '''
+    def _scan_play_step_fn(
+        carry: Tuple[EnvState, Params, RNGKey], unused_arg: Any
+    ) -> Tuple[Tuple[EnvState, Params, RNGKey, Any], Transition]:
+        return play_step_fn(*carry)
+    
 
+    (state, policy_params, _, _), transitions = jax.lax.scan(
+        _scan_play_step_fn,
+        (init_state, policy_params, random_key, None),  # Include initial 'value' as None if used
+        None,
+        length=episode_length
+    )
+    
+    params_vector = flatten_policy_parameters(policy_params)
+    
+    return state, transitions, params_vector
+    
 
 @partial(jax.jit, static_argnames=("play_step_actor_dc_fn", "episode_length"))
 def generate_unroll_actor_dc(

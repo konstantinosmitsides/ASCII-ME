@@ -415,7 +415,6 @@ class QDMCTransition(QDTransition):
     
 class PPOTransition(QDTransition):
     
-    pi: Any
     val_adv: Any
     target: Any
     
@@ -537,7 +536,6 @@ class PPOTransition(QDTransition):
         observation_dim: int,
         action_dim: int,
         descriptor_dim: int,
-        pi_dim: int,
         val_adv_dim: int,
         target_dim: int,
     ) -> PPOTransition:
@@ -559,7 +557,6 @@ class PPOTransition(QDTransition):
             actions=jnp.zeros(shape=(action_dim)),
             state_desc=jnp.zeros(shape=(descriptor_dim)),
             next_state_desc=jnp.zeros(shape=(descriptor_dim)),
-            pi=distrax.MultivariateNormalDiag(loc=jnp.zeros(shape=(pi_dim//2)), scale_diag=jnp.zeros(shape=(pi_dim//2))),
             val_adv=jnp.zeros(shape=(val_adv_dim)),
             target=jnp.zeros(shape=(target_dim)),
         )

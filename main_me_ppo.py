@@ -97,13 +97,14 @@ def main(config: Config) -> None:
 
     # Define the fonction to play a step with the policy in the environment
     @jax.jit
-    def play_step_fn(env_state, policy_params, random_key):
+    def play_step_fn(env_state, policy_params, random_key, value=None):
         random_key, subkey = jax.random.split(random_key)
-        pi, val = policy_network.apply(policy_params, env_state.obs)
+        pi, val = policy_network.apply(policy_params, env_state.obs) if value is None else (policy_network.apply(policy_params, env_state.obs), value)
         action = pi.sample(seed=subkey)
         #logp = policy_network.apply(policy_params, env_state.obs, actions, method=policy_network.logp)
         state_desc = env_state.info["state_descriptor"]
         next_state = env.step(env_state, action)
+        _, next_val = policy_network.apply(policy_params, next_state.obs)
 
         transition = PPOTransition(
             obs=env_state.obs,
@@ -114,14 +115,13 @@ def main(config: Config) -> None:
             actions=action,
             state_desc=state_desc,
             next_state_desc=next_state.info["state_descriptor"],
-            pi=pi,
             val_adv=val,
-            target=jnp.zeros(shape=(()))
+            target=next_val,
             #desc=jnp.zeros(env.behavior_descriptor_length,) * jnp.nan,
             #desc_prime=jnp.zeros(env.behavior_descriptor_length,) * jnp.nan,
         )
 
-        return next_state, policy_params, random_key, transition
+        return (next_state, policy_params, random_key, next_val), transition
 
 
 

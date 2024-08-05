@@ -210,3 +210,21 @@ def get_df(results_dir):
 
                 metrics_list.append(metrics)
     return pd.concat(metrics_list, ignore_index=True)
+
+
+def flatten_policy_parameters(params, flat_params=None):
+    if flat_params is None:
+        flat_params = []
+    
+    for key, value in params.items():
+        if isinstance(value, dict):
+            # Recursive call to handle nested dictionaries
+            flatten_policy_parameters(value, flat_params)
+        elif key in ['bias', 'kernel', 'log_std']:
+            # Flatten and append the parameters if they match expected keys
+            print(f"Including {key} with shape {value.shape}")  # Debug: Confirm these parameters are included
+            flat_params.append(jnp.ravel(value))
+        else:
+            print(f"Skipping {key}")  # Debug: Notice skipped params or incorrect structures
+
+    return jnp.concatenate(flat_params) if flat_params else jnp.array([])
