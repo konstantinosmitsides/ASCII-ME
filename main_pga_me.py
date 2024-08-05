@@ -107,7 +107,7 @@ def main(config: Config) -> None:
             #desc_prime=jnp.zeros(env.behavior_descriptor_length,) * jnp.nan,
         )
 
-        return next_state, policy_params, random_key, transition
+        return (next_state, policy_params, random_key), transition
 
     # Prepare the scoring function
     bd_extraction_fn = behavior_descriptor_extractor[config.env.name]

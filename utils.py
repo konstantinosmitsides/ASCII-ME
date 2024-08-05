@@ -222,9 +222,34 @@ def flatten_policy_parameters(params, flat_params=None):
             flatten_policy_parameters(value, flat_params)
         elif key in ['bias', 'kernel', 'log_std']:
             # Flatten and append the parameters if they match expected keys
-            print(f"Including {key} with shape {value.shape}")  # Debug: Confirm these parameters are included
+            #print(f"Including {key} with shape {value.shape}")  # Debug: Confirm these parameters are included
             flat_params.append(jnp.ravel(value))
         else:
-            print(f"Skipping {key}")  # Debug: Notice skipped params or incorrect structures
+            continue
+            #print(f"Skipping {key}")  # Debug: Notice skipped params or incorrect structures
 
     return jnp.concatenate(flat_params) if flat_params else jnp.array([])
+
+
+def calculate_gae(data):
+    def _scan_get_advantages(carry, x):
+        gae, next_value = carry
+        done, value, reward = x
+        
+        
+        delta = reward + 0.99 * next_value * (1 - done) - value
+        
+        gae = delta + 0.99 * 0.95 * (1 - done) * gae
+        
+        return (gae, value), gae
+    
+    _, advantages = jax.lax.scan(
+        _scan_get_advantages,
+        (jnp.zeros_like(data.val_adv), data.target[:, -1]),
+        (data.done.T, data.val.T, data.reward.T),
+        reverse=True,
+        unroll=16,
+    )
+    
+    return advantages.T, advantages.T + data.val
+    

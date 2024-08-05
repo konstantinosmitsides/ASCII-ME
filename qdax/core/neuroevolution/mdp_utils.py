@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Any, Callable, Tuple
+from typing import Any, Callable, Tuple, Optional
 
 import brax.envs
 import flax.linen as nn
@@ -30,7 +30,7 @@ def generate_unroll(
     random_key: RNGKey,
     episode_length: int,
     play_step_fn: Callable[
-        [EnvState, Params, RNGKey],
+        [EnvState, Params, RNGKey, Optional[Any]],
         Tuple[
             EnvState,
             Params,
@@ -71,13 +71,13 @@ def generate_unroll(
     '''
     def _scan_play_step_fn(
         carry: Tuple[EnvState, Params, RNGKey], unused_arg: Any
-    ) -> Tuple[Tuple[EnvState, Params, RNGKey, Any], Transition]:
+    ) -> Tuple[Tuple[EnvState, Params, RNGKey, Optional[Any]], Transition]:
         return play_step_fn(*carry)
     
 
-    (state, policy_params, _, _), transitions = jax.lax.scan(
+    (state, policy_params, _), transitions = jax.lax.scan(
         _scan_play_step_fn,
-        (init_state, policy_params, random_key, None),  # Include initial 'value' as None if used
+        (init_state, policy_params, random_key),  # Include initial 'value' as None if used
         None,
         length=episode_length
     )

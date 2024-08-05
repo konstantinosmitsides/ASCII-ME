@@ -7,6 +7,7 @@ import flax.linen as nn
 import jax
 import jax.numpy as jnp
 from typing import Any
+from utils import calculate_gae
 
 import qdax.environments
 from qdax import environments
@@ -164,6 +165,10 @@ def scoring_function_brax_envs(
     normalized_obs = normalizer.normalize(data.obs)
     reward_normalizer, normalized_rewards = reward_normalizer.update(data.rewards, data.dones)
     data = data.replace(obs=normalized_obs, rewards=normalized_rewards)
+    
+    advantages, targets = calculate_gae(data)
+    
+    data = data.replace(advantages=advantages, targets=targets)
     
     
     

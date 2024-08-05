@@ -101,7 +101,7 @@ def main(config: Config) -> None:
         random_key, subkey = jax.random.split(random_key)
         pi, val = policy_network.apply(policy_params, env_state.obs) if value is None else (policy_network.apply(policy_params, env_state.obs), value)
         action = pi.sample(seed=subkey)
-        #logp = policy_network.apply(policy_params, env_state.obs, actions, method=policy_network.logp)
+        logp = pi.log_prob(action)
         state_desc = env_state.info["state_descriptor"]
         next_state = env.step(env_state, action)
         _, next_val = policy_network.apply(policy_params, next_state.obs)
@@ -117,6 +117,7 @@ def main(config: Config) -> None:
             next_state_desc=next_state.info["state_descriptor"],
             val_adv=val,
             target=next_val,
+            logp=logp
             #desc=jnp.zeros(env.behavior_descriptor_length,) * jnp.nan,
             #desc_prime=jnp.zeros(env.behavior_descriptor_length,) * jnp.nan,
         )

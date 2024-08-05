@@ -417,7 +417,7 @@ class PPOTransition(QDTransition):
     
     val_adv: Any
     target: Any
-    
+    logp: Any
     '''
     @property
     def pi_dim(self) -> int:
@@ -536,8 +536,8 @@ class PPOTransition(QDTransition):
         observation_dim: int,
         action_dim: int,
         descriptor_dim: int,
-        val_adv_dim: int,
-        target_dim: int,
+        #val_adv_dim: int,
+        #target_dim: int,
     ) -> PPOTransition:
         """
         Initialize a dummy transition that then can be passed to constructors to get
@@ -557,8 +557,9 @@ class PPOTransition(QDTransition):
             actions=jnp.zeros(shape=(action_dim)),
             state_desc=jnp.zeros(shape=(descriptor_dim)),
             next_state_desc=jnp.zeros(shape=(descriptor_dim)),
-            val_adv=jnp.zeros(shape=(val_adv_dim)),
-            target=jnp.zeros(shape=(target_dim)),
+            val_adv=jnp.zeros(shape=()),
+            target=jnp.zeros(shape=()),
+            logp=jnp.zeros(shape=()),
         )
         
 
