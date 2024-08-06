@@ -1,7 +1,8 @@
 name: ant_uni
 version: v1
 backend: spring
-episode_length: 1000
+#episode_length: 1000
+episode_length: 250
 min_bd: 0.
 max_bd: 1.
 use_contact_forces: False

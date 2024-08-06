@@ -12,7 +12,7 @@ defaults:
 alg_name: me_mcpg
 seed: 0
 env_name: ant_uni
-episode_length: 1000
+#episode_length: 1000
 policy_hidden_layer_sizes: [128, 128]
 # ME config
 num_evaluations: 0

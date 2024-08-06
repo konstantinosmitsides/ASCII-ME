@@ -17,6 +17,7 @@ class DCGMEConfig:
     ga_batch_size: int = 128
     qpg_batch_size: int = 64
     ai_batch_size: int = 64
+    actor_batch_size: int  = 0
     lengthscale: float = 0.1
 
     # PG emitter
@@ -42,16 +43,19 @@ class DCGMEEmitter(MultiEmitter):
         config: DCGMEConfig,
         policy_network: nn.Module,
         actor_network: nn.Module,
+        scoring_actor_fn,
         env: QDEnv,
         variation_fn: Callable[[Params, Params, RNGKey], Tuple[Params, RNGKey]],
     ) -> None:
         self._config = config
+        self._actor_network = actor_network
         self._env = env
         self._variation_fn = variation_fn
 
         qdcg_config = QualityDCGConfig(
             qpg_batch_size=config.qpg_batch_size,
             ai_batch_size=config.ai_batch_size,
+            actor_batch_size=config.actor_batch_size,
             lengthscale=config.lengthscale,
             critic_hidden_layer_size=config.critic_hidden_layer_size,
             num_critic_training_steps=config.num_critic_training_steps,
@@ -74,7 +78,8 @@ class DCGMEEmitter(MultiEmitter):
             config=qdcg_config,
             policy_network=policy_network,
             actor_network=actor_network,
-            env=env,
+            scoring_actor_fn=scoring_actor_fn,
+            env=env
         )
 
         # define the GA emitter
