@@ -254,8 +254,9 @@ class PPOEmitter(Emitter):
         tx = optax.chain(
             optax.clip_by_global_norm(self._config.max_grad_norm),
             optax.adam(
-                learning_rate=self._config.learning_rate),
+                learning_rate=self._config.learning_rate,
                 eps=1e-5,
+            ),
         )        
         
         train_state = TrainState.create(
@@ -277,10 +278,10 @@ class PPOEmitter(Emitter):
                 
                 def _loss_fn(params, traj_batch):
                     pi, value = self._policy.apply(params, traj_batch.obs)
-                    logp_ = pi.log_prob(traj_batch.action)
+                    logp_ = pi.log_prob(traj_batch.actions)
                     
                     # see if you will clip the values
-                    value_losses = jnp.square(value - traj_batch.targets)
+                    value_losses = jnp.square(value - traj_batch.target)
                     value_loss = 0.5 * jnp.mean(value_losses)
                     
                     ratio = jnp.exp(logp_ - traj_batch.logp)
@@ -298,12 +299,13 @@ class PPOEmitter(Emitter):
                     train_state.params,
                     traj_batch,
                 )
-                train_state = train_state.apply_gradients(grad)
+                train_state = train_state.apply_gradients(grads=grad)
                 return train_state, total_loss
             
             train_state, traj_batch, rng = update_state
             rng, _rng = jax.random.split(rng)
-            batch_size = traj_batch.rewards.shape[0]
+            batch_size = traj_batch.rewards.shape[0] * traj_batch.rewards.shape[1]
+            #jax.debug.print("Batch size: {}", batch_size)
             
             permutation = jax.random.permutation(_rng, batch_size)
             batch = jax.tree_util.tree_map(

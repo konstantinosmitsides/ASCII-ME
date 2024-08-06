@@ -6,7 +6,7 @@ hydra:
 
 defaults:
   - _self_
-  - env: halfcheetah_uni
+  - env: ant_uni
   - algo: me
 
 seed: 0

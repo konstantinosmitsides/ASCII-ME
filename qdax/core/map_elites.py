@@ -191,6 +191,8 @@ class MAPElites:
         self._metrics_function = metrics_function
         self._obs_normalizer =ObsNormalizer(self._emitter._env.observation_size)
         self._reward_normalizer = RewardNormalizer(self._emitter.batch_size)
+        #self._obs_normalizer =ObsNormalizer(28)
+      
 
     @partial(jax.jit, static_argnames=("self",))
     def init(
@@ -343,10 +345,12 @@ class MAPElites:
             The updated repertoire and emitter state, with a new random key and metrics.
         """
         repertoire, emitter_state, random_key, obs_normalizer,reward_normalizer = carry
-        (repertoire, emitter_state, metrics, random_key,) = self.update(
+        (repertoire, emitter_state, metrics, random_key, obs_normalizer, reward_normalizer) = self.update(
             repertoire,
             emitter_state,
             random_key,
+            obs_normalizer,
+            reward_normalizer
         )
 
         return (repertoire, emitter_state, random_key, obs_normalizer, reward_normalizer), metrics

@@ -168,7 +168,7 @@ def scoring_function_brax_envs(
     
     advantages, targets = calculate_gae(data)
     
-    data = data.replace(advantages=advantages, targets=targets)
+    data = data.replace(val_adv=advantages, target=targets)
     
     
     
