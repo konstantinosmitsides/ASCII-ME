@@ -3,8 +3,8 @@ job_name: oped
 walltime: 7:59:00
  
 nnodes: 1
-ncpus: 32
-mem: 128gb
+ncpus: 4
+mem: 32gb
 ngpus: 1
 gpu_type: RTX6000
  
