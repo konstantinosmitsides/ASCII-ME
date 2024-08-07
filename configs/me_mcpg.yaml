@@ -50,6 +50,7 @@ activation: tanh
 vf_coef: 0.5
 num_minibatches: 32
 max_grad_norm: 0.5
+lecun: True
 
 
 

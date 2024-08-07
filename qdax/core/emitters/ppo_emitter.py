@@ -277,7 +277,8 @@ class PPOEmitter(Emitter):
                 traj_batch = batch_info
                 
                 def _loss_fn(params, traj_batch):
-                    pi, value = self._policy.apply(params, traj_batch.obs)
+                    #pi, value = self._policy.apply(params, traj_batch.obs)
+                    pi, _, value = self._policy.apply(params, traj_batch.obs)
                     logp_ = pi.log_prob(traj_batch.actions)
                     
                     # see if you will clip the values

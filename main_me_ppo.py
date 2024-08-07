@@ -100,14 +100,14 @@ def main(config: Config) -> None:
     @jax.jit
     def play_step_fn(env_state, policy_params, random_key):
         random_key, subkey = jax.random.split(random_key)
-      
-        pi, val = policy_network.apply(policy_params, env_state.obs)
- 
-        action = pi.sample(seed=subkey)
+        #pi, val = policy_network.apply(policy_params, env_state.obs)
+        #action = pi.sample(seed=subkey)
+        pi, action, val = policy_network.apply(policy_params, env_state.obs)
+        
         logp = pi.log_prob(action)
         state_desc = env_state.info["state_descriptor"]
         next_state = env.step(env_state, action)
-        _, next_val = policy_network.apply(policy_params, next_state.obs)
+        _, _, next_val = policy_network.apply(policy_params, next_state.obs)
 
         transition = PPOTransition(
             obs=env_state.obs,
