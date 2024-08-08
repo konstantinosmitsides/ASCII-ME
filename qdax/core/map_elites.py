@@ -104,7 +104,7 @@ class RewardNormalizer:
             mean, var, count, return_val = carry
             (reward, done) = x
             
-            jax.debug.print("Reward shape: {}", reward.shape)
+            #jax.debug.print("Reward shape: {}", reward.shape)
             
             # Update the return value
             new_return_val = reward + gamma * return_val * (1 - done)
