@@ -406,6 +406,7 @@ class MCPGEmitter(Emitter):
         # Directly sample batch and use necessary components
         batch = self._buffer.sample(emitter_state.buffer_state, random_key)
         trans = batch.experience
+        jax.debug.print("trans: {}", trans)
         mask = jax.vmap(self.compute_mask, in_axes=0)(trans.dones)
         standardized_returns = self.get_standardized_return(trans.rewards, mask)
         
