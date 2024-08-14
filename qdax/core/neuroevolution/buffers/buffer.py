@@ -415,8 +415,8 @@ class QDMCTransition(QDTransition):
     
 class PPOTransition(QDTransition):
     
-    val_adv: Any
-    target: Any
+    val: Any
+    #target: Optional[Any]
     logp: Any
     '''
     @property
@@ -557,8 +557,8 @@ class PPOTransition(QDTransition):
             actions=jnp.zeros(shape=(action_dim)),
             state_desc=jnp.zeros(shape=(descriptor_dim)),
             next_state_desc=jnp.zeros(shape=(descriptor_dim)),
-            val_adv=jnp.zeros(shape=()),
-            target=jnp.zeros(shape=()),
+            val=jnp.zeros(shape=()),
+            #target=jnp.zeros(shape=()),
             logp=jnp.zeros(shape=()),
         )
         
