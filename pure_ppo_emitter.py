@@ -17,7 +17,7 @@ from qdax.core.emitters.emitter import EmitterState
 
 @dataclass
 class PurePPOConfig:
-    NO_AGENTS: int = 1
+    GREEDY_AGENTS: int = 1
     LR: float = 1e-3
     NUM_ENVS: int = 2048
     NUM_STEPS: int = 10
@@ -41,7 +41,7 @@ class PurePPOEmitterState(EmitterState):
     rng: Any
 
 class PurePPOEmitter():
-    def __init__(self, config: PurePPOConfig, policy_net, env, scoring_function):
+    def __init__(self, config: PurePPOConfig, policy_net, env): #, scoring_function):
         env = VecEnv(env)
         env = NormalizeVecRewward(env, config.GAMMA)
         
@@ -53,7 +53,7 @@ class PurePPOEmitter():
         #     no_neurons=self._config.NO_NEURONS,
         # )
         self._actor_critic = policy_net
-        self._scoring_function = scoring_function
+        #self._scoring_function = scoring_function
         '''
         rng, _rng = jax.random.split(rng)
         init_x = jnp.zeros(self._env.observation_size)
@@ -86,7 +86,7 @@ class PurePPOEmitter():
         Returns:
             int: the batch size emitted by the emitter.
         """
-        return self._config.NO_AGENTS
+        return self._config.GREEDY_AGENTS
     
     @property
     def use_all_data(self) -> bool:
@@ -337,11 +337,13 @@ class PurePPOEmitter():
             length=num_updates // self._config.NO_ADD,
         )
         
+        '''
         params = jax.tree_util.tree_map(lambda x: x[jnp.newaxis, ...], params)
         fitnesses, descriptors, extra_scores, rng = self._scoring_function(params, rng)
         
         repertoire = repertoire.add(params, descriptors, fitnesses, extra_scores)
         params = jax.tree_util.tree_map(lambda x: x[0, ...], params)
+        '''
         
         return (state, params, opt_state, repertoire, rng), losses
         

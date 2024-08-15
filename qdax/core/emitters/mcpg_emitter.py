@@ -12,7 +12,7 @@ from chex import ArrayTree
 from qdax.core.containers.repertoire import Repertoire
 from qdax.types import Descriptor, ExtraScores, Fitness, Genotype, RNGKey
 from qdax.environments.base_wrappers import QDEnv
-from qdax.core.neuroevolution.buffers.buffer import QDTransition, QDMCTransition
+from qdax.core.neuroevolution.buffers.buffer import QDTransition, QDMCTransition, PPOTransition
 #from qdax.core.neuroevolution.buffers.trajectory_buffer import TrajectoryBuffer
 import flashbax as fbx
 import chex
@@ -40,7 +40,6 @@ class MCPGConfig:
     no_epochs: int = 16
     learning_rate: float = 3e-4
     discount_rate: float = 0.99
-    adam_optimizer: bool = True
     #buffer_size: int = 256000
     clip_param: float = 0.2
     
@@ -109,7 +108,7 @@ class MCPGEmitter(Emitter):
         
         # Init trajectory buffer
 
-        dummy_transition = QDMCTransition.init_dummy(
+        dummy_transition = PPOTransition.init_dummy(
             observation_dim=obs_size,
             action_dim=action_size,
             descriptor_dim=descriptor_size,

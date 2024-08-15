@@ -338,11 +338,14 @@ class MapElitesRepertoire(flax.struct.PyTreeNode):
             batch_of_descriptors
         )
 
-        return MapElitesRepertoire(
+        return (
+            MapElitesRepertoire(
             genotypes=new_repertoire_genotypes,
             fitnesses=new_fitnesses,
             descriptors=new_descriptors,
             centroids=self.centroids,
+        ),
+            addition_condition.reshape(-1),
         )
 
     @classmethod
@@ -389,7 +392,7 @@ class MapElitesRepertoire(flax.struct.PyTreeNode):
         repertoire = cls.init_default(genotype=first_genotype, centroids=centroids)
 
         # add initial population to the repertoire
-        new_repertoire = repertoire.add(genotypes, descriptors, fitnesses, extra_scores)
+        new_repertoire, _ = repertoire.add(genotypes, descriptors, fitnesses, extra_scores)
 
         return new_repertoire  # type: ignore
 

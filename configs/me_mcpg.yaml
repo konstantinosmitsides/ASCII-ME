@@ -18,7 +18,7 @@ policy_hidden_layer_sizes: [128, 128]
 num_evaluations: 0
 num_iterations: 1
 num_samples: 8
-no_agents: 1
+no_agents: 512
 fixed_init_state: False
 discard_dead: False
 # Grid config
@@ -39,10 +39,10 @@ buffer_sample_batch_size: 2
 buffer_add_batch_size: 512
 #batch_size: 64000
 #mini_batch_size: 64000 # Num of episodes used for gradient estimate
-no_epochs: 4 # Num gradient steps per generation
+no_epochs: 16 # Num gradient steps per generation
 #buffer_size: 64000 # Size of the replay buffer
 adam_optimizer: True
-learning_rate: 1e-3
+learning_rate: 3e-4
 discount_rate: 0.99
 clip_param: 0.2
 no_neurons: 64
