@@ -50,7 +50,7 @@ class MEMCPGEmitter(MultiEmitter):
             no_epochs=config.no_epochs,
             #buffer_size=config.buffer_size,
             learning_rate=config.learning_rate,
-            adam_optimizer=config.adam_optimizer,
+            #adam_optimizer=config.adam_optimizer,
             clip_param=config.clip_param
         )
 

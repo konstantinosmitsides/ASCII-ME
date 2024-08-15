@@ -618,14 +618,16 @@ class MCPGEmitter(Emitter):
         mask,
         standardized_returns,
     ):
-        
+        '''
         logps_ = self._policy.apply(
             params,
             jax.lax.stop_gradient(obs),
             jax.lax.stop_gradient(actions),
             method=self._policy.logp,
         )
-        
+        '''
+        pi, _, _ = self._policy.apply(params, obs)
+        logps_ = pi.log_prob(actions)
         
         ratio = jnp.exp(logps_ - jax.lax.stop_gradient(logps))
         

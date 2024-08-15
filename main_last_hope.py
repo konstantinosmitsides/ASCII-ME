@@ -99,8 +99,8 @@ def main(config: Config) -> None:
     def play_step_fn(env_state, policy_params, key):
         rng, rng_ = jax.random.split(key)
         pi, action, val = policy_network.apply(policy_params, env_state.obs)
-        action_ = pi.sample(seed=rng_)
-        log_prob = pi.log_prob(action_)
+        #action_ = pi.sample(seed=rng_)
+        log_prob = pi.log_prob(action)
         
         #rng, rng_ = jax.random.split(rng)
         #rng_step = jax.random.split(rng_, num=self._config.NUM_ENVS)
@@ -234,13 +234,13 @@ def main(config: Config) -> None:
    
 
     def get_n_offspring_added_1(metrics):
-        split = jnp.cumsum(jnp.array([emitter.batch_size for emitter in map_elites._emitter.emitters]))
+        split = jnp.cumsum(jnp.array([emitter.batch_size for emitter in map_elites._emitter_1.emitters]))
         split = jnp.split(metrics["is_offspring_added"], split, axis=-1)[:-1]
         #qpg_offspring_added, ai_offspring_added = jnp.split(split[0], (split[0].shape[1]-1,), axis=-1)
         return (jnp.sum(split[2], axis=-1), jnp.sum(split[0], axis=-1), jnp.sum(split[1], axis=-1))
     
     def get_n_offspring_added_2(metrics):
-        split = jnp.cumsum(jnp.array([emitter.batch_size for emitter in map_elites._emitter.emitters]))
+        split = jnp.cumsum(jnp.array([emitter.batch_size for emitter in map_elites._emitter_2.emitters]))
         split = jnp.split(metrics["is_offspring_added"], split, axis=-1)[:-1]
         #qpg_offspring_added, ai_offspring_added = jnp.split(split[0], (split[0].shape[1]-1,), axis=-1)
         return (jnp.sum(split[1], axis=-1), jnp.sum(split[0], axis=-1))
@@ -306,7 +306,7 @@ def main(config: Config) -> None:
     )
     '''
     me_mcpg_ppo_config = MEMCPGPPOConfig()
-    me_mcpg_config = MEMCPGEmitter()
+    me_mcpg_config = MEMCPGConfig()
     variation_fn = partial(
         isoline_variation, iso_sigma=config.iso_sigma, line_sigma=config.line_sigma
     )
@@ -340,7 +340,7 @@ def main(config: Config) -> None:
     log_period = 10
     num_loops = int(config.num_iterations / log_period)
 
-    metrics = dict.fromkeys(["iteration", "qd_score", "coverage", "max_fitness", "qd_score_repertoire", "dem_repertoire", "time", "evaluation", "ga_offspring_added", "qpg_offspring_added", "ppo_offspring_added"], jnp.array([]))    
+    metrics = dict.fromkeys(["iteration", "qd_score", "coverage", "max_fitness", "qd_score_repertoire", "dem_repertoire", "time", "evaluation", "ga_offspring_added", "qpg_offspring_added"], jnp.array([]))    
     csv_logger = CSVLogger(
         "./log.csv",
         header=list(metrics.keys())
@@ -361,21 +361,22 @@ def main(config: Config) -> None:
             plt.close()
     # Main loop
     start_time = time.time()
-    repertoire, emitter_state, metrics, random_key = map_elites.update_1(
+    repertoire, _, current_metrics, random_key = map_elites.update_1(
         repertoire,
         emitter_state_1,
         random_key,
     )
     timelapse = time.time() - start_time
     
+    current_metrics = jax.tree_util.tree_map(lambda x: jnp.expand_dims(x, axis=0), current_metrics)
+    
     random_key, qd_score_repertoire, dem_repertoire = evaluate_repertoire(random_key, repertoire)
-
     current_metrics["iteration"] = jnp.arange(1, 2, dtype=jnp.int32)
     current_metrics["evaluation"] = jnp.arange(1, 50512, dtype=jnp.int32)
     current_metrics["time"] = jnp.repeat(timelapse, 1)
     current_metrics["qd_score_repertoire"] = jnp.repeat(qd_score_repertoire, 1)
     current_metrics["dem_repertoire"] = jnp.repeat(dem_repertoire, 1)
-    current_metrics["ga_offspring_added"], current_metrics["qpg_offspring_added"], current_metrics["ppo_offspring_added"] = get_n_offspring_added_1(current_metrics)
+    current_metrics["ga_offspring_added"], current_metrics["qpg_offspring_added"], _ = get_n_offspring_added_1(current_metrics)
     del current_metrics["is_offspring_added"]
     metrics = jax.tree_util.tree_map(lambda metric, current_metric: jnp.concatenate([metric, current_metric], axis=0), metrics, current_metrics)
 
@@ -383,7 +384,7 @@ def main(config: Config) -> None:
     log_metrics = jax.tree_util.tree_map(lambda metric: metric[-1], metrics)
     log_metrics["qpg_offspring_added"] = jnp.sum(current_metrics["qpg_offspring_added"])
     log_metrics["ga_offspring_added"] = jnp.sum(current_metrics["ga_offspring_added"])
-    log_metrics["ppo_offspring_added"] = jnp.sum(current_metrics["ppo_offspring_added"])
+    #log_metrics["ppo_offspring_added"] = jnp.sum(current_metrics["ppo_offspring_added"])
     csv_logger.log(log_metrics)
     wandb.log(log_metrics)
     
@@ -398,9 +399,9 @@ def main(config: Config) -> None:
         print(f"Loop {i+1}/{num_loops}")
         start_time = time.time()
         
-        (repertoire, emitter_state, random_key), current_metrics = jax.lax.scan(
+        (repertoire, emitter_state_2, random_key), current_metrics = jax.lax.scan(
             map_elites_scan_update_2,
-            (repertoire, emitter_state, random_key),
+            (repertoire, emitter_state_2, random_key),
             (),
             length=log_period,
         )

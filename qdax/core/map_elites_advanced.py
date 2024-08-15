@@ -193,7 +193,7 @@ class MAPElites:
         repertoire, is_offspring_added = repertoire.add(genotypes, descriptors, fitnesses, extra_scores)
 
         # update emitter state after scoring is made
-        emitter_state = self._emitter_rl.state_update(
+        emitter_state = self._emitter_1.state_update(
             emitter_state=emitter_state,
             repertoire=repertoire,
             genotypes=genotypes,
@@ -283,7 +283,7 @@ class MAPElites:
         repertoire, is_offspring_added = repertoire.add(genotypes, descriptors, fitnesses, extra_scores)
 
         # update emitter state after scoring is made
-        emitter_state = self._emitter_rl.state_update(
+        emitter_state = self._emitter_2.state_update(
             emitter_state=emitter_state,
             repertoire=repertoire,
             genotypes=genotypes,
