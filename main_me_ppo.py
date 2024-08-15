@@ -18,7 +18,7 @@ from omegaconf import OmegaConf, DictConfig
 import jax
 import jax.numpy as jnp
 from hydra.core.config_store import ConfigStore
-from qdax.core.map_elites import MAPElites
+from qdax.core.map_elites_ import MAPElites
 from qdax.types import RNGKey, Genotype
 from qdax.utils.sampling import sampling 
 from qdax.core.containers.mapelites_repertoire import compute_cvt_centroids, MapElitesRepertoire
@@ -28,7 +28,7 @@ from qdax.core.emitters.ppo_me_emitter import PPOMEConfig, PPOMEmitter
 #from qdax.core.emitters.rein_emitter_advanced import REINaiveConfig, REINaiveEmitter
 from qdax.core.neuroevolution.buffers.buffer import QDTransition, QDMCTransition, PPOTransition
 from qdax.environments import behavior_descriptor_extractor
-from qdax.tasks.brax_envs import reset_based_scoring_function_brax_envs as scoring_function
+from qdax.tasks.brax_envs_ import reset_based_scoring_function_brax_envs as scoring_function
 from utils import Config, get_env
 from qdax.core.emitters.mutation_operators import isoline_variation
 import wandb

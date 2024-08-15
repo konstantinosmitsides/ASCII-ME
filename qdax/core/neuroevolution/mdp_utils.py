@@ -84,7 +84,7 @@ def generate_unroll(
     
     params_vector = flatten_policy_parameters(policy_params)
     
-    return state, transitions, params_vector
+    return state, transitions
     
 
 @partial(jax.jit, static_argnames=("play_step_actor_dc_fn", "episode_length"))

@@ -4,11 +4,13 @@ from functools import partial
 import jax
 from qdax.core.neuroevolution.networks.networks import MLPPPO
 import optax
-from flax.training.train_state import TrainState
+#from flax.training.train_state import TrainState
 import jax.numpy as jnp
 from wrappers_qd import VecEnv, NormalizeVecRewward
 from qdax.core.neuroevolution.buffers.buffer import PPOTransition
 from get_env import get_env
+from qdax.tasks.brax_envs import reset_based_scoring_function_brax_envs as scoring_function
+from qdax.environments import behavior_descriptor_extractor
 
 
 
@@ -64,15 +66,15 @@ class PurePPOEmitter():
         
         self._train_state = train_state
         '''
-        rng, _rng = jax.random.split(rng)
-        init_x = jnp.zeros(self._env.observation_size)
-        params = self._actor_critic.init(_rng, init_x)
+        #rng, _rng = jax.random.split(rng)
+        #init_x = jnp.zeros(self._env.observation_size)
+        #params = self._actor_critic.init(_rng, init_x)
         self._tx = optax.chain(
             optax.clip_by_global_norm(self._config.MAX_GRAD_NORM),
             optax.adam(self._config.LR, eps=1e-5)
         )
         
-        self._params = params
+        #self._params = params
         
         
     @partial(jax.jit, static_argnames=("self",))
@@ -108,7 +110,7 @@ class PurePPOEmitter():
     @partial(jax.jit, static_argnames=("self",))
     def _env_step(self, state, params, key):
         rng, rng_ = jax.random.split(key)
-        pi, value = self._actor_critic.apply(params, state.env_state.obs)
+        pi, _, value = self._actor_critic.apply(params, state.env_state.obs)
         action = pi.sample(seed=rng_)
         log_prob = pi.log_prob(action)
         
@@ -179,7 +181,7 @@ class PurePPOEmitter():
     
     @partial(jax.jit, static_argnames=("self",))
     def _loss_fn(self, params, traj_batch, gae, targets):
-        pi, value = self._actor_critic.apply(params, traj_batch.obs)
+        pi, _, value = self._actor_critic.apply(params, traj_batch.obs)
         log_prob = pi.log_prob(traj_batch.actions)
         
         value_pred_clipped = traj_batch.val + (
@@ -259,7 +261,7 @@ class PurePPOEmitter():
     def _one_update(self, state, params, opt_state, rng):
         
         state, params, rng, traj_batch = self._sample(state, params, rng)
-        _, last_val = self._actor_critic.apply(params, state.env_state.obs)
+        _, _, last_val = self._actor_critic.apply(params, state.env_state.obs)
         advs, targets = self._calculate_gae(traj_batch, last_val)
         update_state = (params, opt_state, traj_batch, advs, targets, rng)
         
@@ -289,6 +291,7 @@ class PurePPOEmitter():
             length=num_updates // self._config.NO_ADD,
         )
         
+        jax.debug.print("Update done")
         return (state, params, opt_state, rng), losses
         
         
@@ -317,3 +320,49 @@ if __name__ == "__main__":
     emitter = PurePPOEmitter(config, env, None, rng)
     rng = jax.random.PRNGKey(5)
     params = emitter.emit(rng)
+    params = jax.tree_util.tree_map(lambda x: x[jnp.newaxis, ...], params)
+    
+    
+    
+    reset_fn = jax.jit(env.reset)
+    
+    
+    @jax.jit
+    def play_step_fn(env_state, params, key):
+        rng, rng_ = jax.random.split(key)
+        pi, action, val = emitter._actor_critic.apply(params, env_state.obs)
+        action_ = pi.sample(seed=rng_)
+        log_prob = pi.log_prob(action_)
+        
+        #rng, rng_ = jax.random.split(rng)
+        #rng_step = jax.random.split(rng_, num=self._config.NUM_ENVS)
+        next_env_state = env.step(env_state, action)
+        transition = PPOTransition(
+            obs=env_state.obs,
+            next_obs=next_env_state.obs,
+            rewards=next_env_state.reward,
+            dones=next_env_state.done,
+            truncations=next_env_state.info["truncation"],
+            actions=action,
+            state_desc=env_state.info["state_descriptor"],
+            next_state_desc=next_env_state.info["state_descriptor"],
+            val=val,
+            logp=log_prob,
+        )
+        
+        return (next_env_state, params, rng), transition
+        
+    bd_extraction_fn = behavior_descriptor_extractor['ant_uni']
+    socring_fn = partial(
+        scoring_function,
+        episode_length=1000,
+        play_reset_fn=reset_fn,
+        play_step_fn=play_step_fn,
+        behavior_descriptor_extractor=bd_extraction_fn,
+    )
+    
+    rng = jax.random.PRNGKey(1000)
+    fitnesses, _, _, _ = socring_fn(params, rng)
+    
+    print(fitnesses)
+    

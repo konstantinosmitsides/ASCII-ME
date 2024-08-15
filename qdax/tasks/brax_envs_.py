@@ -6,6 +6,8 @@ import brax.envs
 import flax.linen as nn
 import jax
 import jax.numpy as jnp
+from typing import Any
+from utils import calculate_gae
 
 import qdax.environments
 from qdax import environments
@@ -109,6 +111,8 @@ def scoring_function_brax_envs(
         [EnvState, Params, RNGKey], Tuple[EnvState, Params, RNGKey, QDTransition]
     ],
     behavior_descriptor_extractor: Callable[[QDTransition, jnp.ndarray], Descriptor],
+    normalizer: Optional[Any],
+    reward_normalizer: Optional[Any],
 ) -> Tuple[Fitness, Descriptor, ExtraScores, RNGKey]:
     """Evaluates policies contained in policies_params in parallel in
     deterministic or pseudo-deterministic environments.
@@ -141,22 +145,48 @@ def scoring_function_brax_envs(
         random_key=subkey,
     )
 
-    _final_state, data = jax.vmap(unroll_fn)(init_states, policies_params)
+    _final_state, data, params_vectors = jax.vmap(unroll_fn)(init_states, policies_params)
 
     # create a mask to extract data properly
     mask = get_mask_from_transitions(data)
+    rewards = data.rewards
 
     # scores
     fitnesses = jnp.sum(data.rewards * (1.0 - mask), axis=1)
     descriptors = behavior_descriptor_extractor(data, mask)
-
+    
+    # Apply normalization
+    #normalizer.update(data.obs)
+    #normalized_obs = normalizer.normalize(data.obs)
+    #data = data.replace(obs=normalized_obs)
+    #normalized_rewards = reward_normalizer.update(data.rewards, data.dones)
+    #data = data.replace(rewards=normalized_rewards)
+    normalizer = normalizer.update(data.obs)
+    normalized_obs = normalizer.normalize(data.obs)
+    reward_normalizer, normalized_rewards = reward_normalizer.update(data.rewards, data.dones)
+    data = data.replace(obs=normalized_obs, rewards=normalized_rewards)
+    
+    advantages, targets = calculate_gae(data)
+    
+    data = data.replace(val_adv=advantages, target=targets)
+    
+    
+    
+    
+    
+    
+    
     return (
         fitnesses,
         descriptors,
         {
             "transitions": data,
+            "rewards": rewards,
+            "params_vectors": params_vectors,
         },
         random_key,
+        normalizer,
+        reward_normalizer
     )
 
 
@@ -247,6 +277,8 @@ def scoring_actor_dc_function_brax_envs(
 def reset_based_scoring_function_brax_envs(
     policies_params: Genotype,
     random_key: RNGKey,
+    normalizer: Optional[Any],
+    reward_normalizer: Optional[Any],
     episode_length: int,
     play_reset_fn: Callable[[RNGKey], EnvState],
     play_step_fn: Callable[
@@ -288,16 +320,18 @@ def reset_based_scoring_function_brax_envs(
     reset_fn = jax.vmap(play_reset_fn)
     init_states = reset_fn(keys)
 
-    fitnesses, descriptors, extra_scores, random_key = scoring_function_brax_envs(
+    fitnesses, descriptors, extra_scores, random_key, normalizer, reward_normalizer = scoring_function_brax_envs(
         policies_params=policies_params,
         random_key=random_key,
         init_states=init_states,
         episode_length=episode_length,
         play_step_fn=play_step_fn,
         behavior_descriptor_extractor=behavior_descriptor_extractor,
+        normalizer=normalizer,
+        reward_normalizer=reward_normalizer,
     )
 
-    return fitnesses, descriptors, extra_scores, random_key
+    return fitnesses, descriptors, extra_scores, random_key, normalizer, reward_normalizer
 
 
 @partial(

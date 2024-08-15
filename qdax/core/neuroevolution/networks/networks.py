@@ -437,5 +437,5 @@ class MLPPPO(nn.Module):
         #critic = nn.Dense(1, kernel_init=lecun_uniform(), bias_init=constant(0.0))(critic)
         
         #return pi, actor_mean, jnp.squeeze(critic, axis=-1)
-        return pi, jnp.squeeze(critic, axis=-1)
+        return pi, actor_mean, jnp.squeeze(critic, axis=-1)
         
