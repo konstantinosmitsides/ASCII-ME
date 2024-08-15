@@ -8,7 +8,7 @@ import jax.numpy as jnp
 class VecEnv(brax_env.Wrapper):
     def __init__(self, env):
         super().__init__(env)
-        self.reset = jax.vmap(self.env.resest)
+        self.reset = jax.vmap(self.env.reset)
         self.step = jax.vmap(self.env.step)
         
 @struct.dataclass

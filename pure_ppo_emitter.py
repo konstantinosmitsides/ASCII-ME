@@ -2,12 +2,14 @@ from dataclasses import dataclass
 from qdax.core.emitters.emitter import Emitter
 from functools import partial
 import jax
-from qdax.core.neuroevolution.networks import MLPPPO
+from qdax.core.neuroevolution.networks.networks import MLPPPO
 import optax
 from flax.training.train_state import TrainState
 import jax.numpy as jnp
 from wrappers_qd import VecEnv, NormalizeVecRewward
 from qdax.core.neuroevolution.buffers.buffer import PPOTransition
+from get_env import get_env
+
 
 
 
@@ -28,55 +30,85 @@ class PurePPOConfig:
     ACTIVATION: str = 'tanh'
     ANNEAL_LR: bool = False
     NORMALIZE_ENV: bool = True
+    NO_ADD: int = 10
+    NO_NEURONS: int = 64
     
 
-class PurePPOEmitter(Emitter):
-    def __init__(self, config: PurePPOConfig, actor_critic, env, repertoire):
+class PurePPOEmitter():
+    def __init__(self, config: PurePPOConfig, env, repertoire, rng):
         env = VecEnv(env)
         env = NormalizeVecRewward(env, config.GAMMA)
         
-        self._config = config,
+        self._config = config
         self._env = env
         self._repertoire = repertoire
         self._actor_critic = MLPPPO(
-             action_dim=self._env.actio_size,
+             action_dim=self._env.action_size,
              activation=self._config.ACTIVATION,
-             no_neurons=self._config.no_neurons
+             no_neurons=self._config.NO_NEURONS,
          )
+        '''
+        rng, _rng = jax.random.split(rng)
+        init_x = jnp.zeros(self._env.observation_size)
+        params = self._actor_critic.init(_rng, init_x)
+        tx = optax.chain(
+            optax.clip_by_global_norm(self._config.MAX_GRAD_NORM),
+            optax.adam(self._config.LR, eps=1e-5)
+        )
+        
+        train_state = TrainState.create(
+            apply_fn=self._actor_critic.apply,
+            params=params,
+            tx=tx
+        )
+        
+        self._train_state = train_state
+        '''
+        rng, _rng = jax.random.split(rng)
+        init_x = jnp.zeros(self._env.observation_size)
+        params = self._actor_critic.init(_rng, init_x)
+        self._tx = optax.chain(
+            optax.clip_by_global_norm(self._config.MAX_GRAD_NORM),
+            optax.adam(self._config.LR, eps=1e-5)
+        )
+        
+        self._params = params
+        
         
     @partial(jax.jit, static_argnames=("self",))
     def emit(self, rng):
+    
+        rng, _rng = jax.random.split(rng)
+        init_x = jnp.zeros(self._env.observation_size)
+        params = self._actor_critic.init(_rng, init_x)
 
-         num_updates = self._config.TOTAL_TIMESTEPS // self._config.NUM_ENVS // self._config.NUM_STEPS
-         rng, _rng = jax.random.split(rng)
-         init_x = jnp.zeros(self._env.observation_size)
-         params = self._actor_critic.init(_rng, init_x)
-         tx = optax.chain(
-             optax.clip_by_global_norm(self._config.MAX_GRAD_NORM),
-                optax.adam(self._config.LR, eps=1e-5)
-         )
-         
-         train_state = TrainState.create(
-                apply_fn=self._actor_critic.apply,
-                params=params,
-                tx=tx
-         )
-         
-         rng, _rng = jax.random.split(rng)
-         
-         train_state = jax.lax.scan(
-             self._update_step,
-             train_state,
-             None,
-             length=num_updates,
-         )
-         
-         return train_state
+        opt_state = self._tx.init(params)
+        #train_state = TrainState.create(
+        #    apply_fn=self._actor_critic.apply,
+        #    params=self._params,
+        #    tx=self._tx,
+        #)
+        
+        rng, _rng = jax.random.split(rng)
+        reset_rng = jax.random.split(_rng, num=self._config.NUM_ENVS)
+        state = self._env.reset(reset_rng)
+        
+        def _scan_update_step(carry, _):
+            return self._update_step(*carry)
+        
+        (state, params, opt_state, rng), _ = jax.lax.scan(
+            _scan_update_step,
+            (state, params, opt_state, rng),
+            None,
+            length=self._config.NO_ADD,
+        )
+        
+        return params
      
     @partial(jax.jit, static_argnames=("self",))
-    def _env_step(self, state, train_state, key):
+    def _env_step(self, state, params, key):
         rng, rng_ = jax.random.split(key)
-        pi, value = self._actor_critic.apply(train_state.params, state.env_state.obs)
+        pi, value = self._actor_critic.apply(params, state.env_state.obs)
         action = pi.sample(seed=rng_)
         log_prob = pi.log_prob(action)
         
@@ -96,22 +128,22 @@ class PurePPOEmitter(Emitter):
             logp=log_prob,
         )
         
-        return (next_state, train_state, rng), transition
+        return (next_state, params, rng), transition
     
     @partial(jax.jit, static_argnames=("self",))
-    def _sample(self, state, train_state, rng):
+    def _sample(self, state, params, rng):
         
         def _scan_env_step(carry, _):
             return self._env_step(*carry)
         
-        (state, train_state, rng), transitions = jax.lax.scan(
+        (state, params, rng), transitions = jax.lax.scan(
             _scan_env_step,
-            (state, train_state, rng),
+            (state, params, rng),
             None,
             length=self._config.NUM_STEPS,
         )
         
-        return state, train_state, rng, transitions
+        return state, params, rng, transitions
     
     @partial(jax.jit, static_argnames=("self",))
     def _calulate_single_gae(self, reward, value, next_value, done, prev_gae):
@@ -146,8 +178,8 @@ class PurePPOEmitter(Emitter):
     
     
     @partial(jax.jit, static_argnames=("self",))
-    def _loss_fn(self, traj_batch, gae, targets, train_state):
-        pi, value = self._actor_critic.apply(train_state.params, traj_batch.obs)
+    def _loss_fn(self, params, traj_batch, gae, targets):
+        pi, value = self._actor_critic.apply(params, traj_batch.obs)
         log_prob = pi.log_prob(traj_batch.actions)
         
         value_pred_clipped = traj_batch.val + (
@@ -168,28 +200,30 @@ class PurePPOEmitter(Emitter):
         return loss_actor + self._config.VF_COEFF * value_loss - self._config.ENTROPY_COEFF * entropy, (value_loss, loss_actor, entropy)
     
     @partial(jax.jit, static_argnames=("self",))
-    def _update_minibatch(self, train_state, batch_info):
+    def _update_minibatch(self, params, opt_state, batch_info):
         traj_batch, advs, targets = batch_info
         
         grad_fn = jax.value_and_grad(self._loss_fn, has_aux=True)
         total_loss, grad = grad_fn(
-            train_state.params,
+            params,
             traj_batch,
             advs,
             targets,
         )
-        train_state = train_state.apply_gradients(grad)
-        return train_state, total_loss
+        updates, opt_state = self._tx.update(grad, opt_state)
+        params = optax.apply_updates(params, updates)
+        #train_state = train_state.apply_gradients(grad)
+        return (params, opt_state), total_loss
     
     
     @partial(jax.jit, static_argnames=("self",))
     def _update_epoch(self, update_state):
-        train_state, traj_batch, advs, targets, rng = update_state
+        params, opt_state, traj_batch, advs, targets, rng = update_state
         rng, _rng = jax.random.split(rng)
         batch_size = (self._config.NUM_ENVS * self._config.NUM_STEPS // self._config.NUM_MINIBATCHES) * self._config.NUM_MINIBATCHES
         
         assert (
-            batch_size == self._config["NUM_ENVS"] * self._config["NUM_STEPS"]
+            batch_size == self._config.NUM_ENVS * self._config.NUM_STEPS
         ), "batch size must be equal to number of steps * number of envs"
         permutation = jax.random.permutation(_rng, batch_size)
         batch = (traj_batch, advs, targets)
@@ -207,19 +241,79 @@ class PurePPOEmitter(Emitter):
         )
         
         def _scan_update_minibatch(carry, x):
-            return self._update_minibatch(*x)
-        
-        train_state, losses = jax.lax.scan(
+            return self._update_minibatch(*carry, x)     
+          
+        (params, opt_state), losses = jax.lax.scan(
             _scan_update_minibatch,
-            train_state,
+            (params, opt_state),
             minibatches,
         )
         
-        update_state = (train_state, traj_batch, advs, targets, rng)
+        update_state = (params, opt_state, traj_batch, advs, targets, rng)
         
         return update_state, losses
         
         
         
+    @partial(jax.jit, static_argnames=("self",))
+    def _one_update(self, state, params, opt_state, rng):
+        
+        state, params, rng, traj_batch = self._sample(state, params, rng)
+        _, last_val = self._actor_critic.apply(params, state.env_state.obs)
+        advs, targets = self._calculate_gae(traj_batch, last_val)
+        update_state = (params, opt_state, traj_batch, advs, targets, rng)
+        
+        def _scan_update_epoch(carry, _):
+            return self._update_epoch(carry)
+        
+        (params, opt_state, traj_batch, advs, targets, rng), losses = jax.lax.scan(
+            _scan_update_epoch,
+            update_state,
+            None,
+            length=self._config.UPDATE_EPOCHS,
+        )
+        
+        return (state, params, opt_state, rng), losses
     
-    
+    @partial(jax.jit, static_argnames=("self",))
+    def _update_step(self, state, params, opt_state, rng):
+        num_updates = self._config.TOTAL_TIMESTEPS // self._config.NUM_ENVS // self._config.NUM_STEPS
+        
+        def _scan_one_update(carry, _):
+            return self._one_update(*carry)
+        
+        (state, params, opt_state, rng), losses = jax.lax.scan(
+            _scan_one_update,
+            (state, params, opt_state, rng),
+            None,
+            length=num_updates // self._config.NO_ADD,
+        )
+        
+        return (state, params, opt_state, rng), losses
+        
+        
+        
+if __name__ == "__main__":
+    config = PurePPOConfig(
+        LR=1e-3,
+        NUM_ENVS=2048,
+        NUM_STEPS=10,
+        TOTAL_TIMESTEPS=5e7,
+        UPDATE_EPOCHS=4,
+        NUM_MINIBATCHES=32,
+        GAMMA=0.99,
+        GAE_LAMBDA=0.95,
+        CLIP_EPS=0.2,
+        ENTROPY_COEFF=0.0,
+        VF_COEFF=0.5,
+        MAX_GRAD_NORM=0.5,
+        ACTIVATION="tanh",
+        ANNEAL_LR=False,
+        NORMALIZE_ENV=True,
+        NO_ADD=10,
+    )
+    rng = jax.random.PRNGKey(0)
+    env = get_env("ant_uni")
+    emitter = PurePPOEmitter(config, env, None, rng)
+    rng = jax.random.PRNGKey(5)
+    params = emitter.emit(rng)
