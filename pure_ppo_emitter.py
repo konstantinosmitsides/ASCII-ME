@@ -11,12 +11,13 @@ from qdax.core.neuroevolution.buffers.buffer import PPOTransition
 from get_env import get_env
 from qdax.tasks.brax_envs import reset_based_scoring_function_brax_envs as scoring_function
 from qdax.environments import behavior_descriptor_extractor
-
-
+from typing import Any
+from qdax.core.emitters.emitter import EmitterState
 
 
 @dataclass
 class PurePPOConfig:
+    NO_AGENTS: int = 1
     LR: float = 1e-3
     NUM_ENVS: int = 2048
     NUM_STEPS: int = 10
@@ -29,26 +30,30 @@ class PurePPOConfig:
     ENTROPY_COEFF: float = 0.0
     VF_COEFF: float = 0.5
     MAX_GRAD_NORM: float = 0.5
-    ACTIVATION: str = 'tanh'
+    #ACTIVATION: str = 'tanh'
     ANNEAL_LR: bool = False
     NORMALIZE_ENV: bool = True
-    NO_ADD: int = 10
-    NO_NEURONS: int = 64
+    NO_ADD: int = 1
+    #NO_NEURONS: int = 64
     
+    
+class PurePPOEmitterState(EmitterState):
+    rng: Any
 
 class PurePPOEmitter():
-    def __init__(self, config: PurePPOConfig, env, repertoire, rng):
+    def __init__(self, config: PurePPOConfig, policy_net, env, scoring_function):
         env = VecEnv(env)
         env = NormalizeVecRewward(env, config.GAMMA)
         
         self._config = config
         self._env = env
-        self._repertoire = repertoire
-        self._actor_critic = MLPPPO(
-             action_dim=self._env.action_size,
-             activation=self._config.ACTIVATION,
-             no_neurons=self._config.NO_NEURONS,
-         )
+        #self._actor_critic = MLPPPO(
+        #     action_dim=self._env.action_size,
+        #     activation=self._config.ACTIVATION,
+        #     no_neurons=self._config.NO_NEURONS,
+        # )
+        self._actor_critic = policy_net
+        self._scoring_function = scoring_function
         '''
         rng, _rng = jax.random.split(rng)
         init_x = jnp.zeros(self._env.observation_size)
@@ -74,15 +79,55 @@ class PurePPOEmitter():
             optax.adam(self._config.LR, eps=1e-5)
         )
         
-        #self._params = params
         
+    @property
+    def batch_size(self) -> int:
+        """
+        Returns:
+            int: the batch size emitted by the emitter.
+        """
+        return self._config.NO_AGENTS
+    
+    @property
+    def use_all_data(self) -> bool:
+        """Whther to use all data or not when used along other emitters.
+        """
+        return False
+    
         
     @partial(jax.jit, static_argnames=("self",))
-    def emit(self, rng):
+    def init(self, random_key, repertoire, genotypes, fitnesses, descriptors, extra_scores):
+        rng, _rng = jax.random.split(random_key)
+        emitter_state = PurePPOEmitterState(rng=_rng)
+        
+        return emitter_state, rng
     
-        rng, _rng = jax.random.split(rng)
-        init_x = jnp.zeros(self._env.observation_size)
-        params = self._actor_critic.init(_rng, init_x)
+    @partial(jax.jit, static_argnames=("self",))
+    def state_update(
+        self,
+        emitter_state: PurePPOEmitterState,
+        repertoire,
+        genotypes,
+        fitnesses,
+        descriptors,
+        extra_scores,
+    ):
+        
+        return emitter_state
+        
+    @partial(jax.jit, static_argnames=("self",))
+    def emit(self, repertoire, emitter_state, rng):
+    
+        #rng, _rng = jax.random.split(rng)
+        #init_x = jnp.zeros(self._env.observation_size)
+        #params = self._actor_critic.init(_rng, init_x)
+        
+        parent, rng = repertoire.sample(
+            rng,
+            num_samples=self.batch_size,
+        )
+        
+        params = jax.tree_util.tree_map(lambda x: x[0, ...], parent)
 
         opt_state = self._tx.init(params)
         #train_state = TrainState.create(
@@ -98,14 +143,15 @@ class PurePPOEmitter():
         def _scan_update_step(carry, _):
             return self._update_step(*carry)
         
-        (state, params, opt_state, rng), _ = jax.lax.scan(
+        (state, params, opt_state, repertoire, rng), _ = jax.lax.scan(
             _scan_update_step,
-            (state, params, opt_state, rng),
+            (state, params, opt_state, repertoire, rng),
             None,
             length=self._config.NO_ADD,
         )
         
-        return params
+        params = jax.tree_util.tree_map(lambda x: x[jnp.newaxis, ...], params)
+        return params, {}, rng
      
     @partial(jax.jit, static_argnames=("self",))
     def _env_step(self, state, params, key):
@@ -278,7 +324,7 @@ class PurePPOEmitter():
         return (state, params, opt_state, rng), losses
     
     @partial(jax.jit, static_argnames=("self",))
-    def _update_step(self, state, params, opt_state, rng):
+    def _update_step(self, state, params, opt_state, repertoire, rng):
         num_updates = self._config.TOTAL_TIMESTEPS // self._config.NUM_ENVS // self._config.NUM_STEPS
         
         def _scan_one_update(carry, _):
@@ -291,8 +337,13 @@ class PurePPOEmitter():
             length=num_updates // self._config.NO_ADD,
         )
         
-        jax.debug.print("Update done")
-        return (state, params, opt_state, rng), losses
+        params = jax.tree_util.tree_map(lambda x: x[jnp.newaxis, ...], params)
+        fitnesses, descriptors, extra_scores, rng = self._scoring_function(params, rng)
+        
+        repertoire = repertoire.add(params, descriptors, fitnesses, extra_scores)
+        params = jax.tree_util.tree_map(lambda x: x[0, ...], params)
+        
+        return (state, params, opt_state, repertoire, rng), losses
         
         
         
@@ -315,9 +366,8 @@ if __name__ == "__main__":
         NORMALIZE_ENV=True,
         NO_ADD=10,
     )
-    rng = jax.random.PRNGKey(0)
     env = get_env("ant_uni")
-    emitter = PurePPOEmitter(config, env, None, rng)
+    emitter = PurePPOEmitter(config, env)
     rng = jax.random.PRNGKey(5)
     params = emitter.emit(rng)
     params = jax.tree_util.tree_map(lambda x: x[jnp.newaxis, ...], params)

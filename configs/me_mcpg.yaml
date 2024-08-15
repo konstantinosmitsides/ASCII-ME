@@ -16,9 +16,9 @@ env_name: ant_uni
 policy_hidden_layer_sizes: [128, 128]
 # ME config
 num_evaluations: 0
-num_iterations: 2000
+num_iterations: 1
 num_samples: 8
-no_agents: 512
+no_agents: 1
 fixed_init_state: False
 discard_dead: False
 # Grid config
