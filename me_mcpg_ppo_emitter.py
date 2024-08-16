@@ -8,8 +8,8 @@ from qdax.core.emitters.standard_emitters import MixingEmitter
 from qdax.environments.base_wrappers import QDEnv
 from qdax.types import Params, RNGKey
 from dataclasses import dataclass
-from pure_ppo_emitter import PurePPOEmitter, PurePPOConfig
-
+#from pure_ppo_emitter import PurePPOEmitter, PurePPOConfig
+from pure_ppo_emitter_corrected import PurePPOEmitter, PurePPOConfig
 class MEMCPGPPOConfig:
     """Configuration for PGAME Algorithm"""
 
@@ -35,6 +35,8 @@ class MEMCPGPPOConfig:
     NORMALIZE_ENV: bool = True
     NO_ADD: int = 1
     GREEDY_AGENTS: int = 1
+    ACTIVATION: str = "tanh"
+    NO_NEURONS: int = 64
 
 
 class MEMCPGPPOEmitter(MultiEmitter):
@@ -78,7 +80,9 @@ class MEMCPGPPOEmitter(MultiEmitter):
             ANNEAL_LR=config.ANNEAL_LR,
             NORMALIZE_ENV=config.NORMALIZE_ENV,
             NO_ADD=config.NO_ADD,
-            GREEDY_AGENTS=config.GREEDY_AGENTS
+            GREEDY_AGENTS=config.GREEDY_AGENTS,
+            ACTIVATION=config.ACTIVATION,
+            NO_NEURONS=config.NO_NEURONS
         )
         
         
@@ -90,7 +94,7 @@ class MEMCPGPPOEmitter(MultiEmitter):
         
         ppo_emitter = PurePPOEmitter(
             config=ppo_config,
-            policy_net=policy_network,
+            #policy_net=policy_network,
             env=env,
         )
         

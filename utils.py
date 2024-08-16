@@ -256,11 +256,17 @@ def calculate_gae(data):
     
 @jax.jit
 def transfer_params(target_params, source_params):
-    target_params = target_params['params']
-    target_params["Dense_0"]["kernel"] = source_params["Dense_0"]["kernel"]
-    target_params["Dense_0"]["bias"] = source_params["Dense_0"]["bias"]
-    target_params["Dense_1"]["kernel"] = source_params["Dense_1"]["kernel"]
-    target_params["Dense_1"]["bias"] = source_params["Dense_1"]["bias"]
-    target_params["Dense_2"]["kernel"] = source_params["Dense_2"]["kernel"]
-    target_params["Dense_2"]["bias"] = source_params["Dense_2"]["bias"]
-    target_params['log_std'] = source_params['log_std']
+    source_params_ = source_params['params']
+    target_params_ = target_params['params']
+    target_params_['Dense_0']['kernel'] = source_params_['Dense_0']['kernel']
+    target_params_['Dense_0']['bias'] = source_params_['Dense_0']['bias']
+    target_params_['Dense_1']['kernel'] = source_params_['Dense_1']['kernel']
+    target_params_['Dense_1']['bias'] = source_params_['Dense_1']['bias']
+    target_params_['Dense_2']['kernel'] = source_params_['Dense_2']['kernel']
+    target_params_['Dense_2']['bias'] = source_params_['Dense_2']['bias']
+    target_params_['log_std'] = source_params_['log_std']
+    target_params['params'] = target_params_
+    
+    return target_params
+    
+    

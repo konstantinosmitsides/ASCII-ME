@@ -75,7 +75,7 @@ def main(config: Config) -> None:
 
     
     
-    policy_network = MLPPPO(
+    policy_network = MLPMCPG(
         action_dim=env.action_size,
         activation=config.activation,
         no_neurons=config.no_neurons,
@@ -98,7 +98,7 @@ def main(config: Config) -> None:
     @jax.jit
     def play_step_fn(env_state, policy_params, key):
         rng, rng_ = jax.random.split(key)
-        pi, action, val = policy_network.apply(policy_params, env_state.obs)
+        pi, action = policy_network.apply(policy_params, env_state.obs)
         #action_ = pi.sample(seed=rng_)
         log_prob = pi.log_prob(action)
         
@@ -114,7 +114,7 @@ def main(config: Config) -> None:
             actions=action,
             state_desc=env_state.info["state_descriptor"],
             next_state_desc=next_env_state.info["state_descriptor"],
-            val=val,
+            val= 0.0,
             logp=log_prob,
         )
         

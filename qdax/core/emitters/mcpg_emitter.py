@@ -626,7 +626,7 @@ class MCPGEmitter(Emitter):
             method=self._policy.logp,
         )
         '''
-        pi, _, _ = self._policy.apply(params, obs)
+        pi, _ = self._policy.apply(params, obs)
         logps_ = pi.log_prob(actions)
         
         ratio = jnp.exp(logps_ - jax.lax.stop_gradient(logps))
