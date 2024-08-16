@@ -75,7 +75,7 @@ class MAPElites:
         """
         # score initial genotypes      
         fitnesses, descriptors, extra_scores, random_key = self._scoring_function(
-            genotypes, random_key
+            genotypes, random_key, 0, 1
         )
         
         #print(extra_scores["transitions"])
@@ -179,13 +179,13 @@ class MAPElites:
         '''
         
         # WE WILL ADD ANOTHER FUNCTION FOR THE OTHER EMITTER AND THE CONDITION WILL BE IN THE FOR LOOP IN THE MAIN
-        genotypes, _, random_key = self._emitter_1.emit(
+        genotypes, obs_stats, random_key = self._emitter_1.emit(
             repertoire, emitter_state, random_key
         )
 
         # scores the offsprings
         fitnesses, descriptors, extra_scores, random_key = self._scoring_function(
-            genotypes, random_key
+            genotypes, random_key, obs_stats['obs_mean'], obs_stats['obs_var']
         )
         #jax.debug.print("dones : {}", extra_scores['transitions'].dones)
 
@@ -206,7 +206,7 @@ class MAPElites:
         metrics = self._metrics_function(repertoire)
         metrics["is_offspring_added"] = is_offspring_added
 
-        return repertoire, emitter_state, metrics, random_key
+        return repertoire, emitter_state, metrics, random_key, obs_stats
 
     @partial(jax.jit, static_argnames=("self",))
     def scan_update_1(
@@ -241,6 +241,7 @@ class MAPElites:
         repertoire: MapElitesRepertoire,
         emitter_state: Optional[EmitterState],
         random_key: RNGKey,
+        obs_stats: dict
     ) -> Tuple[MapElitesRepertoire, Optional[EmitterState], Metrics, RNGKey]:
         """
         Performs one iteration of the MAP-Elites algorithm.
@@ -275,7 +276,7 @@ class MAPElites:
 
         # scores the offsprings
         fitnesses, descriptors, extra_scores, random_key = self._scoring_function(
-            genotypes, random_key
+            genotypes, random_key, obs_stats['obs_mean'], obs_stats['obs_var']
         )
         #jax.debug.print("dones : {}", extra_scores['transitions'].dones)
 
@@ -296,7 +297,7 @@ class MAPElites:
         metrics = self._metrics_function(repertoire)
         metrics["is_offspring_added"] = is_offspring_added
         
-        return repertoire, emitter_state, metrics, random_key   
+        return repertoire, emitter_state, metrics, random_key, obs_stats   
 
     @partial(jax.jit, static_argnames=("self",))
     def scan_update_2(
@@ -315,12 +316,13 @@ class MAPElites:
         Returns:
             The updated repertoire and emitter state, with a new random key and metrics.
         """
-        repertoire, emitter_state, random_key = carry
-        (repertoire, emitter_state, metrics, random_key,) = self.update_2(
+        repertoire, emitter_state, random_key, obs_stats = carry
+        (repertoire, emitter_state, metrics, random_key, obs_stats) = self.update_2(
             repertoire,
             emitter_state,
             random_key,
+            obs_stats
         )
 
-        return (repertoire, emitter_state, random_key), metrics
+        return (repertoire, emitter_state, random_key, obs_stats), metrics
     

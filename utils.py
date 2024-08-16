@@ -268,5 +268,9 @@ def transfer_params(target_params, source_params):
     target_params['params'] = target_params_
     
     return target_params
+
+@jax.jit
+def normalize_obs(obs, mean, var):
+    return (obs - mean) / jnp.sqrt(var + 1e-8)
     
     
