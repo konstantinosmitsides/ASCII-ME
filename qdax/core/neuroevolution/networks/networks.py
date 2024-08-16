@@ -342,7 +342,7 @@ class MLPRein(nn.Module):
         logp = jnp.sum(-0.5 * jnp.square((action - mean) / (std + EPS)) - _half_log2pi - log_std, axis=-1)
         return action, logp
     
-    
+'''
 class MLPMCPG(nn.Module):
     """MCPG MLP module"""
     hidden_layers_size: Tuple[int, ...]
@@ -392,6 +392,8 @@ class MLPMCPG(nn.Module):
                 
         #return action, logp
         return action, logp
+        
+'''
     
     
 class MLPPPO(nn.Module):
@@ -438,4 +440,36 @@ class MLPPPO(nn.Module):
         
         #return pi, actor_mean, jnp.squeeze(critic, axis=-1)
         return pi, actor_mean, jnp.squeeze(critic, axis=-1)
+    
+    
+    
+class MLPMCPG(nn.Module):
+    action_dim: Sequence[int]
+    activation: str = 'tanh'
+    no_neurons: int = 64
+    
+    @nn.compact
+    def __call__(self, x):
+        if self.activation == "relu":
+            activation = nn.relu
+        else:
+            activation = nn.tanh
+            
+        actor_mean = nn. Dense(
+            self.no_neurons, kernel_init = orthogonal(jnp.sqrt(2)), bias_init = constant(0.0)
+            #self.no_neurons, kernel_init = lecun_uniform(), bias_init = constant(0.0)
+        )(x)
+        actor_mean = activation(actor_mean)
+        actor_mean = nn.Dense(
+            self.no_neurons, kernel_init=orthogonal(jnp.sqrt(2)), bias_init=constant(0.0)
+            #self.no_neurons, kernel_init = lecun_uniform(), bias_init = constant(0.0)
+        )(actor_mean)
+        actor_mean = activation(actor_mean)
+        actor_mean = nn.Dense(
+            self.action_dim, kernel_init=orthogonal(0.01), bias_init=constant(0.0)
+            #self.action_dim, kernel_init=lecun_uniform(), bias_init=constant(0.0)
+        )(actor_mean)
+        actor_logstd = self.param("log_std", lambda _, shape: jnp.log(0.5)*jnp.ones(shape), (self.action_dim,))
+        pi = distrax.MultivariateNormalDiag(loc=actor_mean, scale_diag=jnp.exp(actor_logstd))
         
+        return pi, actor_mean

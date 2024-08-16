@@ -253,3 +253,14 @@ def calculate_gae(data):
     
     return advantages.T, advantages.T + data.val_adv
     
+    
+@jax.jit
+def transfer_params(target_params, source_params):
+    target_params = target_params['params']
+    target_params["Dense_0"]["kernel"] = source_params["Dense_0"]["kernel"]
+    target_params["Dense_0"]["bias"] = source_params["Dense_0"]["bias"]
+    target_params["Dense_1"]["kernel"] = source_params["Dense_1"]["kernel"]
+    target_params["Dense_1"]["bias"] = source_params["Dense_1"]["bias"]
+    target_params["Dense_2"]["kernel"] = source_params["Dense_2"]["kernel"]
+    target_params["Dense_2"]["bias"] = source_params["Dense_2"]["bias"]
+    target_params['log_std'] = source_params['log_std']
