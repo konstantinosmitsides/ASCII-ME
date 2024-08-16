@@ -22,8 +22,8 @@ class MEMCPGPPOConfig:
     learning_rate: float = 3e-4
     clip_param: float = 0.2
     LR: float = 1e-3
-    NUM_ENVS: int = 2048
-    NUM_STEPS: int = 10
+    NUM_ENVS: int = 256 #2048
+    NUM_STEPS: int = 80 #10
     TOTAL_TIMESTEPS: int = 5e7
     GAMMA: float = 0.99
     GAE_LAMBDA: float = 0.95

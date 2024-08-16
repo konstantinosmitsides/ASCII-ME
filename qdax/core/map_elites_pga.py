@@ -4,8 +4,6 @@ from __future__ import annotations
 from functools import partial
 from typing import Any, Callable, Optional, Tuple
 
-from dataclasses import dataclass, replace
-
 import jax
 import jax.numpy as jnp
 from jax import debug
@@ -20,143 +18,6 @@ from qdax.types import (
     Genotype,
     Metrics,
     RNGKey,
-)
-
-from jax import tree_util
-
-
-
-@dataclass
-class Normalizer:
-    size: int
-    mean: jnp.ndarray = None
-    var: jnp.ndarray = None
-    count: jnp.ndarray = 1e-4
-    
-    def __post_init__(self):
-        if self.mean is None:
-            self.mean = jnp.zeros(self.size)
-        if self.var is None:
-            self.var = jnp.ones(self.size)
-            
-    def update(self, x):
-        # Flatten the first two dimensions (x, y) to treat as a single batch dimension
-        flat_x = x.reshape(-1, self.size)
-        batch_mean = jnp.mean(flat_x, axis=0)
-        batch_var = jnp.var(flat_x, axis=0)
-        batch_count = flat_x.shape[0]
-
-        new_mean, new_var, new_count = self._update_mean_var_count(
-            self.mean, self.var, self.count, batch_mean, batch_var, batch_count)
-        
-        return replace(self, mean=new_mean, var=new_var, count=new_count)
-
-    def normalize(self, x):
-        # Normalize maintaining the original shape, using broadcasting
-        return (x - self.mean) / jnp.sqrt(self.var + 1e-8)
-
-    def _update_mean_var_count(self, mean, var, count, batch_mean, batch_var, batch_count):
-        delta = batch_mean - mean
-        tot_count = count + batch_count
-
-        new_mean = mean + delta * batch_count / tot_count
-        m_a = var * count
-        m_b = batch_var * batch_count
-        M2 = m_a + m_b + jnp.square(delta) * count * batch_count / tot_count
-        new_var = M2 / tot_count
-        new_count = tot_count
-
-        return new_mean, new_var, new_count
-
-
-    def tree_flatten(self):
-        return ((self.mean, self.var, self.count), self.size)
-
-    @classmethod
-    def tree_unflatten(cls, aux_data, children):
-        size = aux_data
-        mean, var, count = children
-        return cls(size=size, mean=mean, var=var, count=count)
-
-# Register Normalizer as a pytree node with JAX
-tree_util.register_pytree_node(
-    Normalizer,
-    Normalizer.tree_flatten,
-    Normalizer.tree_unflatten
-)
-
-
-@dataclass
-class RewardNormalizer:
-    size: int
-    mean: jnp.ndarray = 0.0
-    var: jnp.ndarray = 1.0
-    count: jnp.ndarray = 1e-4
-    return_val: jnp.ndarray = None
-    
-    def __post_init__(self):
-        if self.return_val is None:
-            self.return_val = jnp.zeros((self.size,))
-
-         
-    def update(self, reward, done, gamma=0.99):
-        
-        def _update_column_scan(carry, x):
-            mean, var, count, return_val = carry
-            (reward, done) = x
-            
-            jax.debug.print("Reward shape: {}", reward.shape)
-            
-            # Update the return value
-            new_return_val = reward + gamma * return_val * (1 - done)
-            
-            # Update the mean, var, and count
-            batch_mean = jnp.mean(new_return_val, axis=0)
-            batch_var = jnp.var(new_return_val, axis=0)
-            batch_count = new_return_val.shape[0]
-            
-            delta = batch_mean - mean
-            tot_count = count + batch_count
-            
-            new_mean = mean + delta * batch_count / tot_count
-            m_a = var * count
-            m_b = batch_var * batch_count
-            M2 = m_a + m_b + jnp.square(delta) * count * batch_count / tot_count
-            new_var = M2 / tot_count
-            new_count = tot_count
-            
-            normalized_reward = reward / jnp.sqrt(new_var + 1e-8)
-            
-            return (new_mean, new_var, new_count, new_return_val), normalized_reward
-        
-        (new_mean, new_var, new_count, _), normalized_rewards = jax.lax.scan(
-            _update_column_scan,
-            (self.mean, self.var, self.count, self.return_val),
-            (reward.T, done.T),
-        )
-
-        
-        return replace(self, mean=new_mean, var=new_var, count=new_count), normalized_rewards.T
-
-
-
-
-
-
-    def tree_flatten(self):
-        return ((self.mean, self.var, self.count, self.return_val), self.size)
-    
-    @classmethod
-    def tree_unflatten(cls, aux_data, children):
-        size = aux_data
-        mean, var, count, return_val = children
-        return cls(size=size, mean=mean, var=var, count=count, return_val=return_val)
-    
-        
-tree_util.register_pytree_node(
-    RewardNormalizer,
-    RewardNormalizer.tree_flatten,
-    RewardNormalizer.tree_unflatten
 )
 
 
@@ -181,7 +42,7 @@ class MAPElites:
     def __init__(
         self,
         scoring_function: Callable[
-            [Genotype, RNGKey, Any], Tuple[Fitness, Descriptor, ExtraScores, RNGKey, Any, Any]
+            [Genotype, RNGKey], Tuple[Fitness, Descriptor, ExtraScores, RNGKey]
         ],
         emitter: Emitter,
         metrics_function: Callable[[MapElitesRepertoire], Metrics],
@@ -189,8 +50,6 @@ class MAPElites:
         self._scoring_function = scoring_function
         self._emitter = emitter
         self._metrics_function = metrics_function
-        self._normalizer = Normalizer(28)
-        self._reward_normalizer = RewardNormalizer(5096)
 
     @partial(jax.jit, static_argnames=("self",))
     def init(
@@ -215,11 +74,8 @@ class MAPElites:
             and a random key.
         """
         # score initial genotypes
-        #normalizer = Normalizer(28)
-        #reward_normalizer = RewardNormalizer(5096)
-        
-        fitnesses, descriptors, extra_scores, random_key, normalizer, reward_normalizer = self._scoring_function(
-            init_genotypes, random_key, self._normalizer, self._reward_normalizer
+        fitnesses, descriptors, extra_scores, random_key = self._scoring_function(
+            init_genotypes, random_key
         )
 
         # init the repertoire
@@ -257,7 +113,7 @@ class MAPElites:
         )
         
 
-        return repertoire, emitter_state, random_key, normalizer, reward_normalizer
+        return repertoire, emitter_state, random_key
 
     @partial(jax.jit, static_argnames=("self",))
     def update(
@@ -265,8 +121,6 @@ class MAPElites:
         repertoire: MapElitesRepertoire,
         emitter_state: Optional[EmitterState],
         random_key: RNGKey,
-        normalizer: Optional[Any],
-        reward_normalizer: Optional[Any],
     ) -> Tuple[MapElitesRepertoire, Optional[EmitterState], Metrics, RNGKey]:
         """
         Performs one iteration of the MAP-Elites algorithm.
@@ -293,14 +147,14 @@ class MAPElites:
         )
         
         # scores the offsprings
-        fitnesses, descriptors, extra_scores, random_key, normalizer, reward_normalizer = self._scoring_function(
-            genotypes, random_key, normalizer, reward_normalizer
+        fitnesses, descriptors, extra_scores, random_key = self._scoring_function(
+            genotypes, random_key
         )
         #debug.print('-' * 100)
         #debug.print("Fitness to add: {}", fitnesses)
 
         # add genotypes in the repertoire
-        repertoire = repertoire.add(genotypes, descriptors, fitnesses, extra_scores)
+        repertoire, is_offspring_added = repertoire.add(genotypes, descriptors, fitnesses, extra_scores)
 
         # update emitter state after scoring is made
         emitter_state = self._emitter.state_update(
@@ -314,14 +168,14 @@ class MAPElites:
 
         # update the metrics
         metrics = self._metrics_function(repertoire)
-        #metrics["is_offspring_added"] = is_offspring_added
+        metrics["is_offspring_added"] = is_offspring_added
 
-        return repertoire, emitter_state, metrics, random_key, normalizer, reward_normalizer
+        return repertoire, emitter_state, metrics, random_key
 
     @partial(jax.jit, static_argnames=("self",))
     def scan_update(
         self,
-        carry: Tuple[MapElitesRepertoire, Optional[EmitterState], RNGKey, Optional[Any], Optional[Any]],
+        carry: Tuple[MapElitesRepertoire, Optional[EmitterState], RNGKey],
         unused: Any,
     ) -> Tuple[Tuple[MapElitesRepertoire, Optional[EmitterState], RNGKey], Metrics]:
         """Rewrites the update function in a way that makes it compatible with the
@@ -335,11 +189,11 @@ class MAPElites:
         Returns:
             The updated repertoire and emitter state, with a new random key and metrics.
         """
-        repertoire, emitter_state, random_key, normalizer, reward_normalizer = carry
+        repertoire, emitter_state, random_key = carry
         (repertoire, emitter_state, metrics, random_key,) = self.update(
             repertoire,
             emitter_state,
             random_key,
         )
 
-        return (repertoire, emitter_state, random_key, normalizer, reward_normalizer), metrics
+        return (repertoire, emitter_state, random_key), metrics

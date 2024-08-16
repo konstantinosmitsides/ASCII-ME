@@ -6,7 +6,7 @@ hydra:
 
 defaults:
   - _self_
-  - env: walker2d_uni
+  - env: ant_uni
   - algo: pga_me
 
 seed: 0
@@ -17,6 +17,6 @@ num_samples: 8
 # Archive
 num_init_cvt_samples: 50000
 num_centroids: 1024
-policy_hidden_layer_sizes: [128, 128]
+policy_hidden_layer_sizes: [64, 64]#[128, 128]
 
 #ssss

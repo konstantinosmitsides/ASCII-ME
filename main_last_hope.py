@@ -447,6 +447,7 @@ def main(config: Config) -> None:
         fig.savefig("./Plots/repertoire_plot.png")
         
     recreate_repertoire(repertoire, centroids, metrics_function, random_key)
+    
 
         
     

@@ -368,7 +368,9 @@ if __name__ == "__main__":
         NORMALIZE_ENV=True,
         NO_ADD=10,
     )
-    env = get_env("ant_uni")
+    
+    env_name = "walker2d_uni"
+    env = get_env(env_name)
     emitter = PurePPOEmitter(config, env)
     rng = jax.random.PRNGKey(5)
     params = emitter.emit(rng)
@@ -404,7 +406,7 @@ if __name__ == "__main__":
         
         return (next_env_state, params, rng), transition
         
-    bd_extraction_fn = behavior_descriptor_extractor['ant_uni']
+    bd_extraction_fn = behavior_descriptor_extractor[env_name]
     socring_fn = partial(
         scoring_function,
         episode_length=1000,

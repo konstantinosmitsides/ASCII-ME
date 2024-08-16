@@ -272,7 +272,7 @@ def main(config: Config) -> None:
     log_period = 10
     num_loops = int(config.num_iterations / log_period)
 
-    metrics = dict.fromkeys(["iteration", "qd_score", "coverage", "max_fitness", "qd_score_repertoire", "dem_repertoire", "actor_fitness", "time", "evaluation"], jnp.array([]))
+    metrics = dict.fromkeys(["iteration", "qd_score", "coverage", "max_fitness", "qd_score_repertoire", "dem_repertoire", "actor_fitness", "time", "evaluation", "ga_offspring_added", "qpg_offspring_added", "ai_offspring_added"], jnp.array([]))
     csv_logger = CSVLogger(
         "./log.csv",
         header=list(metrics.keys())
@@ -316,15 +316,15 @@ def main(config: Config) -> None:
         current_metrics["qd_score_repertoire"] = jnp.repeat(qd_score_repertoire, log_period)
         current_metrics["dem_repertoire"] = jnp.repeat(dem_repertoire, log_period)
         current_metrics["actor_fitness"] = jnp.repeat(fitness_actor, log_period)
-        #current_metrics["ga_offspring_added"], current_metrics["qpg_offspring_added"], current_metrics["ai_offspring_added"] = get_n_offspring_added(current_metrics)
-        #del current_metrics["is_offspring_added"]
+        current_metrics["ga_offspring_added"], current_metrics["qpg_offspring_added"], current_metrics["ai_offspring_added"] = get_n_offspring_added(current_metrics)
+        del current_metrics["is_offspring_added"]
         metrics = jax.tree_util.tree_map(lambda metric, current_metric: jnp.concatenate([metric, current_metric], axis=0), metrics, current_metrics)
 
         # Log
         log_metrics = jax.tree_util.tree_map(lambda metric: metric[-1], metrics)
-        #log_metrics["qpg_offspring_added"] = jnp.sum(current_metrics["qpg_offspring_added"])
-        #log_metrics["ga_offspring_added"] = jnp.sum(current_metrics["ga_offspring_added"])
-        #log_metrics["ai_offspring_added"] = jnp.sum(current_metrics["ai_offspring_added"])
+        log_metrics["qpg_offspring_added"] = jnp.sum(current_metrics["qpg_offspring_added"])
+        log_metrics["ga_offspring_added"] = jnp.sum(current_metrics["ga_offspring_added"])
+        log_metrics["ai_offspring_added"] = jnp.sum(current_metrics["ai_offspring_added"])
         csv_logger.log(log_metrics)
         wandb.log(log_metrics)
 
