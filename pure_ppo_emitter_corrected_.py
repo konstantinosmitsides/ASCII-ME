@@ -19,7 +19,7 @@ from utils import transfer_params
 @dataclass
 class PurePPOConfig:
     GREEDY_AGENTS: int = 1
-    LR: float = 3e-4
+    LR: float = 1e-3
     NUM_ENVS: int = 256
     NUM_STEPS: int = 80
     TOTAL_TIMESTEPS: int = 5e7
@@ -163,7 +163,8 @@ class PurePPOEmitter():
         sol_params = transfer_params(sol_params, params) 
         
         params = jax.tree_util.tree_map(lambda x: x[jnp.newaxis, ...], sol_params)
-        return params, {"obs_mean" : state.env_state.mean, "obs_var" : state.env_state.var}, rng
+        #jax.debug.print("are they the same? {}", state.env_state.mean[0] == state.env_state.mean[1])
+        return params, {"obs_mean" : state.env_state.mean[0], "obs_var" : state.env_state.var[0]}, rng
      
     @partial(jax.jit, static_argnames=("self",))
     def _env_step(self, state, params, key):

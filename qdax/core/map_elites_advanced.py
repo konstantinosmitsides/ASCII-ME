@@ -75,7 +75,7 @@ class MAPElites:
         """
         # score initial genotypes      
         fitnesses, descriptors, extra_scores, random_key = self._scoring_function(
-            genotypes, random_key, 0, 1
+            genotypes, random_key, 0.0, 1.0
         )
         
         #print(extra_scores["transitions"])
