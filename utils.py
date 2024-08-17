@@ -70,7 +70,8 @@ def get_env(config: Config):
                 config.env.name,
                 episode_length=config.env.episode_length,
                 exclude_current_positions_from_observation=config.env.exclude_current_positions_from_observation,
-                backend=config.env.backend)
+            )
+                #backend=config.env.backend)
         elif config.env.name == "humanoid_omni":
             env = environments_v1.create(
                 config.env.name,
