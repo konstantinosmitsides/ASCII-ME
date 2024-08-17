@@ -146,13 +146,13 @@ def main(config: Config) -> None:
     reward_offset = 0
     
     
-    '''
+    
     @jax.jit
-    def evaluate_repertoire(random_key, repertoire):
+    def evaluate_repertoire(random_key, repertoire, obs_stats):
         repertoire_empty = repertoire.fitnesses == -jnp.inf
 
         fitnesses, descriptors, extra_scores, random_key = scoring_fn(
-            repertoire.genotypes, random_key
+            repertoire.genotypes, random_key, obs_stats['obs_mean'], obs_stats['obs_var']
         )
 
         # Compute repertoire QD score
@@ -173,6 +173,7 @@ def main(config: Config) -> None:
         centroids: jnp.ndarray,
         metrics_fn: Callable,
         random_key: RNGKey,
+        obs_stats
     ) -> MapElitesRepertoire:
         
         (
@@ -181,7 +182,7 @@ def main(config: Config) -> None:
             old_coverage
         ) = metrics_fn(repertoire).values()
         fitnesses, descriptors, extra_scores, random_key = me_scoring_fn(
-            repertoire.genotypes, random_key
+            repertoire.genotypes, random_key, obs_stats['obs_mean'], obs_stats['obs_var']
         )
         new_repertoire = MapElitesRepertoire.init(
             genotypes=repertoire.genotypes,
@@ -231,7 +232,7 @@ def main(config: Config) -> None:
         
         
         
-    '''
+
         
         
     
@@ -346,8 +347,8 @@ def main(config: Config) -> None:
     log_period = 10
     num_loops = int(config.num_iterations / log_period)
 
-    #metrics = dict.fromkeys(["iteration", "qd_score", "coverage", "max_fitness", "qd_score_repertoire", "dem_repertoire", "time", "evaluation", "ga_offspring_added", "qpg_offspring_added"], jnp.array([]))    
-    metrics = dict.fromkeys(["iteration", "qd_score", "coverage", "max_fitness", "time", "evaluation", "ga_offspring_added", "qpg_offspring_added"], jnp.array([]))        
+    metrics = dict.fromkeys(["iteration", "qd_score", "coverage", "max_fitness", "qd_score_repertoire", "dem_repertoire", "time", "evaluation", "ga_offspring_added", "qpg_offspring_added"], jnp.array([]))    
+    #metrics = dict.fromkeys(["iteration", "qd_score", "coverage", "max_fitness", "time", "evaluation", "ga_offspring_added", "qpg_offspring_added"], jnp.array([]))        
     csv_logger = CSVLogger(
         "./log.csv",
         header=list(metrics.keys())
@@ -377,12 +378,12 @@ def main(config: Config) -> None:
     
     current_metrics = jax.tree_util.tree_map(lambda x: jnp.expand_dims(x, axis=0), current_metrics)
     
-    #random_key, qd_score_repertoire, dem_repertoire = evaluate_repertoire(random_key, repertoire)
+    random_key, qd_score_repertoire, dem_repertoire = evaluate_repertoire(random_key, repertoire, obs_stats)
     current_metrics["iteration"] = jnp.arange(1, 2, dtype=jnp.int32)
     current_metrics["evaluation"] = jnp.arange(1, 50512, dtype=jnp.int32)
     current_metrics["time"] = jnp.repeat(timelapse, 1)
-    #current_metrics["qd_score_repertoire"] = jnp.repeat(qd_score_repertoire, 1)
-    #current_metrics["dem_repertoire"] = jnp.repeat(dem_repertoire, 1)
+    current_metrics["qd_score_repertoire"] = jnp.repeat(qd_score_repertoire, 1)
+    current_metrics["dem_repertoire"] = jnp.repeat(dem_repertoire, 1)
     current_metrics["ga_offspring_added"], current_metrics["qpg_offspring_added"], _ = get_n_offspring_added_1(current_metrics)
     del current_metrics["is_offspring_added"]
     metrics = jax.tree_util.tree_map(lambda metric, current_metric: jnp.concatenate([metric, current_metric], axis=0), metrics, current_metrics)
@@ -415,13 +416,13 @@ def main(config: Config) -> None:
         timelapse = time.time() - start_time
 
         # Metrics
-        #random_key, qd_score_repertoire, dem_repertoire = evaluate_repertoire(random_key, repertoire)
+        random_key, qd_score_repertoire, dem_repertoire = evaluate_repertoire(random_key, repertoire, obs_stats)
 
         current_metrics["iteration"] = jnp.arange(2+log_period*i, 2+log_period*(i+1), dtype=jnp.int32)
         current_metrics["evaluation"] = jnp.arange(50512+log_period*eval_num*i, 50512+log_period*eval_num*(i+1), dtype=jnp.int32)
         current_metrics["time"] = jnp.repeat(timelapse, log_period)
-        #current_metrics["qd_score_repertoire"] = jnp.repeat(qd_score_repertoire, log_period)
-        #current_metrics["dem_repertoire"] = jnp.repeat(dem_repertoire, log_period)
+        current_metrics["qd_score_repertoire"] = jnp.repeat(qd_score_repertoire, log_period)
+        current_metrics["dem_repertoire"] = jnp.repeat(dem_repertoire, log_period)
         current_metrics["ga_offspring_added"], current_metrics["qpg_offspring_added"] = get_n_offspring_added_2(current_metrics)
         del current_metrics["is_offspring_added"]
         metrics = jax.tree_util.tree_map(lambda metric, current_metric: jnp.concatenate([metric, current_metric], axis=0), metrics, current_metrics)
@@ -450,10 +451,10 @@ def main(config: Config) -> None:
     # Plot
     if env.behavior_descriptor_length == 2:
         env_steps = jnp.arange(config.num_iterations) * config.env.episode_length * config.no_agents
-        fig, _ = plot_map_elites_results(env_steps=env_steps, metrics=metrics, repertoire=repertoire, min_bd=config.env.min_bd, max_bd=config.env.max_bd)
+        fig, _ = plot_map_elites_results(env_steps=env_steps+1, metrics=metrics, repertoire=repertoire, min_bd=config.env.min_bd, max_bd=config.env.max_bd)
         fig.savefig("./Plots/repertoire_plot.png")
         
-    #recreate_repertoire(repertoire, centroids, metrics_function, random_key)
+    recreate_repertoire(repertoire, centroids, metrics_function, random_key, obs_stats)
     
 
         
