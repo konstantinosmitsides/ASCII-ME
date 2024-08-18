@@ -10,7 +10,9 @@ from qdax.types import Params, RNGKey
 from dataclasses import dataclass
 #from pure_ppo_emitter import PurePPOEmitter, PurePPOConfig
 #from pure_ppo_emitter_corrected import PurePPOEmitter, PurePPOConfig
-from pure_ppo_emitter_corrected_ import PurePPOEmitter, PurePPOConfig
+from pure_ppo_emitter import PurePPOEmitter, PurePPOConfig
+
+@dataclass
 class MEMCPGPPOConfig:
     """Configuration for PGAME Algorithm"""
 
@@ -38,6 +40,7 @@ class MEMCPGPPOConfig:
     GREEDY_AGENTS: int = 1
     ACTIVATION: str = "tanh"
     NO_NEURONS: int = 64
+    UPDATE_EPOCHS: int = 4
 
 
 class MEMCPGPPOEmitter(MultiEmitter):
@@ -54,8 +57,8 @@ class MEMCPGPPOEmitter(MultiEmitter):
         self._env = env
         self._variation_fn = variation_fn
         
-        ga_no_agents = int(self._config.proportion_mutation_ga * config.no_agents)
-        mcpg_no_agents = config.no_agents - ga_no_agents
+        ga_no_agents = int(self._config.proportion_mutation_ga * (config.no_agents - config.GREEDY_AGENTS))
+        mcpg_no_agents = (config.no_agents - config.GREEDY_AGENTS) - ga_no_agents
         
         mcpg_config = MCPGConfig(
             no_agents=mcpg_no_agents,
@@ -83,7 +86,8 @@ class MEMCPGPPOEmitter(MultiEmitter):
             NO_ADD=config.NO_ADD,
             GREEDY_AGENTS=config.GREEDY_AGENTS,
             ACTIVATION=config.ACTIVATION,
-            NO_NEURONS=config.NO_NEURONS
+            NO_NEURONS=config.NO_NEURONS,
+            UPDATE_EPOCHS=config.UPDATE_EPOCHS
         )
         
         

@@ -6,21 +6,22 @@ from qdax.core.neuroevolution.networks.networks import MLPPPO
 import optax
 #from flax.training.train_state import TrainState
 import jax.numpy as jnp
-from wrappers_qd import VecEnv, NormalizeVecRewward
+from wrappers_qd import VecEnv, NormalizeVecReward
 from qdax.core.neuroevolution.buffers.buffer import PPOTransition
 from get_env import get_env
 from qdax.tasks.brax_envs import reset_based_scoring_function_brax_envs as scoring_function
 from qdax.environments import behavior_descriptor_extractor
 from typing import Any
 from qdax.core.emitters.emitter import EmitterState
+from utils import transfer_params
 
 
 @dataclass
 class PurePPOConfig:
     GREEDY_AGENTS: int = 1
-    LR: float = 1e-3
-    NUM_ENVS: int = 2048
-    NUM_STEPS: int = 10
+    LR: float = 3e-4
+    NUM_ENVS: int = 256
+    NUM_STEPS: int = 80
     TOTAL_TIMESTEPS: int = 5e7
     UPDATE_EPOCHS: int = 4
     NUM_MINIBATCHES: int = 32
@@ -30,29 +31,29 @@ class PurePPOConfig:
     ENTROPY_COEFF: float = 0.0
     VF_COEFF: float = 0.5
     MAX_GRAD_NORM: float = 0.5
-    #ACTIVATION: str = 'tanh'
+    ACTIVATION: str = 'tanh'
     ANNEAL_LR: bool = False
     NORMALIZE_ENV: bool = True
     NO_ADD: int = 1
-    #NO_NEURONS: int = 64
+    NO_NEURONS: int = 64
     
     
 class PurePPOEmitterState(EmitterState):
     rng: Any
 
 class PurePPOEmitter():
-    def __init__(self, config: PurePPOConfig, policy_net, env): #, scoring_function):
+    def __init__(self, config: PurePPOConfig, env): #, scoring_function):
         env = VecEnv(env)
-        env = NormalizeVecRewward(env, config.GAMMA)
+        env = NormalizeVecReward(env, config.GAMMA)
         
         self._config = config
         self._env = env
-        #self._actor_critic = MLPPPO(
-        #     action_dim=self._env.action_size,
-        #     activation=self._config.ACTIVATION,
-        #     no_neurons=self._config.NO_NEURONS,
-        # )
-        self._actor_critic = policy_net
+        self._actor_critic = MLPPPO(
+             action_dim=self._env.action_size,
+             activation=self._config.ACTIVATION,
+             no_neurons=self._config.NO_NEURONS,
+         )
+        #self._actor_critic = policy_net
         #self._scoring_function = scoring_function
         '''
         rng, _rng = jax.random.split(rng)
@@ -127,7 +128,15 @@ class PurePPOEmitter():
             num_samples=self.batch_size,
         )
         
-        params = jax.tree_util.tree_map(lambda x: x[0, ...], parent)
+        sol_params = jax.tree_util.tree_map(lambda x: x[0, ...], parent)
+        
+        rng, _rng = jax.random.split(rng)
+        init_x = jnp.zeros(self._env.observation_size)
+        new_params = self._actor_critic.init(_rng, init_x)
+        params = transfer_params(new_params, sol_params)
+        
+        
+        
 
         opt_state = self._tx.init(params)
         #train_state = TrainState.create(
@@ -150,7 +159,9 @@ class PurePPOEmitter():
             length=self._config.NO_ADD,
         )
         
-        params = jax.tree_util.tree_map(lambda x: x[jnp.newaxis, ...], params)
+        sol_params = transfer_params(sol_params, params) 
+        
+        params = jax.tree_util.tree_map(lambda x: x[jnp.newaxis, ...], sol_params)
         return params, {}, rng
      
     @partial(jax.jit, static_argnames=("self",))

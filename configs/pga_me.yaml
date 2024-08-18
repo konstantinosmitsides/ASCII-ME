@@ -18,5 +18,6 @@ num_samples: 8
 num_init_cvt_samples: 50000
 num_centroids: 1024
 policy_hidden_layer_sizes: [64, 64]#[128, 128]
+HPC: False
 
 #ssss

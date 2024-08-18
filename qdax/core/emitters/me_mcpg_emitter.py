@@ -20,6 +20,7 @@ class MEMCPGConfig:
     no_epochs: int = 16
     learning_rate: float = 3e-4
     clip_param: float = 0.2
+    discount_rate: float = 0.99
     
     
 class MEMCPGEmitter(MultiEmitter):
@@ -50,7 +51,7 @@ class MEMCPGEmitter(MultiEmitter):
             no_epochs=config.no_epochs,
             #buffer_size=config.buffer_size,
             learning_rate=config.learning_rate,
-            #adam_optimizer=config.adam_optimizer,
+            discount_rate=config.discount_rate,
             clip_param=config.clip_param
         )
 

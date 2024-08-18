@@ -18,7 +18,7 @@ from omegaconf import OmegaConf, DictConfig
 import jax
 import jax.numpy as jnp
 from hydra.core.config_store import ConfigStore
-from qdax.core.map_elites_advanced import MAPElites
+from qdax.core.map_elites_obs_norm import MAPElites
 from qdax.types import RNGKey, Genotype
 from qdax.utils.sampling import sampling 
 from qdax.core.containers.mapelites_repertoire import compute_cvt_centroids, MapElitesRepertoire
