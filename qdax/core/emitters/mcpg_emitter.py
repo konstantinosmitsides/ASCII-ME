@@ -325,6 +325,7 @@ class MCPGEmitter(Emitter):
         #jax.debug.print("rewards*mask: {}", (rewards * mask).shape)
         return_ = jax.vmap(self.get_return)(rewards * mask)
         return self.standardize(return_)
+        #return return_
     
     '''
     @partial(jax.jit, static_argnames=("self",))
@@ -405,8 +406,10 @@ class MCPGEmitter(Emitter):
         # Directly sample batch and use necessary components
         batch = self._buffer.sample(emitter_state.buffer_state, random_key)
         trans = batch.experience
+        #jax.debug.print("trans: {}", trans)
         mask = jax.vmap(self.compute_mask, in_axes=0)(trans.dones)
         standardized_returns = self.get_standardized_return(trans.rewards, mask)
+        jax.debug.print("standardized_returns: {}", standardized_returns)
         
         def scan_train_policy(
             carry: Tuple[MCPGEmitterState, Genotype, optax.OptState],

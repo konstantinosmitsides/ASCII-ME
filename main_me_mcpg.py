@@ -26,7 +26,7 @@ from qdax.core.neuroevolution.networks.networks import MLPMCPG
 from qdax.core.emitters.me_mcpg_emitter import MEMCPGConfig, MEMCPGEmitter
 #from qdax.core.emitters.rein_emitter_advanced import REINaiveConfig, REINaiveEmitter
 from qdax.core.neuroevolution.buffers.buffer import QDTransition, QDMCTransition
-from qdax.environments import behavior_descriptor_extractor
+from qdax.environments_v1 import behavior_descriptor_extractor
 from qdax.tasks.brax_envs import reset_based_scoring_function_brax_envs as scoring_function
 from utils import Config, get_env
 from qdax.core.emitters.mutation_operators import isoline_variation
@@ -80,7 +80,7 @@ def main(config: Config) -> None:
     policy_network = MLPMCPG(
         hidden_layers_size=policy_layer_sizes,
         action_size=env.action_size,
-        activation=jax.nn.tanh,
+        activation=jnp.tanh,
         final_activation=None,
         hidden_init=jax.nn.initializers.orthogonal(scale=jnp.sqrt(2)),
         mean_init=jax.nn.initializers.orthogonal(scale=0.01),
@@ -254,22 +254,8 @@ def main(config: Config) -> None:
             
             fig.savefig("./recreated_repertoire_plot.png")
         
-        
-        
-        
-        
-        
-    
-        
+         
 
-   
-    '''
-    def get_n_offspring_added(metrics):
-        split = jnp.cumsum(jnp.array([emitter.batch_size for emitter in map_elites._emitter.emitters]))
-        split = jnp.split(metrics["is_offspring_added"], split, axis=-1)[:-1]
-        qpg_offspring_added, ai_offspring_added = jnp.split(split[0], (split[0].shape[1]-1,), axis=-1)
-        return (jnp.sum(split[1], axis=-1), jnp.sum(qpg_offspring_added, axis=-1), jnp.sum(ai_offspring_added, axis=-1))
-    '''
     # Get minimum reward value to make sure qd_score are positive
     
 
@@ -306,20 +292,7 @@ def main(config: Config) -> None:
         variation_fn=variation_fn,
         )
     
-    '''
-    rein_emitter = REINaiveEmitter(
-        config=rein_emitter_config,
-        policy_network=policy_network,
-        env=env,
-        )
-    '''
-    '''
-    me_scoring_fn = partial(
-        sampling,
-        scoring_fn=scoring_fn,
-        num_samples=config.num_samples,
-    )
-    '''
+
 
     # Instantiate MAP Elites
     map_elites = MAPElites(
