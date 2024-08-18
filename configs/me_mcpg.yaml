@@ -45,6 +45,12 @@ adam_optimizer: True
 learning_rate: 3e-4
 discount_rate: 0.99
 clip_param: 0.2
+no_neurons: 64
+activation: tanh
+vf_coef: 0.5
+num_minibatches: 32
+max_grad_norm: 0.5
+lecun: True
 
 
 

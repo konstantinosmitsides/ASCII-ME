@@ -236,6 +236,7 @@ def plot_map_elites_results(
         A figure and axes with the plots of the metrics and visualisation of the grid.
     """
     # Customize matplotlib params
+    env_steps + 1
     font_size = 16
     params = {
         "axes.labelsize": font_size,

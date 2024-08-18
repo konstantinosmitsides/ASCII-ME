@@ -3,7 +3,7 @@ from typing import Any, Callable, Tuple
 import jax.numpy as jnp
 import qdax
 from qdax import environments
-from qdax.tasks.brax_envs import create_brax_scoring_fn
+from qdax.tasks.brax_envs_ import create_brax_scoring_fn
 from qdax.types import Genotype, RNGKey
 
 

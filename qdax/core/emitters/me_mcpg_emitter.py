@@ -14,16 +14,13 @@ class MEMCPGConfig:
     """Configuration for PGAME Algorithm"""
 
     proportion_mutation_ga: float = 0.5
-    no_agents: int = 256
-    buffer_sample_batch_size: int = 32
-    buffer_add_batch_size: int = 256
-    #batch_size: int = 1000*256
-    #mini_batch_size: int = 1000*256
+    no_agents: int = 512
+    buffer_sample_batch_size: int = 2
+    buffer_add_batch_size: int = 512
     no_epochs: int = 16
-    #buffer_size: int = 256000
     learning_rate: float = 3e-4
-    adam_optimizer: bool = True
     clip_param: float = 0.2
+    discount_rate: float = 0.99
     
     
 class MEMCPGEmitter(MultiEmitter):
@@ -54,7 +51,7 @@ class MEMCPGEmitter(MultiEmitter):
             no_epochs=config.no_epochs,
             #buffer_size=config.buffer_size,
             learning_rate=config.learning_rate,
-            adam_optimizer=config.adam_optimizer,
+            discount_rate=config.discount_rate,
             clip_param=config.clip_param
         )
 

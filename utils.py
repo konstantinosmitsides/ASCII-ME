@@ -70,7 +70,8 @@ def get_env(config: Config):
                 config.env.name,
                 episode_length=config.env.episode_length,
                 exclude_current_positions_from_observation=config.env.exclude_current_positions_from_observation,
-                backend=config.env.backend)
+            )
+                #backend=config.env.backend)
         elif config.env.name == "humanoid_omni":
             env = environments_v1.create(
                 config.env.name,
@@ -210,3 +211,67 @@ def get_df(results_dir):
 
                 metrics_list.append(metrics)
     return pd.concat(metrics_list, ignore_index=True)
+
+
+def flatten_policy_parameters(params, flat_params=None):
+    if flat_params is None:
+        flat_params = []
+    
+    for key, value in params.items():
+        if isinstance(value, dict):
+            # Recursive call to handle nested dictionaries
+            flatten_policy_parameters(value, flat_params)
+        elif key in ['bias', 'kernel', 'log_std']:
+            # Flatten and append the parameters if they match expected keys
+            #print(f"Including {key} with shape {value.shape}")  # Debug: Confirm these parameters are included
+            flat_params.append(jnp.ravel(value))
+        else:
+            continue
+            #print(f"Skipping {key}")  # Debug: Notice skipped params or incorrect structures
+
+    return jnp.concatenate(flat_params) if flat_params else jnp.array([])
+
+
+def calculate_gae(data):
+    def _scan_get_advantages(carry, x):
+        gae, next_value = carry
+        done, value, reward = x
+        
+        
+        delta = reward + 0.99 * next_value * (1 - done) - value
+        
+        gae = delta + 0.99 * 0.95 * (1 - done) * gae
+        
+        return (gae, value), gae
+    
+    _, advantages = jax.lax.scan(
+        _scan_get_advantages,
+        (jnp.zeros_like(data.val_adv[:, 0]), data.target[:, -1]),
+        (data.dones.T, data.val_adv.T, data.rewards.T),
+        reverse=True,
+        unroll=16,
+    )
+    
+    return advantages.T, advantages.T + data.val_adv
+    
+    
+@jax.jit
+def transfer_params(target_params, source_params):
+    source_params_ = source_params['params']
+    target_params_ = target_params['params']
+    target_params_['Dense_0']['kernel'] = source_params_['Dense_0']['kernel']
+    target_params_['Dense_0']['bias'] = source_params_['Dense_0']['bias']
+    target_params_['Dense_1']['kernel'] = source_params_['Dense_1']['kernel']
+    target_params_['Dense_1']['bias'] = source_params_['Dense_1']['bias']
+    target_params_['Dense_2']['kernel'] = source_params_['Dense_2']['kernel']
+    target_params_['Dense_2']['bias'] = source_params_['Dense_2']['bias']
+    target_params_['log_std'] = source_params_['log_std']
+    target_params['params'] = target_params_
+    
+    return target_params
+
+@jax.jit
+def normalize_obs(obs, mean, var):
+    return (obs - mean) / jnp.sqrt(var + 1e-8)
+    
+    

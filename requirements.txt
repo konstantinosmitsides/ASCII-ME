@@ -168,3 +168,6 @@ Werkzeug==3.0.3
 widgetsnbextension==4.0.10
 zipp==3.18.1
 flashbax
+distrax
+gymnax
+navix
