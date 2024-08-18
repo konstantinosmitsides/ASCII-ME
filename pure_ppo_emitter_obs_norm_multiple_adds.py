@@ -6,7 +6,7 @@ from qdax.core.neuroevolution.networks.networks import MLPPPO
 import optax
 #from flax.training.train_state import TrainState
 import jax.numpy as jnp
-from wrappers_qd import VecEnv, NormalizeVecReward
+from wrappers_qd import VecEnv, NormalizeVecObsReward, NormalizeVecObs
 from qdax.core.neuroevolution.buffers.buffer import PPOTransition
 from get_env import get_env
 from qdax.tasks.brax_envs import reset_based_scoring_function_brax_envs as scoring_function
@@ -19,7 +19,7 @@ from utils import transfer_params
 @dataclass
 class PurePPOConfig:
     GREEDY_AGENTS: int = 1
-    LR: float = 3e-4
+    LR: float = 1e-3
     NUM_ENVS: int = 256
     NUM_STEPS: int = 80
     TOTAL_TIMESTEPS: int = 5e7
@@ -39,12 +39,16 @@ class PurePPOConfig:
     
     
 class PurePPOEmitterState(EmitterState):
+    params: Any
+    env_state: Any
+    opt_state: Any
     rng: Any
 
 class PurePPOEmitter():
     def __init__(self, config: PurePPOConfig, env): #, scoring_function):
         env = VecEnv(env)
-        env = NormalizeVecReward(env, config.GAMMA)
+        env = NormalizeVecObs(env)
+        env = NormalizeVecObsReward(env, config.GAMMA)
         
         self._config = config
         self._env = env
@@ -81,6 +85,7 @@ class PurePPOEmitter():
         )
         
         
+        
     @property
     def batch_size(self) -> int:
         """
@@ -93,13 +98,35 @@ class PurePPOEmitter():
     def use_all_data(self) -> bool:
         """Whther to use all data or not when used along other emitters.
         """
-        return False
+        return True
     
         
     @partial(jax.jit, static_argnames=("self",))
     def init(self, random_key, repertoire, genotypes, fitnesses, descriptors, extra_scores):
-        rng, _rng = jax.random.split(random_key)
-        emitter_state = PurePPOEmitterState(rng=_rng)
+        #rng, _rng = jax.random.split(random_key)
+        
+        params, rng = repertoire.sample(
+            random_key, 
+            num_samples=self.batch_size
+            )
+        
+        sol_params = jax.tree_util.tree_map(lambda x: x[0, ...], params)
+        rng, _rng = jax.random.split(rng)
+        init_x = jnp.zeros(self._env.observation_size)
+        new_params = self._actor_critic.init(_rng, init_x)
+        params = transfer_params(new_params, sol_params)
+        
+        opt_state = self._tx.init(params)
+        
+        rng, _rng = jax.random.split(rng)
+        reset_rng = jax.random.split(_rng, num=self._config.NUM_ENVS)
+        state = self._env.reset(reset_rng)
+        
+        rng, _rng = jax.random.split(rng)
+        
+        emitter_state = PurePPOEmitterState(params=params, env_state=state, opt_state=opt_state, rng=_rng)
+        
+        
         
         return emitter_state, rng
     
@@ -114,6 +141,16 @@ class PurePPOEmitter():
         extra_scores,
     ):
         
+        rng, _ = jax.random.split(emitter_state.rng)
+        
+        emitter_state = emitter_state.replace(
+            params=extra_scores["params"],
+            env_state=extra_scores["env_state"],
+            opt_state=extra_scores["opt_state"],
+            rng=rng,
+        )
+        
+        
         return emitter_state
         
     @partial(jax.jit, static_argnames=("self",))
@@ -122,35 +159,15 @@ class PurePPOEmitter():
         #rng, _rng = jax.random.split(rng)
         #init_x = jnp.zeros(self._env.observation_size)
         #params = self._actor_critic.init(_rng, init_x)
-        
-        parent, rng = repertoire.sample(
-            rng,
-            num_samples=self.batch_size,
-        )
-        
-        sol_params = jax.tree_util.tree_map(lambda x: x[0, ...], parent)
-        
-        rng, _rng = jax.random.split(rng)
-        init_x = jnp.zeros(self._env.observation_size)
-        new_params = self._actor_critic.init(_rng, init_x)
-        params = transfer_params(new_params, sol_params)
-        
-        
-        
-
-        opt_state = self._tx.init(params)
-        #train_state = TrainState.create(
-        #    apply_fn=self._actor_critic.apply,
-        #    params=self._params,
-        #    tx=self._tx,
-        #)
-        
-        rng, _rng = jax.random.split(rng)
-        reset_rng = jax.random.split(_rng, num=self._config.NUM_ENVS)
-        state = self._env.reset(reset_rng)
+    
+    
+        state = emitter_state.env_state
+        params = emitter_state.params
+        opt_state = emitter_state.opt_state
         
         def _scan_update_step(carry, _):
             return self._update_step(*carry)
+        
         
         (state, params, opt_state, repertoire, rng), _ = self._update_step(
             state,
@@ -160,15 +177,20 @@ class PurePPOEmitter():
             rng,
         )
         
+        sol_params = jax.tree_util.tree_map(lambda x: x[0], repertoire.genotypes)
+        sol_params = jax.tree_util.tree_map(lambda x: x[0, ...], sol_params)
+        
+        
         sol_params = transfer_params(sol_params, params) 
         
-        params = jax.tree_util.tree_map(lambda x: x[jnp.newaxis, ...], sol_params)
-        return params, {}, rng
+        params_ = jax.tree_util.tree_map(lambda x: x[jnp.newaxis, ...], sol_params)
+        #jax.debug.print("are they the same? {}", state.env_state.mean[0] == state.env_state.mean[1])
+        return params_, {"obs_mean" : state.env_state.mean[0], "obs_var" : state.env_state.var[0], "env_state" : state, "opt_state" : opt_state, "params" : params}, rng
      
     @partial(jax.jit, static_argnames=("self",))
     def _env_step(self, state, params, key):
         rng, rng_ = jax.random.split(key)
-        pi, _, value = self._actor_critic.apply(params, state.env_state.obs)
+        pi, _, value = self._actor_critic.apply(params, state.env_state.env_state.obs)
         action = pi.sample(seed=rng_)
         log_prob = pi.log_prob(action)
         
@@ -176,14 +198,14 @@ class PurePPOEmitter():
         #rng_step = jax.random.split(rng_, num=self._config.NUM_ENVS)
         next_state = self._env.step(state, action)
         transition = PPOTransition(
-            obs=state.env_state.obs,
-            next_obs=next_state.env_state.obs,
-            rewards=next_state.env_state.reward,
-            dones=next_state.env_state.done,
-            truncations=next_state.env_state.info["truncation"],
+            obs=state.env_state.env_state.obs,
+            next_obs=next_state.env_state.env_state.obs,
+            rewards=next_state.env_state.env_state.reward,
+            dones=next_state.env_state.env_state.done,
+            truncations=next_state.env_state.env_state.info["truncation"],
             actions=action,
-            state_desc=state.env_state.info["state_descriptor"],
-            next_state_desc=next_state.env_state.info["state_descriptor"],
+            state_desc=state.env_state.env_state.info["state_descriptor"],
+            next_state_desc=next_state.env_state.env_state.info["state_descriptor"],
             val=value,
             logp=log_prob,
         )
@@ -319,7 +341,7 @@ class PurePPOEmitter():
     def _one_update(self, state, params, opt_state, rng):
         
         state, params, rng, traj_batch = self._sample(state, params, rng)
-        _, _, last_val = self._actor_critic.apply(params, state.env_state.obs)
+        _, _, last_val = self._actor_critic.apply(params, state.env_state.env_state.obs)
         advs, targets = self._calculate_gae(traj_batch, last_val)
         update_state = (params, opt_state, traj_batch, advs, targets, rng)
         

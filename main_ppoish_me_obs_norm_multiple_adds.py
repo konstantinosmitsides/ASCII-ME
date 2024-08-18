@@ -18,7 +18,7 @@ from omegaconf import OmegaConf, DictConfig
 import jax
 import jax.numpy as jnp
 from hydra.core.config_store import ConfigStore
-from qdax.core.map_elites_obs_norm import MAPElites
+from qdax.core.map_elites_obs_norm_multiple_adds import MAPElites
 from qdax.types import RNGKey, Genotype
 from qdax.utils.sampling_obs_norm import sampling 
 from qdax.core.containers.mapelites_repertoire import compute_cvt_centroids, MapElitesRepertoire
@@ -35,7 +35,7 @@ import wandb
 from qdax.utils.metrics import CSVLogger, default_qd_metrics
 from qdax.utils.plotting import plot_map_elites_results, plot_2d_map_elites_repertoire
 import matplotlib.pyplot as plt
-from me_mcpg_ppo_emitter_obs_norm import MEMCPGPPOEmitter, MEMCPGPPOConfig
+from me_mcpg_ppo_emitter_obs_norm_multiple_adds import MEMCPGPPOEmitter, MEMCPGPPOConfig
 from utils import normalize_obs
 
 
@@ -381,8 +381,7 @@ def main(config: Config) -> None:
     # compute initial repertoire
     repertoire, emitter_state_1, emitter_state_2, random_key = map_elites.init(init_params, centroids, random_key)
 
-    log_period = 10
-    num_loops = int((config.num_iterations-1) / log_period)
+
 
     metrics = dict.fromkeys(["iteration", "qd_score", "coverage", "max_fitness", "qd_score_repertoire", "dem_repertoire", "time", "evaluation", "ga_offspring_added", "qpg_offspring_added"], jnp.array([]))    
     #metrics = dict.fromkeys(["iteration", "qd_score", "coverage", "max_fitness", "time", "evaluation", "ga_offspring_added", "qpg_offspring_added"], jnp.array([]))        
@@ -405,41 +404,56 @@ def main(config: Config) -> None:
             plt.savefig(f"./Plots/{metric_name}_vs_iterations.png")
             plt.close()
     # Main loop
-    start_time = time.time()
-    repertoire, _, current_metrics, random_key, obs_stats = map_elites.update_1(
-        repertoire,
-        emitter_state_1,
-        random_key,
-    )
-    timelapse = time.time() - start_time
+    map_elites_scan_update_1 = map_elites.scan_update_1
+    log_period = 1
+    num_loops = int(config.algo.NO_ADD // log_period)
+    eval_num = int(config.batch_size + (config.algo.TOTAL_TIMESTEPS // config.env.episode_length // config.algo.NO_ADD))
+    print(f"Number of evaluations per iteration: {eval_num}")
     
-    current_metrics = jax.tree_util.tree_map(lambda x: jnp.expand_dims(x, axis=0), current_metrics)
-    
-    random_key, qd_score_repertoire, dem_repertoire = evaluate_repertoire(random_key, repertoire, obs_stats)
-    current_metrics["iteration"] = jnp.arange(1, 2, dtype=jnp.int32)
-    current_metrics["evaluation"] = jnp.arange(1, 50512, dtype=jnp.int32)
-    current_metrics["time"] = jnp.repeat(timelapse, 1)
-    current_metrics["qd_score_repertoire"] = jnp.repeat(qd_score_repertoire, 1)
-    current_metrics["dem_repertoire"] = jnp.repeat(dem_repertoire, 1)
-    current_metrics["ga_offspring_added"], current_metrics["qpg_offspring_added"], _ = get_n_offspring_added_1(current_metrics)
-    del current_metrics["is_offspring_added"]
-    metrics = jax.tree_util.tree_map(lambda metric, current_metric: jnp.concatenate([metric, current_metric], axis=0), metrics, current_metrics)
+    for i in range(num_loops):
+        print(f"Loop {i+1}/{num_loops}")
+        start_time = time.time()
+        
+        (repertoire, emitter_state_1, random_key), (current_metrics, obs_stats) = jax.lax.scan(
+            map_elites_scan_update_1,
+            (repertoire, emitter_state_1, random_key),
+            (),
+            length=log_period,
+        )
+        timelapse = time.time() - start_time
+        
+        obs_stats["obs_mean"] = jnp.squeeze(obs_stats["obs_mean"])
+        obs_stats["obs_var"] = jnp.squeeze(obs_stats["obs_var"])
 
-    # Log
-    log_metrics = jax.tree_util.tree_map(lambda metric: metric[-1], metrics)
-    log_metrics["qpg_offspring_added"] = jnp.sum(current_metrics["qpg_offspring_added"])
-    log_metrics["ga_offspring_added"] = jnp.sum(current_metrics["ga_offspring_added"])
-    #log_metrics["ppo_offspring_added"] = jnp.sum(current_metrics["ppo_offspring_added"])
-    csv_logger.log(log_metrics)
-    wandb.log(log_metrics)
+        
+                
+        random_key, qd_score_repertoire, dem_repertoire = evaluate_repertoire(random_key, repertoire, obs_stats)
+        current_metrics["iteration"] = jnp.arange(1+log_period*i, 1+log_period*(i+1), dtype=jnp.int32)
+        current_metrics["evaluation"] = jnp.arange(1+log_period*eval_num*i, 1+log_period*eval_num*(i+1), dtype=jnp.int32)
+        current_metrics["time"] = jnp.repeat(timelapse, log_period)
+        current_metrics["qd_score_repertoire"] = jnp.repeat(qd_score_repertoire, log_period)
+        current_metrics["dem_repertoire"] = jnp.repeat(dem_repertoire, log_period)
+        current_metrics["ga_offspring_added"], current_metrics["qpg_offspring_added"], _ = get_n_offspring_added_1(current_metrics)
+        del current_metrics["is_offspring_added"]
+        metrics = jax.tree_util.tree_map(lambda metric, current_metric: jnp.concatenate([metric, current_metric], axis=0), metrics, current_metrics)
+
+        # Log
+        log_metrics = jax.tree_util.tree_map(lambda metric: metric[-1], metrics)
+        log_metrics["qpg_offspring_added"] = jnp.sum(current_metrics["qpg_offspring_added"])
+        log_metrics["ga_offspring_added"] = jnp.sum(current_metrics["ga_offspring_added"])
+        #log_metrics["ppo_offspring_added"] = jnp.sum(current_metrics["ppo_offspring_added"])
+        csv_logger.log(log_metrics)
+        wandb.log(log_metrics)
     
     
-    
+    already_done_evals = eval_num * config.algo.NO_ADD
     map_elites_scan_update_2 = map_elites.scan_update_2
     eval_num = config.batch_size
     print(f"Number of evaluations per iteration: {eval_num}")
-    #profiler.start_trace(profiler_dir)
-    #jax.profiler.start_server(9999)
+
+    log_period = 10
+    num_loops = int(config.num_iterations / log_period)
+
     for i in range(num_loops):
         print(f"Loop {i+1}/{num_loops}")
         start_time = time.time()
@@ -455,8 +469,8 @@ def main(config: Config) -> None:
         # Metrics
         random_key, qd_score_repertoire, dem_repertoire = evaluate_repertoire(random_key, repertoire, obs_stats)
 
-        current_metrics["iteration"] = jnp.arange(2+log_period*i, 2+log_period*(i+1), dtype=jnp.int32)
-        current_metrics["evaluation"] = jnp.arange(50512+log_period*eval_num*i, 50512+log_period*eval_num*(i+1), dtype=jnp.int32)
+        current_metrics["iteration"] = jnp.arange(config.algo.NO_ADD+1+log_period*i, config.algo.NO_ADD+1+log_period*(i+1), dtype=jnp.int32)
+        current_metrics["evaluation"] = jnp.arange(already_done_evals+log_period*eval_num*i, already_done_evals+log_period*eval_num*(i+1), dtype=jnp.int32)
         current_metrics["time"] = jnp.repeat(timelapse, log_period)
         current_metrics["qd_score_repertoire"] = jnp.repeat(qd_score_repertoire, log_period)
         current_metrics["dem_repertoire"] = jnp.repeat(dem_repertoire, log_period)

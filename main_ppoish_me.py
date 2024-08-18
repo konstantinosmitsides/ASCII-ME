@@ -375,7 +375,7 @@ def main(config: Config) -> None:
     repertoire, emitter_state_1, emitter_state_2, random_key = map_elites.init(init_params, centroids, random_key)
 
     log_period = 10
-    num_loops = int(config.num_iterations / log_period)
+    num_loops = int((config.num_iterations-1) / log_period)
 
     metrics = dict.fromkeys(["iteration", "qd_score", "coverage", "max_fitness", "qd_score_repertoire", "dem_repertoire", "time", "evaluation", "ga_offspring_added", "qpg_offspring_added"], jnp.array([]))    
     csv_logger = CSVLogger(

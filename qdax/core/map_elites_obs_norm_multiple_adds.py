@@ -119,7 +119,9 @@ class MAPElites:
             genotypes=genotypes,
             fitnesses=fitnesses,
             descriptors=descriptors,
-            extra_scores={**extra_scores}#, **extra_info},
+            extra_scores={**extra_scores,**{"params" : emitter_state_1.emitter_states[1].params,
+                                            "env_state" : emitter_state_1.emitter_states[1].env_state,
+                                            "opt_state" : emitter_state_1.emitter_states[1].opt_state}},
         )
         
         emitter_state_2, random_key = self._emitter_2.init(
@@ -199,7 +201,7 @@ class MAPElites:
             genotypes=genotypes,
             fitnesses=fitnesses,
             descriptors=descriptors,
-            extra_scores={**extra_scores}#, **extra_info},
+            extra_scores={**extra_scores, **obs_stats},
         )
 
         # update the metrics
@@ -226,13 +228,13 @@ class MAPElites:
             The updated repertoire and emitter state, with a new random key and metrics.
         """
         repertoire, emitter_state, random_key = carry
-        (repertoire, emitter_state, metrics, random_key,) = self.update_1(
+        (repertoire, emitter_state, metrics, random_key, obs_stats) = self.update_1(
             repertoire,
             emitter_state,
             random_key,
         )
 
-        return (repertoire, emitter_state, random_key), metrics
+        return (repertoire, emitter_state, random_key), (metrics, obs_stats)
     
     
     @partial(jax.jit, static_argnames=("self",))
@@ -325,3 +327,4 @@ class MAPElites:
         )
 
         return (repertoire, emitter_state, random_key, obs_stats), metrics
+    

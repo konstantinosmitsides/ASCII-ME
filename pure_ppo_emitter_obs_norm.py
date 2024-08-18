@@ -153,11 +153,12 @@ class PurePPOEmitter():
         def _scan_update_step(carry, _):
             return self._update_step(*carry)
         
-        (state, params, opt_state, repertoire, rng), _ = jax.lax.scan(
-            _scan_update_step,
-            (state, params, opt_state, repertoire, rng),
-            None,
-            length=self._config.NO_ADD,
+        (state, params, opt_state, repertoire, rng), _ = self._update_step(
+            state,
+            params,
+            opt_state,
+            repertoire,
+            rng,
         )
         
         sol_params = transfer_params(sol_params, params) 
