@@ -10,7 +10,7 @@ from qdax.types import Params, RNGKey
 from dataclasses import dataclass
 #from pure_ppo_emitter import PurePPOEmitter, PurePPOConfig
 #from pure_ppo_emitter_corrected import PurePPOEmitter, PurePPOConfig
-from pure_ppo_emitter import PurePPOEmitter, PurePPOConfig
+from pure_ppo_emitter_no_pg import PurePPOEmitter, PurePPOConfig
 
 @dataclass
 class MEPPOConfig:

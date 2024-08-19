@@ -271,6 +271,21 @@ def transfer_params(target_params, source_params):
     return target_params
 
 @jax.jit
+def transfer_params_no_pg(target_params, source_params):
+    source_params_ = source_params['params']
+    target_params_ = target_params['params']
+    target_params_['Dense_0']['kernel'] = source_params_['Dense_0']['kernel']
+    target_params_['Dense_0']['bias'] = source_params_['Dense_0']['bias']
+    target_params_['Dense_1']['kernel'] = source_params_['Dense_1']['kernel']
+    target_params_['Dense_1']['bias'] = source_params_['Dense_1']['bias']
+    target_params_['Dense_2']['kernel'] = source_params_['Dense_2']['kernel']
+    target_params_['Dense_2']['bias'] = source_params_['Dense_2']['bias']
+    #target_params_['log_std'] = source_params_['log_std']
+    target_params['params'] = target_params_
+    
+    return target_params
+
+@jax.jit
 def normalize_obs(obs, mean, var):
     return (obs - mean) / jnp.sqrt(var + 1e-8)
     
