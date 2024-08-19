@@ -37,5 +37,6 @@ clip_param: 0.2
 init_lecun: False
 sample_trajectory: True
 baseline_equal_parent_fitness: False
+PG_emitter: True
 
 grad_steps: 16

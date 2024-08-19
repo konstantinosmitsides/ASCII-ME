@@ -34,6 +34,8 @@ from qdax.utils.metrics import CSVLogger, default_qd_metrics
 from qdax.utils.plotting import plot_map_elites_results, plot_2d_map_elites_repertoire
 import matplotlib.pyplot as plt
 from me_mcpg_ppo_emitter import MEMCPGPPOEmitter, MEMCPGPPOConfig
+from qdax.core.emitters.standard_emitters import MixingEmitter
+from me_ppo_emitter import MEPPOConfig, MEPPOEmitter
 
 
 
@@ -251,6 +253,14 @@ def main(config: Config) -> None:
         #qpg_offspring_added, ai_offspring_added = jnp.split(split[0], (split[0].shape[1]-1,), axis=-1)
         return (jnp.sum(split[1], axis=-1), jnp.sum(split[0], axis=-1))
     
+    def get_n_offspring_added_1_(metrics):
+        split = jnp.cumsum(jnp.array([emitter.batch_size for emitter in map_elites._emitter_1.emitters]))
+        split = jnp.split(metrics["is_offspring_added"], split, axis=-1)[:-1]
+        #qpg_offspring_added, ai_offspring_added = jnp.split(split[0], (split[0].shape[1]-1,), axis=-1)
+        return (jnp.sum(split[1], axis=-1))
+    
+    def get_n_offspring_added_2_(metrics):
+        return jnp.sum(metrics["is_offspring_added"], axis=-1)
     
     
 
@@ -311,155 +321,120 @@ def main(config: Config) -> None:
         scoring_fn,
     )
     '''
-    me_mcpg_ppo_config = MEMCPGPPOConfig(
-        LR=config.algo.LR,
-        NUM_ENVS=config.algo.NUM_ENVS,
-        NUM_STEPS=config.algo.NUM_STEPS,
-        TOTAL_TIMESTEPS=config.algo.TOTAL_TIMESTEPS,
-        GAMMA=config.algo.GAMMA,
-        GAE_LAMBDA=config.algo.GAE_LAMBDA,
-        CLIP_EPS=config.algo.CLIP_EPS,
-        ENTROPY_COEFF=config.algo.ENTROPY_COEFF,
-        VF_COEFF=config.algo.VF_COEFF,
-        MAX_GRAD_NORM=config.algo.MAX_GRAD_NORM,
-        ANNEAL_LR=config.algo.ANNEAL_LR,
-        NORMALIZE_ENV=config.algo.NORMALIZE_ENV,
-        NO_ADD=config.algo.NO_ADD,
-        GREEDY_AGENTS=config.algo.GREEDY_AGENTS,
-        ACTIVATION=config.algo.ACTIVATION,
-        NO_NEURONS=config.algo.NO_NEURONS,
-        UPDATE_EPOCHS=config.algo.UPDATE_EPOCHS,
-        NUM_MINIBATCHES=config.algo.NUM_MINIBATCHES,
-        proportion_mutation_ga=config.algo.proportion_mutation_ga,
-        no_agents=config.batch_size,
-        buffer_sample_batch_size=config.algo.buffer_sample_batch_size,
-        buffer_add_batch_size=config.algo.buffer_add_batch_size,
-        no_epochs=config.algo.no_epochs,
-        learning_rate=config.algo.learning_rate,
-        clip_param=config.algo.clip_param,
-    )
-
-    me_mcpg_config = MEMCPGConfig(
-        proportion_mutation_ga=config.algo.proportion_mutation_ga,
-        no_agents=config.batch_size,
-        buffer_sample_batch_size=config.algo.buffer_sample_batch_size,
-        buffer_add_batch_size=config.algo.buffer_add_batch_size,
-        no_epochs=config.algo.no_epochs,
-        learning_rate=config.algo.learning_rate,
-        clip_param=config.algo.clip_param,
-        discount_rate=config.algo.discount_rate,
-    )
-    
-    
-    variation_fn = partial(
-        isoline_variation, iso_sigma=config.algo.iso_sigma, line_sigma=config.algo.line_sigma
-    )
-    
-    me_mcpg_ppo_emitter = MEMCPGPPOEmitter(
-        me_mcpg_ppo_config,
-        policy_network,
-        env,
-        variation_fn,
-    )
-    
-    me_mcpg_emitter = MEMCPGEmitter(
-        me_mcpg_config,
-        policy_network,
-        env,
-        variation_fn,
-    )
-    
-    
-    
-    map_elites = MAPElites(
-        scoring_function=scoring_fn,
-        emitter_1=me_mcpg_ppo_emitter,
-        emitter_2=me_mcpg_emitter,
-        metrics_function=metrics_function,
-    )
-
-    # compute initial repertoire
-    repertoire, emitter_state_1, emitter_state_2, random_key = map_elites.init(init_params, centroids, random_key)
-
-    log_period = 10
-    num_loops = int((config.num_iterations-1) / log_period)
-
-    metrics = dict.fromkeys(["iteration", "qd_score", "coverage", "max_fitness", "qd_score_repertoire", "dem_repertoire", "time", "evaluation", "ga_offspring_added", "qpg_offspring_added"], jnp.array([]))    
-    csv_logger = CSVLogger(
-        "./log.csv",
-        header=list(metrics.keys())
-    )
-    def plot_metrics_vs_iterations(metrics, log_period):
-        iterations = jnp.arange(1, 1 + len(metrics["time"]), dtype=jnp.int32)
-
-        for metric_name, metric_values in metrics.items():
-            if metric_name in ["iteration", "evaluation"]:
-                continue
-            plt.figure()
-            plt.plot(iterations, metric_values, label=metric_name)
-            plt.xlabel("Iteration")
-            plt.ylabel(metric_name)
-            plt.title(f"{metric_name} vs Iterations")
-            plt.legend()
-            plt.savefig(f"./Plots/{metric_name}_vs_iterations.png")
-            plt.close()
-    # Main loop
-    start_time = time.time()
-    repertoire, _, current_metrics, random_key = map_elites.update_1(
-        repertoire,
-        emitter_state_1,
-        random_key,
-    )
-    timelapse = time.time() - start_time
-    
-    current_metrics = jax.tree_util.tree_map(lambda x: jnp.expand_dims(x, axis=0), current_metrics)
-    
-    random_key, qd_score_repertoire, dem_repertoire = evaluate_repertoire(random_key, repertoire)
-    current_metrics["iteration"] = jnp.arange(1, 2, dtype=jnp.int32)
-    current_metrics["evaluation"] = jnp.arange(1, 50512, dtype=jnp.int32)
-    current_metrics["time"] = jnp.repeat(timelapse, 1)
-    current_metrics["qd_score_repertoire"] = jnp.repeat(qd_score_repertoire, 1)
-    current_metrics["dem_repertoire"] = jnp.repeat(dem_repertoire, 1)
-    current_metrics["ga_offspring_added"], current_metrics["qpg_offspring_added"], _ = get_n_offspring_added_1(current_metrics)
-    del current_metrics["is_offspring_added"]
-    metrics = jax.tree_util.tree_map(lambda metric, current_metric: jnp.concatenate([metric, current_metric], axis=0), metrics, current_metrics)
-
-    # Log
-    log_metrics = jax.tree_util.tree_map(lambda metric: metric[-1], metrics)
-    log_metrics["qpg_offspring_added"] = jnp.sum(current_metrics["qpg_offspring_added"])
-    log_metrics["ga_offspring_added"] = jnp.sum(current_metrics["ga_offspring_added"])
-    #log_metrics["ppo_offspring_added"] = jnp.sum(current_metrics["ppo_offspring_added"])
-    csv_logger.log(log_metrics)
-    wandb.log(log_metrics)
-    
-    
-    
-    map_elites_scan_update_2 = map_elites.scan_update_2
-    eval_num = config.batch_size
-    print(f"Number of evaluations per iteration: {eval_num}")
-    #profiler.start_trace(profiler_dir)
-    #jax.profiler.start_server(9999)
-    for i in range(num_loops):
-        print(f"Loop {i+1}/{num_loops}")
-        start_time = time.time()
+    if config.algo.PG_emitter:
         
-        (repertoire, emitter_state_2, random_key), current_metrics = jax.lax.scan(
-            map_elites_scan_update_2,
-            (repertoire, emitter_state_2, random_key),
-            (),
-            length=log_period,
+        me_mcpg_ppo_config = MEMCPGPPOConfig(
+            LR=config.algo.LR,
+            NUM_ENVS=config.algo.NUM_ENVS,
+            NUM_STEPS=config.algo.NUM_STEPS,
+            TOTAL_TIMESTEPS=config.algo.TOTAL_TIMESTEPS,
+            GAMMA=config.algo.GAMMA,
+            GAE_LAMBDA=config.algo.GAE_LAMBDA,
+            CLIP_EPS=config.algo.CLIP_EPS,
+            ENTROPY_COEFF=config.algo.ENTROPY_COEFF,
+            VF_COEFF=config.algo.VF_COEFF,
+            MAX_GRAD_NORM=config.algo.MAX_GRAD_NORM,
+            ANNEAL_LR=config.algo.ANNEAL_LR,
+            NORMALIZE_ENV=config.algo.NORMALIZE_ENV,
+            NO_ADD=config.algo.NO_ADD,
+            GREEDY_AGENTS=config.algo.GREEDY_AGENTS,
+            ACTIVATION=config.algo.ACTIVATION,
+            NO_NEURONS=config.algo.NO_NEURONS,
+            UPDATE_EPOCHS=config.algo.UPDATE_EPOCHS,
+            NUM_MINIBATCHES=config.algo.NUM_MINIBATCHES,
+            proportion_mutation_ga=config.algo.proportion_mutation_ga,
+            no_agents=config.batch_size,
+            buffer_sample_batch_size=config.algo.buffer_sample_batch_size,
+            buffer_add_batch_size=config.algo.buffer_add_batch_size,
+            no_epochs=config.algo.no_epochs,
+            learning_rate=config.algo.learning_rate,
+            clip_param=config.algo.clip_param,
+        )
+
+
+
+        me_mcpg_config = MEMCPGConfig(
+            proportion_mutation_ga=config.algo.proportion_mutation_ga,
+            no_agents=config.batch_size,
+            buffer_sample_batch_size=config.algo.buffer_sample_batch_size,
+            buffer_add_batch_size=config.algo.buffer_add_batch_size,
+            no_epochs=config.algo.no_epochs,
+            learning_rate=config.algo.learning_rate,
+            clip_param=config.algo.clip_param,
+            discount_rate=config.algo.discount_rate,
+        )
+        
+        
+        variation_fn = partial(
+            isoline_variation, iso_sigma=config.algo.iso_sigma, line_sigma=config.algo.line_sigma
+        )
+        
+        me_mcpg_ppo_emitter = MEMCPGPPOEmitter(
+            me_mcpg_ppo_config,
+            policy_network,
+            env,
+            variation_fn,
+        )
+        
+        me_mcpg_emitter = MEMCPGEmitter(
+            me_mcpg_config,
+            policy_network,
+            env,
+            variation_fn,
+        )
+        
+        
+        
+        map_elites = MAPElites(
+            scoring_function=scoring_fn,
+            emitter_1=me_mcpg_ppo_emitter,
+            emitter_2=me_mcpg_emitter,
+            metrics_function=metrics_function,
+        )
+
+        # compute initial repertoire
+        repertoire, emitter_state_1, emitter_state_2, random_key = map_elites.init(init_params, centroids, random_key)
+
+        log_period = 10
+        num_loops = int((config.num_iterations-1) / log_period)
+
+        metrics = dict.fromkeys(["iteration", "qd_score", "coverage", "max_fitness", "qd_score_repertoire", "dem_repertoire", "time", "evaluation", "ga_offspring_added", "qpg_offspring_added"], jnp.array([]))    
+        csv_logger = CSVLogger(
+            "./log.csv",
+            header=list(metrics.keys())
+        )
+        def plot_metrics_vs_iterations(metrics, log_period):
+            iterations = jnp.arange(1, 1 + len(metrics["time"]), dtype=jnp.int32)
+
+            for metric_name, metric_values in metrics.items():
+                if metric_name in ["iteration", "evaluation"]:
+                    continue
+                plt.figure()
+                plt.plot(iterations, metric_values, label=metric_name)
+                plt.xlabel("Iteration")
+                plt.ylabel(metric_name)
+                plt.title(f"{metric_name} vs Iterations")
+                plt.legend()
+                plt.savefig(f"./Plots/{metric_name}_vs_iterations.png")
+                plt.close()
+        # Main loop
+        start_time = time.time()
+        repertoire, _, current_metrics, random_key = map_elites.update_1(
+            repertoire,
+            emitter_state_1,
+            random_key,
         )
         timelapse = time.time() - start_time
-
-        # Metrics
+        
+        current_metrics = jax.tree_util.tree_map(lambda x: jnp.expand_dims(x, axis=0), current_metrics)
+        
         random_key, qd_score_repertoire, dem_repertoire = evaluate_repertoire(random_key, repertoire)
-
-        current_metrics["iteration"] = jnp.arange(2+log_period*i, 2+log_period*(i+1), dtype=jnp.int32)
-        current_metrics["evaluation"] = jnp.arange(50512+log_period*eval_num*i, 50512+log_period*eval_num*(i+1), dtype=jnp.int32)
-        current_metrics["time"] = jnp.repeat(timelapse, log_period)
-        current_metrics["qd_score_repertoire"] = jnp.repeat(qd_score_repertoire, log_period)
-        current_metrics["dem_repertoire"] = jnp.repeat(dem_repertoire, log_period)
-        current_metrics["ga_offspring_added"], current_metrics["qpg_offspring_added"] = get_n_offspring_added_2(current_metrics)
+        current_metrics["iteration"] = jnp.arange(1, 2, dtype=jnp.int32)
+        current_metrics["evaluation"] = jnp.arange(1, 50512, dtype=jnp.int32)
+        current_metrics["time"] = jnp.repeat(timelapse, 1)
+        current_metrics["qd_score_repertoire"] = jnp.repeat(qd_score_repertoire, 1)
+        current_metrics["dem_repertoire"] = jnp.repeat(dem_repertoire, 1)
+        current_metrics["ga_offspring_added"], current_metrics["qpg_offspring_added"], _ = get_n_offspring_added_1(current_metrics)
         del current_metrics["is_offspring_added"]
         metrics = jax.tree_util.tree_map(lambda metric, current_metric: jnp.concatenate([metric, current_metric], axis=0), metrics, current_metrics)
 
@@ -467,38 +442,258 @@ def main(config: Config) -> None:
         log_metrics = jax.tree_util.tree_map(lambda metric: metric[-1], metrics)
         log_metrics["qpg_offspring_added"] = jnp.sum(current_metrics["qpg_offspring_added"])
         log_metrics["ga_offspring_added"] = jnp.sum(current_metrics["ga_offspring_added"])
-        #log_metrics["ai_offspring_added"] = jnp.sum(current_metrics["ai_offspring_added"])
+        #log_metrics["ppo_offspring_added"] = jnp.sum(current_metrics["ppo_offspring_added"])
         csv_logger.log(log_metrics)
         wandb.log(log_metrics)
-    #profiler.stop_trace()
-    # Metrics
-    
-    with open("./metrics.pickle", "wb") as metrics_file:
-        pickle.dump(metrics, metrics_file)
-
-    # Repertoire
-    os.mkdir("./repertoire/")
-    os.mkdir("./Plots/")
-    repertoire.save(path="./repertoire/")
-
-    plot_metrics_vs_iterations(metrics, log_period)
-
-
-    # Plot
-    if env.behavior_descriptor_length == 2:
         
-        fig, _ = plot_2d_map_elites_repertoire(
-            centroids=repertoire.centroids,
-            repertoire_fitnesses=repertoire.fitnesses,
-            minval=config.env.min_bd,
-            maxval=config.env.max_bd,
-            repertoire_descriptors=repertoire.descriptors,
+        
+        
+        map_elites_scan_update_2 = map_elites.scan_update_2
+        eval_num = config.batch_size
+        print(f"Number of evaluations per iteration: {eval_num}")
+        #profiler.start_trace(profiler_dir)
+        #jax.profiler.start_server(9999)
+        for i in range(num_loops):
+            print(f"Loop {i+1}/{num_loops}")
+            start_time = time.time()
+            
+            (repertoire, emitter_state_2, random_key), current_metrics = jax.lax.scan(
+                map_elites_scan_update_2,
+                (repertoire, emitter_state_2, random_key),
+                (),
+                length=log_period,
             )
-        #env_steps = jnp.arange(config.num_iterations + 1) * config.env.episode_length * config.batch_size
-        #fig, _ = plot_map_elites_results(env_steps=env_steps, metrics=metrics, repertoire=repertoire, min_bd=config.env.min_bd, max_bd=config.env.max_bd)
-        fig.savefig("./repertoire_plot.png")
+            timelapse = time.time() - start_time
+
+            # Metrics
+            random_key, qd_score_repertoire, dem_repertoire = evaluate_repertoire(random_key, repertoire)
+
+            current_metrics["iteration"] = jnp.arange(2+log_period*i, 2+log_period*(i+1), dtype=jnp.int32)
+            current_metrics["evaluation"] = jnp.arange(50512+log_period*eval_num*i, 50512+log_period*eval_num*(i+1), dtype=jnp.int32)
+            current_metrics["time"] = jnp.repeat(timelapse, log_period)
+            current_metrics["qd_score_repertoire"] = jnp.repeat(qd_score_repertoire, log_period)
+            current_metrics["dem_repertoire"] = jnp.repeat(dem_repertoire, log_period)
+            current_metrics["ga_offspring_added"], current_metrics["qpg_offspring_added"] = get_n_offspring_added_2(current_metrics)
+            del current_metrics["is_offspring_added"]
+            metrics = jax.tree_util.tree_map(lambda metric, current_metric: jnp.concatenate([metric, current_metric], axis=0), metrics, current_metrics)
+
+            # Log
+            log_metrics = jax.tree_util.tree_map(lambda metric: metric[-1], metrics)
+            log_metrics["qpg_offspring_added"] = jnp.sum(current_metrics["qpg_offspring_added"])
+            log_metrics["ga_offspring_added"] = jnp.sum(current_metrics["ga_offspring_added"])
+            #log_metrics["ai_offspring_added"] = jnp.sum(current_metrics["ai_offspring_added"])
+            csv_logger.log(log_metrics)
+            wandb.log(log_metrics)
+        #profiler.stop_trace()
+        # Metrics
         
-    recreate_repertoire(repertoire, centroids, metrics_function, random_key)
+        with open("./metrics.pickle", "wb") as metrics_file:
+            pickle.dump(metrics, metrics_file)
+
+        # Repertoire
+        os.mkdir("./repertoire/")
+        os.mkdir("./Plots/")
+        repertoire.save(path="./repertoire/")
+
+        plot_metrics_vs_iterations(metrics, log_period)
+
+
+        # Plot
+        if env.behavior_descriptor_length == 2:
+            
+            fig, _ = plot_2d_map_elites_repertoire(
+                centroids=repertoire.centroids,
+                repertoire_fitnesses=repertoire.fitnesses,
+                minval=config.env.min_bd,
+                maxval=config.env.max_bd,
+                repertoire_descriptors=repertoire.descriptors,
+                )
+            #env_steps = jnp.arange(config.num_iterations + 1) * config.env.episode_length * config.batch_size
+            #fig, _ = plot_map_elites_results(env_steps=env_steps, metrics=metrics, repertoire=repertoire, min_bd=config.env.min_bd, max_bd=config.env.max_bd)
+            fig.savefig("./repertoire_plot.png")
+            
+        recreate_repertoire(repertoire, centroids, metrics_function, random_key)
+        
+    else:
+        me_ppo_config = MEPPOConfig(
+            LR=config.algo.LR,
+            NUM_ENVS=config.algo.NUM_ENVS,
+            NUM_STEPS=config.algo.NUM_STEPS,
+            TOTAL_TIMESTEPS=config.algo.TOTAL_TIMESTEPS,
+            GAMMA=config.algo.GAMMA,
+            GAE_LAMBDA=config.algo.GAE_LAMBDA,
+            CLIP_EPS=config.algo.CLIP_EPS,
+            ENTROPY_COEFF=config.algo.ENTROPY_COEFF,
+            VF_COEFF=config.algo.VF_COEFF,
+            MAX_GRAD_NORM=config.algo.MAX_GRAD_NORM,
+            ANNEAL_LR=config.algo.ANNEAL_LR,
+            NORMALIZE_ENV=config.algo.NORMALIZE_ENV,
+            NO_ADD=config.algo.NO_ADD,
+            GREEDY_AGENTS=config.algo.GREEDY_AGENTS,
+            ACTIVATION=config.algo.ACTIVATION,
+            NO_NEURONS=config.algo.NO_NEURONS,
+            UPDATE_EPOCHS=config.algo.UPDATE_EPOCHS,
+            NUM_MINIBATCHES=config.algo.NUM_MINIBATCHES,
+            proportion_mutation_ga=config.algo.proportion_mutation_ga,
+            no_agents=config.batch_size,
+            buffer_sample_batch_size=config.algo.buffer_sample_batch_size,
+            buffer_add_batch_size=config.algo.buffer_add_batch_size,
+            no_epochs=config.algo.no_epochs,
+            learning_rate=config.algo.learning_rate,
+            clip_param=config.algo.clip_param,
+        )
+
+
+
+        
+        
+        variation_fn = partial(
+            isoline_variation, iso_sigma=config.algo.iso_sigma, line_sigma=config.algo.line_sigma
+        )
+        
+        me_ppo_emitter = MEPPOEmitter(
+            me_ppo_config,
+            policy_network,
+            env,
+            variation_fn,
+        )
+        
+        ga_emitter = MixingEmitter(
+            mutation_fn=None,
+            variation_fn=variation_fn,
+            variation_percentage=1.0,
+            batch_size=config.batch_size
+        )
+        
+        
+        
+        map_elites = MAPElites(
+            scoring_function=scoring_fn,
+            emitter_1=me_ppo_emitter,
+            emitter_2=ga_emitter,
+            metrics_function=metrics_function,
+        )
+
+        # compute initial repertoire
+        repertoire, emitter_state_1, emitter_state_2, random_key = map_elites.init(init_params, centroids, random_key)
+
+        log_period = 10
+        num_loops = int((config.num_iterations-1) / log_period)
+
+        metrics = dict.fromkeys(["iteration", "qd_score", "coverage", "max_fitness", "qd_score_repertoire", "dem_repertoire", "time", "evaluation", "ga_offspring_added"], jnp.array([]))    
+        csv_logger = CSVLogger(
+            "./log.csv",
+            header=list(metrics.keys())
+        )
+        def plot_metrics_vs_iterations(metrics, log_period):
+            iterations = jnp.arange(1, 1 + len(metrics["time"]), dtype=jnp.int32)
+
+            for metric_name, metric_values in metrics.items():
+                if metric_name in ["iteration", "evaluation"]:
+                    continue
+                plt.figure()
+                plt.plot(iterations, metric_values, label=metric_name)
+                plt.xlabel("Iteration")
+                plt.ylabel(metric_name)
+                plt.title(f"{metric_name} vs Iterations")
+                plt.legend()
+                plt.savefig(f"./Plots/{metric_name}_vs_iterations.png")
+                plt.close()
+        # Main loop
+        start_time = time.time()
+        repertoire, _, current_metrics, random_key = map_elites.update_1(
+            repertoire,
+            emitter_state_1,
+            random_key,
+        )
+        timelapse = time.time() - start_time
+        
+        current_metrics = jax.tree_util.tree_map(lambda x: jnp.expand_dims(x, axis=0), current_metrics)
+        
+        random_key, qd_score_repertoire, dem_repertoire = evaluate_repertoire(random_key, repertoire)
+        current_metrics["iteration"] = jnp.arange(1, 2, dtype=jnp.int32)
+        current_metrics["evaluation"] = jnp.arange(1, 50512, dtype=jnp.int32)
+        current_metrics["time"] = jnp.repeat(timelapse, 1)
+        current_metrics["qd_score_repertoire"] = jnp.repeat(qd_score_repertoire, 1)
+        current_metrics["dem_repertoire"] = jnp.repeat(dem_repertoire, 1)
+        current_metrics["ga_offspring_added"] = get_n_offspring_added_1_(current_metrics)
+        del current_metrics["is_offspring_added"]
+        metrics = jax.tree_util.tree_map(lambda metric, current_metric: jnp.concatenate([metric, current_metric], axis=0), metrics, current_metrics)
+
+        # Log
+        log_metrics = jax.tree_util.tree_map(lambda metric: metric[-1], metrics)
+        log_metrics["ga_offspring_added"] = jnp.sum(current_metrics["ga_offspring_added"])
+        #log_metrics["ppo_offspring_added"] = jnp.sum(current_metrics["ppo_offspring_added"])
+        csv_logger.log(log_metrics)
+        wandb.log(log_metrics)
+        
+        
+        
+        map_elites_scan_update_2 = map_elites.scan_update_2
+        eval_num = config.batch_size
+        print(f"Number of evaluations per iteration: {eval_num}")
+        #profiler.start_trace(profiler_dir)
+        #jax.profiler.start_server(9999)
+        for i in range(num_loops):
+            print(f"Loop {i+1}/{num_loops}")
+            start_time = time.time()
+            
+            (repertoire, emitter_state_2, random_key), current_metrics = jax.lax.scan(
+                map_elites_scan_update_2,
+                (repertoire, emitter_state_2, random_key),
+                (),
+                length=log_period,
+            )
+            timelapse = time.time() - start_time
+
+            # Metrics
+            random_key, qd_score_repertoire, dem_repertoire = evaluate_repertoire(random_key, repertoire)
+
+            current_metrics["iteration"] = jnp.arange(2+log_period*i, 2+log_period*(i+1), dtype=jnp.int32)
+            current_metrics["evaluation"] = jnp.arange(50512+log_period*eval_num*i, 50512+log_period*eval_num*(i+1), dtype=jnp.int32)
+            current_metrics["time"] = jnp.repeat(timelapse, log_period)
+            current_metrics["qd_score_repertoire"] = jnp.repeat(qd_score_repertoire, log_period)
+            current_metrics["dem_repertoire"] = jnp.repeat(dem_repertoire, log_period)
+            current_metrics["ga_offspring_added"] = get_n_offspring_added_2_(current_metrics)
+            del current_metrics["is_offspring_added"]
+            metrics = jax.tree_util.tree_map(lambda metric, current_metric: jnp.concatenate([metric, current_metric], axis=0), metrics, current_metrics)
+
+            # Log
+            log_metrics = jax.tree_util.tree_map(lambda metric: metric[-1], metrics)
+            log_metrics["ga_offspring_added"] = jnp.sum(current_metrics["ga_offspring_added"])
+            #log_metrics["ai_offspring_added"] = jnp.sum(current_metrics["ai_offspring_added"])
+            csv_logger.log(log_metrics)
+            wandb.log(log_metrics)
+        #profiler.stop_trace()
+        # Metrics
+        
+        with open("./metrics.pickle", "wb") as metrics_file:
+            pickle.dump(metrics, metrics_file)
+
+        # Repertoire
+        os.mkdir("./repertoire/")
+        os.mkdir("./Plots/")
+        repertoire.save(path="./repertoire/")
+
+        plot_metrics_vs_iterations(metrics, log_period)
+
+
+        # Plot
+        if env.behavior_descriptor_length == 2:
+            
+            fig, _ = plot_2d_map_elites_repertoire(
+                centroids=repertoire.centroids,
+                repertoire_fitnesses=repertoire.fitnesses,
+                minval=config.env.min_bd,
+                maxval=config.env.max_bd,
+                repertoire_descriptors=repertoire.descriptors,
+                )
+            #env_steps = jnp.arange(config.num_iterations + 1) * config.env.episode_length * config.batch_size
+            #fig, _ = plot_map_elites_results(env_steps=env_steps, metrics=metrics, repertoire=repertoire, min_bd=config.env.min_bd, max_bd=config.env.max_bd)
+            fig.savefig("./repertoire_plot.png")
+            
+        recreate_repertoire(repertoire, centroids, metrics_function, random_key)
+        
     
 
         
