@@ -24,8 +24,6 @@ from qdax.utils.sampling import sampling
 from qdax.core.containers.mapelites_repertoire import compute_cvt_centroids, MapElitesRepertoire
 from qdax.core.neuroevolution.networks.networks import MLPMCPG, MLPPPO
 from qdax.core.emitters.me_mcpg_emitter import MEMCPGConfig, MEMCPGEmitter
-from qdax.core.emitters.ppo_me_emitter import PPOMEConfig, PPOMEmitter
-#from qdax.core.emitters.rein_emitter_advanced import REINaiveConfig, REINaiveEmitter
 from qdax.core.neuroevolution.buffers.buffer import QDTransition, QDMCTransition, PPOTransition
 from qdax.environments import behavior_descriptor_extractor
 from qdax.tasks.brax_envs import reset_based_scoring_function_brax_envs as scoring_function
@@ -73,13 +71,21 @@ def main(config: Config) -> None:
 
     
 
-    
-    
-    policy_network = MLPMCPG(
-        action_dim=env.action_size,
-        activation=config.algo.ACTIVATION,
-        no_neurons=config.algo.NO_NEURONS,
-    )
+    if not config.algo.init_lecun:
+        policy_network = MLPMCPG(
+            action_dim=env.action_size,
+            activation=config.algo.ACTIVATION,
+            no_neurons=config.algo.NO_NEURONS,
+        )
+        
+    else:
+        policy_network = MLPMCPG(
+            action_dim=env.action_size,
+            activation=config.algo.ACTIVATION,
+            no_neurons=config.algo.NO_NEURONS,
+            kernel_init=jax.nn.initializers.lecun_uniform(),
+            final_init=jax.nn.initializers.lecun_uniform(),
+        )
 
     # Init population of controllers
     
@@ -323,6 +329,7 @@ def main(config: Config) -> None:
         ACTIVATION=config.algo.ACTIVATION,
         NO_NEURONS=config.algo.NO_NEURONS,
         UPDATE_EPOCHS=config.algo.UPDATE_EPOCHS,
+        NUM_MINIBATCHES=config.algo.NUM_MINIBATCHES,
         proportion_mutation_ga=config.algo.proportion_mutation_ga,
         no_agents=config.batch_size,
         buffer_sample_batch_size=config.algo.buffer_sample_batch_size,

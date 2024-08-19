@@ -23,7 +23,7 @@ VF_COEFF: 0.5
 MAX_GRAD_NORM: 0.5
 ACTIVATION: tanh
 ANNEAL_LR: False
-NORMALIZE_ENV: True
+NORMALIZE_ENV: False
 NO_ADD: 1
 NO_NEURONS: 64
 
@@ -34,3 +34,8 @@ no_epochs: 16
 learning_rate: 3e-4
 discount_rate: 0.99
 clip_param: 0.2
+init_lecun: False
+sample_trajectory: True
+baseline_equal_parent_fitness: False
+
+grad_steps: 16

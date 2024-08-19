@@ -18,23 +18,22 @@ from omegaconf import OmegaConf, DictConfig
 import jax
 import jax.numpy as jnp
 from hydra.core.config_store import ConfigStore
-from qdax.core.map_elites_obs_norm import MAPElites
+from qdax.core.map_elites_advanced import MAPElites
 from qdax.types import RNGKey, Genotype
-from qdax.utils.sampling_obs_norm import sampling 
+from qdax.utils.sampling import sampling 
 from qdax.core.containers.mapelites_repertoire import compute_cvt_centroids, MapElitesRepertoire
 from qdax.core.neuroevolution.networks.networks import MLPMCPG, MLPPPO
-from qdax.core.emitters.me_mcpg_emitter import MEMCPGConfig, MEMCPGEmitter
+from qdax.core.emitters.me_mcpg_emitter_trans import MEMCPGConfig, MEMCPGEmitter
 from qdax.core.neuroevolution.buffers.buffer import QDTransition, QDMCTransition, PPOTransition
 from qdax.environments import behavior_descriptor_extractor
-from qdax.tasks.brax_envs_obs_stats import reset_based_scoring_function_brax_envs as scoring_function
+from qdax.tasks.brax_envs_trans import reset_based_scoring_function_brax_envs as scoring_function
 from utils import Config, get_env
 from qdax.core.emitters.mutation_operators import isoline_variation
 import wandb
 from qdax.utils.metrics import CSVLogger, default_qd_metrics
 from qdax.utils.plotting import plot_map_elites_results, plot_2d_map_elites_repertoire
 import matplotlib.pyplot as plt
-from me_mcpg_ppo_emitter_obs_norm import MEMCPGPPOEmitter, MEMCPGPPOConfig
-from utils import normalize_obs
+from me_mcpg_ppo_emitter_trans import MEMCPGPPOEmitter, MEMCPGPPOConfig
 
 
 
@@ -103,17 +102,16 @@ def main(config: Config) -> None:
 
     # Define the fonction to play a step with the policy in the environment
     @jax.jit
-    def play_step_fn(env_state, policy_params, key, obs_mean, obs_var):
-        obs = normalize_obs(env_state.obs, obs_mean, obs_var)
+    def play_step_fn(env_state, policy_params, key):
         rng, rng_ = jax.random.split(key)
-        pi, action = policy_network.apply(policy_params, obs) #env_state.obs)
+        pi, action = policy_network.apply(policy_params, env_state.obs)
         #action_ = pi.sample(seed=rng_)
         log_prob = pi.log_prob(action)
         
         #rng, rng_ = jax.random.split(rng)
         #rng_step = jax.random.split(rng_, num=self._config.NUM_ENVS)
         next_env_state = env.step(env_state, action)
-        transition = PPOTransition(
+        transition = QDMCTransition(
             obs=env_state.obs,
             next_obs=next_env_state.obs,
             rewards=next_env_state.reward,
@@ -122,11 +120,11 @@ def main(config: Config) -> None:
             actions=action,
             state_desc=env_state.info["state_descriptor"],
             next_state_desc=next_env_state.info["state_descriptor"],
-            val= 0.0,
+            #val= 0.0,
             logp=log_prob,
         )
         
-        return (next_env_state, policy_params, rng, obs_mean, obs_var), transition
+        return (next_env_state, policy_params, rng), transition
 
 
 
@@ -148,17 +146,13 @@ def main(config: Config) -> None:
     scoring_fn=scoring_fn,
     num_samples=config.num_samples,
 )
-    
-    reward_offset = 0
-    
-    
-    
+
     @jax.jit
-    def evaluate_repertoire(random_key, repertoire, obs_stats):
+    def evaluate_repertoire(random_key, repertoire):
         repertoire_empty = repertoire.fitnesses == -jnp.inf
 
         fitnesses, descriptors, extra_scores, random_key = scoring_fn(
-            repertoire.genotypes, random_key, obs_stats['obs_mean'], obs_stats['obs_var']
+            repertoire.genotypes, random_key
         )
 
         # Compute repertoire QD score
@@ -172,14 +166,13 @@ def main(config: Config) -> None:
 
         return random_key, qd_score, dem
     
-    
+    reward_offset = 0
     
     def recreate_repertoire(
         repertoire: MapElitesRepertoire,
         centroids: jnp.ndarray,
         metrics_fn: Callable,
         random_key: RNGKey,
-        obs_stats,
     ) -> MapElitesRepertoire:
         
         (
@@ -188,7 +181,7 @@ def main(config: Config) -> None:
             old_coverage
         ) = metrics_fn(repertoire).values()
         fitnesses, descriptors, extra_scores, random_key = me_scoring_fn(
-            repertoire.genotypes, random_key, obs_stats,
+            repertoire.genotypes, random_key
         )
         new_repertoire = MapElitesRepertoire.init(
             genotypes=repertoire.genotypes,
@@ -238,7 +231,7 @@ def main(config: Config) -> None:
         
         
         
-
+        
         
         
     
@@ -340,21 +333,21 @@ def main(config: Config) -> None:
         proportion_mutation_ga=config.algo.proportion_mutation_ga,
         no_agents=config.batch_size,
         buffer_sample_batch_size=config.algo.buffer_sample_batch_size,
-        buffer_add_batch_size=config.algo.buffer_add_batch_size,
-        no_epochs=config.algo.no_epochs,
+        grad_steps=config.algo.grad_steps,
+        buffer_size=config.batch_size * config.env.episode_length,
         learning_rate=config.algo.learning_rate,
         clip_param=config.algo.clip_param,
-    )
-    
+        )
+
     me_mcpg_config = MEMCPGConfig(
         proportion_mutation_ga=config.algo.proportion_mutation_ga,
         no_agents=config.batch_size,
         buffer_sample_batch_size=config.algo.buffer_sample_batch_size,
-        buffer_add_batch_size=config.algo.buffer_add_batch_size,
-        no_epochs=config.algo.no_epochs,
+        grad_steps=config.algo.grad_steps,
+        buffer_size=config.batch_size * config.env.episode_length,
         learning_rate=config.algo.learning_rate,
         clip_param=config.algo.clip_param,
-        discount_rate=config.algo.discount_rate,
+        max_grad_norm=config.algo.MAX_GRAD_NORM,
     )
     
     
@@ -392,7 +385,6 @@ def main(config: Config) -> None:
     num_loops = int((config.num_iterations-1) / log_period)
 
     metrics = dict.fromkeys(["iteration", "qd_score", "coverage", "max_fitness", "qd_score_repertoire", "dem_repertoire", "time", "evaluation", "ga_offspring_added", "qpg_offspring_added"], jnp.array([]))    
-    #metrics = dict.fromkeys(["iteration", "qd_score", "coverage", "max_fitness", "time", "evaluation", "ga_offspring_added", "qpg_offspring_added"], jnp.array([]))        
     csv_logger = CSVLogger(
         "./log.csv",
         header=list(metrics.keys())
@@ -413,7 +405,7 @@ def main(config: Config) -> None:
             plt.close()
     # Main loop
     start_time = time.time()
-    repertoire, _, current_metrics, random_key, obs_stats = map_elites.update_1(
+    repertoire, _, current_metrics, random_key = map_elites.update_1(
         repertoire,
         emitter_state_1,
         random_key,
@@ -422,7 +414,7 @@ def main(config: Config) -> None:
     
     current_metrics = jax.tree_util.tree_map(lambda x: jnp.expand_dims(x, axis=0), current_metrics)
     
-    random_key, qd_score_repertoire, dem_repertoire = evaluate_repertoire(random_key, repertoire, obs_stats)
+    random_key, qd_score_repertoire, dem_repertoire = evaluate_repertoire(random_key, repertoire)
     current_metrics["iteration"] = jnp.arange(1, 2, dtype=jnp.int32)
     current_metrics["evaluation"] = jnp.arange(1, 50512, dtype=jnp.int32)
     current_metrics["time"] = jnp.repeat(timelapse, 1)
@@ -451,16 +443,16 @@ def main(config: Config) -> None:
         print(f"Loop {i+1}/{num_loops}")
         start_time = time.time()
         
-        (repertoire, emitter_state_2, random_key, obs_stats), current_metrics = jax.lax.scan(
+        (repertoire, emitter_state_2, random_key), current_metrics = jax.lax.scan(
             map_elites_scan_update_2,
-            (repertoire, emitter_state_2, random_key, obs_stats),
+            (repertoire, emitter_state_2, random_key),
             (),
             length=log_period,
         )
         timelapse = time.time() - start_time
 
         # Metrics
-        random_key, qd_score_repertoire, dem_repertoire = evaluate_repertoire(random_key, repertoire, obs_stats)
+        random_key, qd_score_repertoire, dem_repertoire = evaluate_repertoire(random_key, repertoire)
 
         current_metrics["iteration"] = jnp.arange(2+log_period*i, 2+log_period*(i+1), dtype=jnp.int32)
         current_metrics["evaluation"] = jnp.arange(50512+log_period*eval_num*i, 50512+log_period*eval_num*(i+1), dtype=jnp.int32)
@@ -506,7 +498,7 @@ def main(config: Config) -> None:
         #fig, _ = plot_map_elites_results(env_steps=env_steps, metrics=metrics, repertoire=repertoire, min_bd=config.env.min_bd, max_bd=config.env.max_bd)
         fig.savefig("./repertoire_plot.png")
         
-    recreate_repertoire(repertoire, centroids, metrics_function, random_key, obs_stats)
+    recreate_repertoire(repertoire, centroids, metrics_function, random_key)
     
 
         

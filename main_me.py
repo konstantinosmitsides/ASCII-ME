@@ -87,6 +87,7 @@ def main(config: Config) -> None:
     print("Number of parameters in policy_network: ", param_count)
 
     # Define the fonction to play a step with the policy in the environment
+    @jax.jit
     def play_step_fn(env_state, policy_params, random_key):
         actions = policy_network.apply(policy_params, env_state.obs)
         state_desc = env_state.info["state_descriptor"]
@@ -238,13 +239,13 @@ def main(config: Config) -> None:
     )
 
     # Compute initial repertoire and emitter state
-    repertoire, emitter_state, random_key, obs_normalizer, reward_normalizer = map_elites.init(init_params, centroids, random_key)
+    repertoire, emitter_state, random_key = map_elites.init(init_params, centroids, random_key)
 
     log_period = 10
     num_loops = int(config.num_iterations / log_period)
 
-    #metrics = dict.fromkeys(["iteration", "qd_score", "coverage", "max_fitness", "qd_score_repertoire", "dem_repertoire", "time", "evaluation"], jnp.array([]))
-    metrics = dict.fromkeys(["iteration", "qd_score", "coverage", "max_fitness", "time", "evaluation"], jnp.array([]))
+    metrics = dict.fromkeys(["iteration", "qd_score", "coverage", "max_fitness", "qd_score_repertoire", "dem_repertoire", "time", "evaluation", "ga_offspring_added"], jnp.array([]))
+    #metrics = dict.fromkeys(["iteration", "qd_score", "coverage", "max_fitness", "time", "evaluation"], jnp.array([]))
     csv_logger = CSVLogger(
         "./log.csv",
         header=list(metrics.keys())
@@ -271,29 +272,29 @@ def main(config: Config) -> None:
     print(f"Number of evaluations per iteration: {eval_num}")
     for i in range(num_loops):
         start_time = time.time()
-        (repertoire, emitter_state, random_key, obs_normalizer, reward_normalizer), current_metrics = jax.lax.scan(
+        (repertoire, emitter_state, random_key), current_metrics = jax.lax.scan(
             map_elites_scan_update,
-            (repertoire, emitter_state, random_key, obs_normalizer, reward_normalizer),
+            (repertoire, emitter_state, random_key),
             (),
             length=log_period,
         )
         timelapse = time.time() - start_time
 
         # Metrics
-        #random_key, qd_score_repertoire, dem_repertoire = evaluate_repertoire(random_key, repertoire)
+        random_key, qd_score_repertoire, dem_repertoire = evaluate_repertoire(random_key, repertoire)
 
         current_metrics["iteration"] = jnp.arange(1+log_period*i, 1+log_period*(i+1), dtype=jnp.int32)
         current_metrics["evaluation"] = jnp.arange(1+log_period*eval_num*i, 1+log_period*eval_num*(i+1), dtype=jnp.int32)
         current_metrics["time"] = jnp.repeat(timelapse, log_period)
-        #current_metrics["qd_score_repertoire"] = jnp.repeat(qd_score_repertoire, log_period)
-        #current_metrics["dem_repertoire"] = jnp.repeat(dem_repertoire, log_period)
-        #current_metrics["ga_offspring_added"] = get_n_offspring_added(current_metrics)
-        #del current_metrics["is_offspring_added"]
+        current_metrics["qd_score_repertoire"] = jnp.repeat(qd_score_repertoire, log_period)
+        current_metrics["dem_repertoire"] = jnp.repeat(dem_repertoire, log_period)
+        current_metrics["ga_offspring_added"] = get_n_offspring_added(current_metrics)
+        del current_metrics["is_offspring_added"]
         metrics = jax.tree_util.tree_map(lambda metric, current_metric: jnp.concatenate([metric, current_metric], axis=0), metrics, current_metrics)
 
         # Log
         log_metrics = jax.tree_util.tree_map(lambda metric: metric[-1], metrics)
-        #log_metrics["ga_offspring_added"] = jnp.sum(current_metrics["ga_offspring_added"])
+        log_metrics["ga_offspring_added"] = jnp.sum(current_metrics["ga_offspring_added"])
         csv_logger.log(log_metrics)
         wandb.log(log_metrics)
 
@@ -316,7 +317,7 @@ def main(config: Config) -> None:
         fig, _ = plot_map_elites_results(env_steps=env_steps, metrics=metrics, repertoire=repertoire, min_bd=config.env.min_bd, max_bd=config.env.max_bd)
         fig.savefig("./Plots/repertoire_plot.png")
 
-    #recreate_repertoire(repertoire, centroids, metrics_function, random_key)
+    recreate_repertoire(repertoire, centroids, metrics_function, random_key)
 
 if __name__ == "__main__":
     cs = ConfigStore.instance()

@@ -41,6 +41,7 @@ class MEMCPGPPOConfig:
     ACTIVATION: str = "tanh"
     NO_NEURONS: int = 64
     UPDATE_EPOCHS: int = 4
+    NUM_MINIBATCHES: int = 32
 
 
 class MEMCPGPPOEmitter(MultiEmitter):
@@ -87,7 +88,8 @@ class MEMCPGPPOEmitter(MultiEmitter):
             GREEDY_AGENTS=config.GREEDY_AGENTS,
             ACTIVATION=config.ACTIVATION,
             NO_NEURONS=config.NO_NEURONS,
-            UPDATE_EPOCHS=config.UPDATE_EPOCHS
+            UPDATE_EPOCHS=config.UPDATE_EPOCHS,
+            NUM_MINIBATCHES=config.NUM_MINIBATCHES,
         )
         
         

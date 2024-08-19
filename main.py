@@ -26,7 +26,10 @@ def main(config: Config) -> None:
         if config.algo.NORMALIZE_ENV:
             import main_ppoish_me_obs_norm as main
         else:
-            import main_ppoish_me as main
+            if config.algo.sample_trajectory:
+                import main_ppoish_me as main
+            else:
+                import main_ppoish_me_trans as main
             
     else:
         raise NotImplementedError

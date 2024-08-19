@@ -133,8 +133,8 @@ class PurePPOEmitter():
         
         rng, _rng = jax.random.split(rng)
         init_x = jnp.zeros(self._env.observation_size)
-        new_params = self._actor_critic.init(_rng, init_x)
-        params = transfer_params(new_params, sol_params)
+        params = self._actor_critic.init(_rng, init_x)
+        #params = transfer_params(new_params, sol_params)
         
         
         

@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from functools import partial
 from math import floor 
-from typing import Callable, Tuple, Any
+from typing import Callable, Tuple, Any, Optional
 
 import jax
 from jax import debug
@@ -16,7 +16,6 @@ from qdax.core.neuroevolution.buffers.buffer import QDTransition, QDMCTransition
 #from qdax.core.neuroevolution.buffers.trajectory_buffer import TrajectoryBuffer
 import flashbax as fbx
 import chex
-from rein_related import *
 
 from qdax.core.emitters.emitter import Emitter, EmitterState
 from jax import profiler
@@ -409,7 +408,7 @@ class MCPGEmitter(Emitter):
         #jax.debug.print("trans: {}", trans)
         mask = jax.vmap(self.compute_mask, in_axes=0)(trans.dones)
         standardized_returns = self.get_standardized_return(trans.rewards, mask)
-        jax.debug.print("standardized_returns: {}", standardized_returns)
+        #jax.debug.print("standardized_returns: {}", standardized_returns)
         
         def scan_train_policy(
             carry: Tuple[MCPGEmitterState, Genotype, optax.OptState],

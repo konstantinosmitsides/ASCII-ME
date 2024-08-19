@@ -3,14 +3,14 @@ from typing import Callable, Tuple
 import flax.linen as nn
 
 from qdax.core.emitters.multi_emitter import MultiEmitter
-from qdax.core.emitters.mcpg_emitter import MCPGConfig, MCPGEmitter
+from qdax.core.emitters.mcpg_emitter_trans import MCPGConfig, MCPGEmitter
 from qdax.core.emitters.standard_emitters import MixingEmitter
 from qdax.environments.base_wrappers import QDEnv
 from qdax.types import Params, RNGKey
 from dataclasses import dataclass
 #from pure_ppo_emitter import PurePPOEmitter, PurePPOConfig
 #from pure_ppo_emitter_corrected import PurePPOEmitter, PurePPOConfig
-from pure_ppo_emitter_obs_norm import PurePPOEmitter, PurePPOConfig
+from pure_ppo_emitter import PurePPOEmitter, PurePPOConfig
 
 @dataclass
 class MEMCPGPPOConfig:
@@ -19,11 +19,11 @@ class MEMCPGPPOConfig:
     
     proportion_mutation_ga: float = 0.5
     no_agents: int = 511
-    buffer_sample_batch_size: int = 2
-    buffer_add_batch_size: int = 512
-    no_epochs: int = 16
+    buffer_sample_batch_size: int = 128
+    grad_steps: int = 16
     learning_rate: float = 3e-4
     clip_param: float = 0.2
+    buffer_size: int = 512000
     LR: float = 1e-3
     NUM_ENVS: int = 256 #2048
     NUM_STEPS: int = 80 #10
@@ -64,11 +64,11 @@ class MEMCPGPPOEmitter(MultiEmitter):
         mcpg_config = MCPGConfig(
             no_agents=mcpg_no_agents,
             buffer_sample_batch_size=config.buffer_sample_batch_size,
-            buffer_add_batch_size=config.buffer_add_batch_size,
-            #batch_size=config.batch_size,
-            no_epochs=config.no_epochs,
+            grad_steps=config.grad_steps,
             learning_rate=config.learning_rate,
-            clip_param=config.clip_param
+            clip_param=config.clip_param,
+            buffer_size=config.buffer_size,
+            max_grad_norm=config.MAX_GRAD_NORM
         )
         
         ppo_config = PurePPOConfig(

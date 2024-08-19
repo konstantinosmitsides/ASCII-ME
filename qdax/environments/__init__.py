@@ -55,6 +55,7 @@ behavior_descriptor_extractor = {
     "halfcheetah_uni": get_feet_contact_proportion,
     "hopper_uni": get_feet_contact_proportion,
     "walker2d_uni": get_feet_contact_proportion,
+    "anttrap_omni": get_final_xy_position,
 }
 
 _qdax_envs = {
