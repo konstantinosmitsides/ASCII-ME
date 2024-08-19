@@ -185,3 +185,4 @@ grad_steps_experiments_stage_2/
 grad_steps_experiments.ipynb
 time_execution_mcpg.ipynb
 prev_output/
+hpc.sh

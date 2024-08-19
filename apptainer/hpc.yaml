@@ -1,4 +1,4 @@
-job_name: oped
+job_name: ppoish_me_first_experiments_not_advanced_baseline
  
 walltime: 7:59:00
  
@@ -11,7 +11,20 @@ gpu_type: RTX6000
 queue: null  # -q express -P exp-00097
 njobs: 5
 args:
-  - "seed=\$RANDOM env=halfcheetah_uni"
-  #- "seed=\$RANDOM env=ant_uni"
-  #- "seed=\$RANDOM env=hopper_uni"
-  #- "seed=\$RANDOM env=walker2d_uni"
+  # sample_trajectories
+  - "algo=ppoish_me seed=$RANDOM batch_size=512 env=ant_uni env.episode_length=1000 num_iterations=1901 algo.NORMALIZE_ENV=False algo.buffer_sample_batch_size=2 algo.buffer_add_batch_size=512 algo.sample_trajectory=True algo.init_lecun=False"
+  - "algo=ppoish_me seed=$RANDOM batch_size=512 env=walker2d_uni env.episode_length=1000 num_iterations=1901 algo.NORMALIZE_ENV=False algo.buffer_sample_batch_size=2 algo.buffer_add_batch_size=512 algo.sample_trajectory=True algo.init_lecun=False"
+  - "algo=ppoish_me seed=$RANDOM batch_size=512 env=humanoid_uni env.episode_length=1000 num_iterations=1901 algo.NORMALIZE_ENV=False algo.buffer_sample_batch_size=2 algo.buffer_add_batch_size=512 algo.sample_trajectory=True algo.init_lecun=False"
+  - "algo=ppoish_me seed=$RANDOM batch_size=512 env=ant_uni env.episode_length=1000 num_iterations=1901 algo.NORMALIZE_ENV=False algo.buffer_sample_batch_size=2 algo.buffer_add_batch_size=512 algo.sample_trajectory=True algo.init_lecun=True"
+  - "algo=ppoish_me seed=$RANDOM batch_size=512 env=walker2d_uni env.episode_length=1000 num_iterations=1901 algo.NORMALIZE_ENV=False algo.buffer_sample_batch_size=2 algo.buffer_add_batch_size=512 algo.sample_trajectory=True algo.init_lecun=True"
+  - "algo=ppoish_me seed=$RANDOM batch_size=512 env=humanoid_uni env.episode_length=1000 num_iterations=1901 algo.NORMALIZE_ENV=False algo.buffer_sample_batch_size=2 algo.buffer_add_batch_size=512 algo.sample_trajectory=True algo.init_lecun=True"
+
+  # sample_transitions
+  - "algo=ppoish_me seed=$RANDOM batch_size=512 env=ant_uni env.episode_length=1000 num_iterations=1901 algo.NORMALIZE_ENV=False algo.buffer_sample_batch_size=128 algo.grad_steps=16 algo.sample_trajectory=False algo.init_lecun=False"
+  - "algo=ppoish_me seed=$RANDOM batch_size=512 env=walker2d_uni env.episode_length=1000 num_iterations=1901 algo.NORMALIZE_ENV=False algo.buffer_sample_batch_size=128 algo.grad_steps=16 algo.sample_trajectory=False algo.init_lecun=False"
+  - "algo=ppoish_me seed=$RANDOM batch_size=512 env=humanoid_uni env.episode_length=1000 num_iterations=1901 algo.NORMALIZE_ENV=False algo.buffer_sample_batch_size=128 algo.grad_steps=16 algo.sample_trajectory=False algo.init_lecun=False"
+  - "algo=ppoish_me seed=$RANDOM batch_size=512 env=ant_uni env.episode_length=1000 num_iterations=1901 algo.NORMALIZE_ENV=False algo.buffer_sample_batch_size=128 algo.grad_steps=16 algo.sample_trajectory=False algo.init_lecun=True"
+  - "algo=ppoish_me seed=$RANDOM batch_size=512 env=walker2d_uni env.episode_length=1000 num_iterations=1901 algo.NORMALIZE_ENV=False algo.buffer_sample_batch_size=128 algo.grad_steps=16 algo.sample_trajectory=False algo.init_lecun=True"
+  - "algo=ppoish_me seed=$RANDOM batch_size=512 env=humanoid_uni env.episode_length=1000 num_iterations=1901 algo.NORMALIZE_ENV=False algo.buffer_sample_batch_size=128 algo.grad_steps=16 algo.sample_trajectory=False algo.init_lecun=True"
+
+
