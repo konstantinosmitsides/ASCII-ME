@@ -2,7 +2,7 @@ hydra:
     job:
         chdir: True
     run:
-        dir: ./output/${env_name}/${alg_name}/${now:%Y-%m-%d}/${now:%H-%M-%S}
+        dir: ./prev_output/${env_name}/${alg_name}/${now:%Y-%m-%d}/${now:%H-%M-%S}
 
 defaults:
     - _self_
