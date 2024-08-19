@@ -413,7 +413,7 @@ class MCPGEmitter(Emitter):
         #standardized_returns = self.get_standardized_return(trans.rewards, mask)
         #jax.debug.print("standardized_returns: {}", standardized_returns)
         
-        standardized_returns = (trans.rewards - fitness) / jnp.minimum(1, fitness)
+        standardized_returns = (trans.rewards - fitness) / jnp.maximum(1, fitness)
         
         def scan_train_policy(
             carry: Tuple[MCPGEmitterState, Genotype, optax.OptState],
