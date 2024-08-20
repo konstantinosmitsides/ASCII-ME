@@ -23,6 +23,7 @@ from qdax.types import (
     RNGKey,
 )
 
+from utils import get_return_for_batch_episodes
 
 
 def make_policy_network_play_step_fn_brax(
@@ -149,15 +150,17 @@ def scoring_function_brax_envs(
 
     # scores
     fitnesses = jnp.sum(data.rewards * (1.0 - mask), axis=1)
-    fitnesses_ = fitnesses[:, None] * jnp.ones((1, data.rewards.shape[1]))
     descriptors = behavior_descriptor_extractor(data, mask)
-    data = data.replace(rewards=fitnesses_)
-
+    returns = get_return_for_batch_episodes(data.rewards, 1.0 - mask, episode_length)
+    data = data.replace(rewards=returns)
+    
+    
     return (
         fitnesses,
         descriptors,
         {
             "transitions": data,
+            "returns": returns,
         },
         random_key,
     )

@@ -162,12 +162,12 @@ class MCPGEmitter(Emitter):
         
         
         # sample parents
-        parents, fitnesses, random_key = repertoire.sample(
+        parents, returns, random_key = repertoire.sample(
             random_key=random_keys[-1],
             num_samples=no_agents,
         )
         
-        offsprings_mcpg = self.emit_mcpg(emitter_state, parents, fitnesses, random_keys[:no_agents])
+        offsprings_mcpg = self.emit_mcpg(emitter_state, parents, returns, random_keys[:no_agents])
         
         return offsprings_mcpg, {}, random_keys[-2]
     
@@ -176,7 +176,7 @@ class MCPGEmitter(Emitter):
         self,
         emitter_state: MCPGEmitterState,
         parents: Genotype,
-        fitnesses: Fitness,
+        returns: Any,
         random_keys: ArrayTree,
     ) -> Genotype:
         """Emit the offsprings generated through MCPG mutation.
@@ -189,7 +189,7 @@ class MCPGEmitter(Emitter):
         '''
         #profiler.start_trace(profiler_dir)
         
-        offsprings = jax.vmap(self._mutation_function_mcpg, in_axes=(0, 0, None, 0))(parents, fitnesses, emitter_state, random_keys)
+        offsprings = jax.vmap(self._mutation_function_mcpg, in_axes=(0, 0, None, 0))(parents, returns, emitter_state, random_keys)
         
         #profiler.stop_trace()
         
@@ -397,7 +397,7 @@ class MCPGEmitter(Emitter):
     def _mutation_function_mcpg(
         self,
         policy_params,
-        fitness,
+        returns,
         emitter_state: MCPGEmitterState,
         random_key: RNGKey,
     ) -> Genotype:
@@ -413,10 +413,10 @@ class MCPGEmitter(Emitter):
         #standardized_returns = self.get_standardized_return(trans.rewards, mask)
         #jax.debug.print("standardized_returns: {}", standardized_returns)
         
-        jax.debug.print("trans rewards: {}", trans.rewards)
+        #jax.debug.print("returns: {}", returns)
         
-        standardized_returns = (trans.rewards - fitness) / jnp.maximum(1, fitness)
-        
+        standardized_returns = (trans.rewards - returns) #/ jnp.maximum(1, fitness)
+        jax.debug.print("standardized_returns: {}", standardized_returns)
         
         def scan_train_policy(
             carry: Tuple[MCPGEmitterState, Genotype, optax.OptState],
