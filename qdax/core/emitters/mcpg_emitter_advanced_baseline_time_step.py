@@ -415,7 +415,7 @@ class MCPGEmitter(Emitter):
         
         #jax.debug.print("returns: {}", returns)
         
-        standardized_returns = (trans.rewards - returns) / jnp.maximum((0.5 * (returns + trans.rewards)), 1) #/ jnp.maximum(1, fitness)
+        standardized_returns = (trans.rewards - returns) #/ jnp.maximum((0.5 * (returns + trans.rewards)), 1) #/ jnp.maximum(1, fitness)
         #jax.debug.print("standardized_returns: {}", standardized_returns)
         
         def scan_train_policy(
