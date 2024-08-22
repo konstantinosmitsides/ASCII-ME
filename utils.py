@@ -144,6 +144,7 @@ def get_config(run_dir):
 def get_metrics(run_dir):
     with open(run_dir / "metrics.pickle", "rb") as metrics_file:
         metrics = pickle.load(metrics_file)
+        del metrics["evaluation"]
     return pd.DataFrame.from_dict(metrics)
 
 def get_log(run_dir):
