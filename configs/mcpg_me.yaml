@@ -7,7 +7,7 @@ hydra:
 defaults:
   - _self_
   - env: ant_omni
-  - algo: dcg_me
+  - algo: mcpg_me
 
 seed: 42
 num_iterations: 2000
@@ -18,3 +18,4 @@ num_samples: 8
 num_init_cvt_samples: 50000
 num_centroids: 1024
 policy_hidden_layer_sizes: [64, 64]
+HPC: False

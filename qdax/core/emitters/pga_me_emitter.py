@@ -23,7 +23,7 @@ class PGAMEConfig:
     replay_buffer_size: int = 1000000
     critic_hidden_layer_size: Tuple[int, ...] = (256, 256)
     critic_learning_rate: float = 3e-4
-    greedy_learning_rate: float = 3e-4
+    actor_learning_rate: float = 3e-4
     policy_learning_rate: float = 1e-3
     noise_clip: float = 0.5
     policy_noise: float = 0.2
@@ -58,7 +58,7 @@ class PGAMEEmitter(MultiEmitter):
             replay_buffer_size=config.replay_buffer_size,
             critic_hidden_layer_size=config.critic_hidden_layer_size,
             critic_learning_rate=config.critic_learning_rate,
-            actor_learning_rate=config.greedy_learning_rate,
+            actor_learning_rate=config.actor_learning_rate,
             policy_learning_rate=config.policy_learning_rate,
             noise_clip=config.noise_clip,
             policy_noise=config.policy_noise,

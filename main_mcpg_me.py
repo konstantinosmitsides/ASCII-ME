@@ -81,34 +81,6 @@ def main(config: Config) -> None:
         activation=config.algo.activation,
         no_neurons=config.algo.no_neurons,
     )
-
-    
-
-        
-    '''
-    policy_network = MLPMCPG(
-        hidden_layers_size=policy_layer_sizes,
-        action_size=env.action_size,
-        activation=jax.nn.tanh,
-        hidden_init=jax.nn.initializers.variance_scaling(scale=jnp.sqrt(2), mode='fan_in', distribution='uniform'),
-        mean_init=jax.nn.initializers.variance_scaling(scale=0.02*jnp.sqrt(2), mode='fan_in', distribution='uniform'),
-    )
-    '''
-
-    
-    '''
-    policy_network = MLPMCPG(
-        hidden_layers_size=policy_layer_sizes,
-        action_size=env.action_size,
-        activation=jax.nn.relu,
-        hidden_init=jax.nn.initializers.lecun_uniform(),
-        mean_init=jax.nn.initializers.lecun_uniform(),
-    )
-    '''
-    
-    
-
-    
     
     # Init population of controllers
     
@@ -143,8 +115,6 @@ def main(config: Config) -> None:
             state_desc=state_desc,
             next_state_desc=next_state.info["state_descriptor"],
             logp=logp,
-            #desc=jnp.zeros(env.behavior_descriptor_length,) * jnp.nan,
-            #desc_prime=jnp.zeros(env.behavior_descriptor_length,) * jnp.nan,
         )
 
         return (next_state, policy_params, random_key), transition
@@ -154,7 +124,6 @@ def main(config: Config) -> None:
     def get_n_offspring_added(metrics):
         split = jnp.cumsum(jnp.array([emitter.batch_size for emitter in map_elites._emitter.emitters]))
         split = jnp.split(metrics["is_offspring_added"], split, axis=-1)[:-1]
-        #qpg_offspring_added, ai_offspring_added = jnp.split(split[0], (split[0].shape[1]-1,), axis=-1)
         return (jnp.sum(split[1], axis=-1), jnp.sum(split[0], axis=-1))
 
 
@@ -169,8 +138,7 @@ def main(config: Config) -> None:
         play_step_fn=play_step_fn,
         behavior_descriptor_extractor=bd_extraction_fn,
     )
-    #reward_offset = get_reward_offset_brax(env, config.env_name)
-    #print(f"Reward offset: {reward_offset}")
+
     
     me_scoring_fn = partial(
     sampling,
@@ -311,11 +279,27 @@ def main(config: Config) -> None:
     log_period = 10
     num_loops = int(config.num_iterations / log_period)
 
-    metrics = dict.fromkeys(["iteration", "qd_score", "coverage", "max_fitness", "qd_score_repertoire", "dem_repertoire", "time", "evaluation", "ga_offspring_added", "qpg_offspring_added"], jnp.array([]))
+    metrics = dict.fromkeys(
+        [
+            "iteration", 
+            "qd_score", 
+            "coverage", 
+            "max_fitness", 
+            #"qd_score_repertoire", 
+            #"dem_repertoire", 
+            "time", 
+            "evaluation", 
+            "ga_offspring_added", 
+            "qpg_offspring_added"
+            ], 
+        jnp.array([])
+        )
     csv_logger = CSVLogger(
         "./log.csv",
         header=list(metrics.keys())
     )
+    
+    
     def plot_metrics_vs_iterations(metrics, log_period):
         iterations = jnp.arange(1, 1 + len(metrics["time"]), dtype=jnp.int32)
 
@@ -330,15 +314,16 @@ def main(config: Config) -> None:
             plt.legend()
             plt.savefig(f"./Plots/{metric_name}_vs_iterations.png")
             plt.close()
+    
+    
+    
     # Main loop
     map_elites_scan_update = map_elites.scan_update
     eval_num = config.batch_size 
-    print(f"Number of evaluations per iteration: {eval_num}")
-    #profiler.start_trace(profiler_dir)
-    #jax.profiler.start_server(9999)
+    #print(f"Number of evaluations per iteration: {eval_num}")
     cumulative_time = 0
     for i in range(num_loops):
-        print(f"Loop {i+1}/{num_loops}")
+        #print(f"Loop {i+1}/{num_loops}")
         start_time = time.time()
         
         (repertoire, emitter_state, random_key,), current_metrics = jax.lax.scan(
@@ -351,13 +336,13 @@ def main(config: Config) -> None:
         cumulative_time += timelapse
 
         # Metrics
-        random_key, qd_score_repertoire, dem_repertoire = evaluate_repertoire(random_key, repertoire)
+        #random_key, qd_score_repertoire, dem_repertoire = evaluate_repertoire(random_key, repertoire)
 
         current_metrics["iteration"] = jnp.arange(1+log_period*i, 1+log_period*(i+1), dtype=jnp.int32)
         current_metrics["evaluation"] = jnp.arange(1+log_period*eval_num*i, 1+log_period*eval_num*(i+1), dtype=jnp.int32)
         current_metrics["time"] = jnp.repeat(cumulative_time, log_period)
-        current_metrics["qd_score_repertoire"] = jnp.repeat(qd_score_repertoire, log_period)
-        current_metrics["dem_repertoire"] = jnp.repeat(dem_repertoire, log_period)
+        #current_metrics["qd_score_repertoire"] = jnp.repeat(qd_score_repertoire, log_period)
+        #current_metrics["dem_repertoire"] = jnp.repeat(dem_repertoire, log_period)
         current_metrics["ga_offspring_added"], current_metrics["qpg_offspring_added"] = get_n_offspring_added(current_metrics)
         del current_metrics["is_offspring_added"]
         metrics = jax.tree_util.tree_map(lambda metric, current_metric: jnp.concatenate([metric, current_metric], axis=0), metrics, current_metrics)
@@ -375,19 +360,21 @@ def main(config: Config) -> None:
 
     # Repertoire
     os.mkdir("./repertoire/")
-    os.mkdir("./Plots/")
+    #os.mkdir("./Plots/")
     repertoire.save(path="./repertoire/")
 
-    plot_metrics_vs_iterations(metrics, log_period)
+    #plot_metrics_vs_iterations(metrics, log_period)
 
 
     # Plot
+    '''
     if env.behavior_descriptor_length == 2:
         env_steps = jnp.arange(config.num_iterations) * config.env.episode_length * config.batch_size
         fig, _ = plot_map_elites_results(env_steps=env_steps, metrics=metrics, repertoire=repertoire, min_bd=config.env.min_bd, max_bd=config.env.max_bd)
         fig.savefig("./Plots/repertoire_plot.png")
+    '''
         
-    recreate_repertoire(repertoire, centroids, metrics_function, random_key)
+    #recreate_repertoire(repertoire, centroids, metrics_function, random_key)
         
     
 
