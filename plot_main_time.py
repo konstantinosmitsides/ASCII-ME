@@ -54,7 +54,7 @@ ALGO_DICT = {
     "memes": "MEMES",
 }
 
-XLABEL = "Evaluations"
+XLABEL = "Time (s)"
 
 
 def customize_axis(ax):
@@ -97,7 +97,7 @@ def plot(df):
 
         sns.lineplot(
             df_plot,
-            x="num_evaluations",
+            x="time",
             y="qd_score",
             hue="algo",
             hue_order=ALGO_LIST,
@@ -121,7 +121,7 @@ def plot(df):
 
         sns.lineplot(
             df_plot,
-            x="num_evaluations",
+            x="time",
             y="coverage",
             hue="algo",
             hue_order=ALGO_LIST,
@@ -142,7 +142,7 @@ def plot(df):
         # Max fitness
         ax = sns.lineplot(  # store ax for legend
             df_plot,
-            x="num_evaluations",
+            x="time",
             y="max_fitness",
             hue="algo",
             hue_order=ALGO_LIST,
@@ -168,7 +168,7 @@ def plot(df):
     fig.tight_layout()
 
     # Save plot
-    fig.savefig("testing_plots/output/plot_main.pdf", bbox_inches="tight")
+    fig.savefig("testing_plots/output/plot_main_time.pdf", bbox_inches="tight")
     plt.close()
 
 

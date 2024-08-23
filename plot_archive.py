@@ -15,7 +15,7 @@ from utils import get_config, get_env, get_repertoire, get_df
 
 
 # Define env and algo names
-ENV = "ant_omni"
+ENV = "walker2d_uni"
 
 ENV_LIST = [
     "ant_omni",
@@ -47,11 +47,12 @@ DESC_DICT = {
 
 ALGO_LIST = [
     #"dcg_me",
-    #"pga_me",
+    "pga_me",
     #"qd_pg",
-    #"me",
+    "me",
     #"me_es",
-    "mcpg_me"
+    "mcpg_me",
+    "memes"
 ]
 ALGO_DICT = {
     "dcg_me": "DCG-MAP-Elites-AI",
@@ -59,7 +60,8 @@ ALGO_DICT = {
     "qd_pg": "QD-PG",
     "me": "MAP-Elites",
     "me_es": "MAP-Elites-ES",
-    "mcpg_me": "MCPG-ME"
+    "mcpg_me": "MCPG-ME",
+    "memes": "MEMES",
 }
 
 
@@ -198,8 +200,8 @@ if __name__ == "__main__":
     # Get the most representative run for each (env, algo)
     idx = df_last_iteration.groupby(['env', 'algo'])['qd_score_diff_to_median'].idxmin()
     runs = df_last_iteration.loc[idx][["env", "algo", "run"]]
-    print(runs)
-    print(runs[(runs["env"] == ENV) & (runs["algo"] == "mcpg_me")]["run"])
+    #print(runs)
+    #print(runs[(runs["env"] == ENV) & (runs["algo"] == "mcpg_me")]["run"])
 
     # Get run paths
     run_paths = [results_dir / ENV / algo / runs[(runs["env"] == ENV) & (runs["algo"] == algo)]["run"].item() for algo in ALGO_LIST]

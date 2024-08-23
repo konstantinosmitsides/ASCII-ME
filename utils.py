@@ -162,19 +162,22 @@ def get_repertoire(run_dir):
     env = get_env(config)
 
     # Init policy network
-    '''
-    policy_layer_sizes = config.policy_hidden_layer_sizes + (env.action_size,)
-    policy_network = MLP(
-        layer_sizes=policy_layer_sizes,
-        kernel_init=jax.nn.initializers.lecun_uniform(),
-        final_activation=jnp.tanh,
+    
+    if config.algo.name == "mcpg_me":
+        policy_network = MLPMCPG(
+        action_dim=env.action_size,
+        activation=config.algo.activation,
+        no_neurons=config.algo.no_neurons,
     )
-    '''
-    policy_network = MLPMCPG(
-    action_dim=env.action_size,
-    activation=config.algo.activation,
-    no_neurons=config.algo.no_neurons,
-)
+    else:
+        
+        policy_layer_sizes = config.policy_hidden_layer_sizes + (env.action_size,)
+        policy_network = MLP(
+            layer_sizes=policy_layer_sizes,
+            kernel_init=jax.nn.initializers.lecun_uniform(),
+            final_activation=jnp.tanh,
+        )
+    
 
     # Init fake params
     random_key, random_subkey = jax.random.split(random_key)
@@ -212,6 +215,8 @@ def get_df(results_dir):
                     metrics["num_evaluations"] = metrics["iteration"] * 1050
                 elif config.algo.name == "dcg_me_gecco":
                     metrics["num_evaluations"] = metrics["iteration"] * (config.batch_size + config.algo.actor_batch_size)
+                elif config.algo.name == "memes":
+                    metrics["num_evaluations"] = metrics["iteration"] * ((config.batch_size * config.algo.sample_number * config.algo.num_in_optimizer_steps) + config.batch_size)
                 else:
                     metrics["num_evaluations"] = metrics["iteration"] * config.batch_size
 
