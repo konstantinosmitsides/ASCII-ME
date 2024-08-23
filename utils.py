@@ -8,7 +8,7 @@ import jax
 import jax.numpy as jnp
 from jax.flatten_util import ravel_pytree
 from qdax import environments_v1, environments
-from qdax.core.neuroevolution.networks.networks import MLP
+from qdax.core.neuroevolution.networks.networks import MLP, MLPMCPG
 from qdax.core.containers.mapelites_repertoire import MapElitesRepertoire
 from functools import partial
 
@@ -162,12 +162,19 @@ def get_repertoire(run_dir):
     env = get_env(config)
 
     # Init policy network
+    '''
     policy_layer_sizes = config.policy_hidden_layer_sizes + (env.action_size,)
     policy_network = MLP(
         layer_sizes=policy_layer_sizes,
         kernel_init=jax.nn.initializers.lecun_uniform(),
         final_activation=jnp.tanh,
     )
+    '''
+    policy_network = MLPMCPG(
+    action_dim=env.action_size,
+    activation=config.algo.activation,
+    no_neurons=config.algo.no_neurons,
+)
 
     # Init fake params
     random_key, random_subkey = jax.random.split(random_key)

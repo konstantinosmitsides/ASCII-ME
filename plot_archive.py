@@ -1,5 +1,5 @@
 import sys
-sys.path.append("/project/")
+sys.path.append("testing_plots/")
 
 from pathlib import Path
 
@@ -15,7 +15,7 @@ from utils import get_config, get_env, get_repertoire, get_df
 
 
 # Define env and algo names
-ENV = "humanoid_uni"
+ENV = "ant_omni"
 
 ENV_LIST = [
     "ant_omni",
@@ -46,11 +46,11 @@ DESC_DICT = {
 }
 
 ALGO_LIST = [
-    "dcg_me",
-    "pga_me",
-    "qd_pg",
-    "me",
-    "me_es",
+    #"dcg_me",
+    #"pga_me",
+    #"qd_pg",
+    #"me",
+    #"me_es",
     "mcpg_me"
 ]
 ALGO_DICT = {
@@ -160,7 +160,7 @@ def plot(repertoires, configs):
     plt.colorbar(matplotlib.cm.ScalarMappable(norm=norm, cmap=cmap), cax=cax)
 
     # Save plot
-    fig.savefig(f"/project/output/plot_archive_{ENV}.pdf", bbox_inches="tight")
+    fig.savefig(f"testing_plots/output/plot_archive_{ENV}.pdf", bbox_inches="tight")
     plt.close()
 
 
@@ -179,7 +179,7 @@ if __name__ == "__main__":
     plt.rc("font", size=12)
 
     # Create the DataFrame
-    results_dir = Path("/project/output/")
+    results_dir = Path("testing_plots/output/")
     df = get_df(results_dir)
 
     # Filter
@@ -198,6 +198,8 @@ if __name__ == "__main__":
     # Get the most representative run for each (env, algo)
     idx = df_last_iteration.groupby(['env', 'algo'])['qd_score_diff_to_median'].idxmin()
     runs = df_last_iteration.loc[idx][["env", "algo", "run"]]
+    print(runs)
+    print(runs[(runs["env"] == ENV) & (runs["algo"] == "mcpg_me")]["run"])
 
     # Get run paths
     run_paths = [results_dir / ENV / algo / runs[(runs["env"] == ENV) & (runs["algo"] == algo)]["run"].item() for algo in ALGO_LIST]
