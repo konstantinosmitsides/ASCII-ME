@@ -10,6 +10,7 @@ from jax.flatten_util import ravel_pytree
 from qdax import environments_v1, environments
 from qdax.core.neuroevolution.networks.networks import MLP
 from qdax.core.containers.mapelites_repertoire import MapElitesRepertoire
+from functools import partial
 
 from omegaconf import OmegaConf
 
@@ -290,4 +291,41 @@ def transfer_params_no_pg(target_params, source_params):
 def normalize_obs(obs, mean, var):
     return (obs - mean) / jnp.sqrt(var + 1e-8)
     
+@partial(jax.jit, static_argnames=("episode_length",))
+def get_return_for_episode(
+    rewards,
+    episode_length,
+):
+    def _body(carry, x):
+        (next_return,) = carry
+        (rewards,) = x
+
+        current_return = rewards + 0.99 * next_return
+        return (current_return,), (current_return,)
     
+    
+    
+    #jax.debug.print("rewards", rewards.shape)
+    
+    _, (return_,) = jax.lax.scan(
+        _body,
+        (jnp.array(0.),),
+        (rewards,),
+        length=episode_length,
+        reverse=True,
+    )
+    
+    return return_
+
+
+@partial(jax.jit, static_argnames=("episode_length",))
+def get_return_for_batch_episodes(
+    rewards,
+    mask,
+    episode_length
+):
+    #mask = jnp.expand_dims(mask, axis=-1)
+    #valid_rewards = (rewards * mask)#.squeeze(axis=-1)
+    #jax.debug.print("mask: {}", mask.shape)
+    #jax.debug.print("rewards*mask: {}", (rewards * mask).shape)
+    return jax.vmap(get_return_for_episode, in_axes=(0, None))(rewards * mask, episode_length)

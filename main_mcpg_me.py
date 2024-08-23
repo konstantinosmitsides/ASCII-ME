@@ -18,16 +18,16 @@ from omegaconf import OmegaConf, DictConfig
 import jax
 import jax.numpy as jnp
 from hydra.core.config_store import ConfigStore
-from qdax.core.map_elites import MAPElites
+from qdax.core.map_elites_advanced_baseline_time_step import MAPElites
 from qdax.types import RNGKey, Genotype
 from qdax.utils.sampling import sampling 
-from qdax.core.containers.mapelites_repertoire import compute_cvt_centroids, MapElitesRepertoire
+from qdax.core.containers.mapelites_repertoire_advanced_baseline_time_step import compute_cvt_centroids, MapElitesRepertoire
 from qdax.core.neuroevolution.networks.networks import MLPMCPG
-from qdax.core.emitters.me_mcpg_emitter import MEMCPGConfig, MEMCPGEmitter
+from qdax.core.emitters.me_mcpg_emitter_advanced_baseline_time_step import MEMCPGConfig, MEMCPGEmitter
 #from qdax.core.emitters.rein_emitter_advanced import REINaiveConfig, REINaiveEmitter
 from qdax.core.neuroevolution.buffers.buffer import QDTransition, QDMCTransition
 from qdax.environments_v1 import behavior_descriptor_extractor
-from qdax.tasks.brax_envs import reset_based_scoring_function_brax_envs as scoring_function
+from qdax.tasks.brax_envs_advanced_baseline_time_step import reset_based_scoring_function_brax_envs as scoring_function
 from utils import Config, get_env
 from qdax.core.emitters.mutation_operators import isoline_variation
 import wandb
@@ -44,14 +44,14 @@ from jax import profiler
 
 
 
-@hydra.main(version_base="1.2", config_path="configs", config_name="me_mcpg")
+@hydra.main(version_base="1.2", config_path="configs", config_name="mcpg_me")
 def main(config: Config) -> None:
     #profiler_dir = "Memory_Investigation"
     #os.makedirs(profiler_dir, exist_ok=True)
     wandb.login(key="ab476069b53a15ad74ff1845e8dee5091d241297")
     wandb.init(
         project="me-mcpg",
-        name=config.alg_name,
+        name=config.algo.name,
         config=OmegaConf.to_container(config, resolve=True),
     )
     # Init a random key
@@ -71,19 +71,15 @@ def main(config: Config) -> None:
         random_key=random_key,
     )
     # Init policy network
-    policy_layer_sizes = config.policy_hidden_layer_sizes #+ (env.action_size,)
-    print(policy_layer_sizes)
+
     
 
     
     
     policy_network = MLPMCPG(
-        hidden_layers_size=policy_layer_sizes,
-        action_size=env.action_size,
-        activation=jnp.tanh,
-        final_activation=None,
-        hidden_init=jax.nn.initializers.orthogonal(scale=jnp.sqrt(2)),
-        mean_init=jax.nn.initializers.orthogonal(scale=0.01),
+        action_dim=env.action_size,
+        activation=config.algo.activation,
+        no_neurons=config.algo.no_neurons,
     )
 
     
@@ -118,10 +114,10 @@ def main(config: Config) -> None:
     
     # maybe consider adding two random keys for each policy
     random_key, subkey = jax.random.split(random_key)
-    keys = jax.random.split(subkey, num=config.no_agents)
+    keys = jax.random.split(subkey, num=config.batch_size)
     #split_keys = jax.vmap(lambda k: jax.random.split(k, 2))(keys)
     #keys1, keys2 = split_keys[:, 0], split_keys[:, 1]
-    fake_batch_obs = jnp.zeros(shape=(config.no_agents, env.observation_size))
+    fake_batch_obs = jnp.zeros(shape=(config.batch_size, env.observation_size))
     init_params = jax.vmap(policy_network.init)(keys, fake_batch_obs)
 
     param_count = sum(x[0].size for x in jax.tree_util.tree_leaves(init_params))
@@ -131,10 +127,11 @@ def main(config: Config) -> None:
     @jax.jit
     def play_step_fn(env_state, policy_params, random_key):
         #random_key, subkey = jax.random.split(random_key)
-        actions, logp = policy_network.apply(policy_params, env_state.obs)
+        pi, action = policy_network.apply(policy_params, env_state.obs)
+        logp = pi.log_prob(action)
         #logp = policy_network.apply(policy_params, env_state.obs, actions, method=policy_network.logp)
         state_desc = env_state.info["state_descriptor"]
-        next_state = env.step(env_state, actions)
+        next_state = env.step(env_state, action)
 
         transition = QDMCTransition(
             obs=env_state.obs,
@@ -142,7 +139,7 @@ def main(config: Config) -> None:
             rewards=next_state.reward,
             dones=next_state.done,
             truncations=next_state.info["truncation"],
-            actions=actions,
+            actions=action,
             state_desc=state_desc,
             next_state_desc=next_state.info["state_descriptor"],
             logp=logp,
@@ -150,7 +147,15 @@ def main(config: Config) -> None:
             #desc_prime=jnp.zeros(env.behavior_descriptor_length,) * jnp.nan,
         )
 
-        return next_state, policy_params, random_key, transition
+        return (next_state, policy_params, random_key), transition
+
+
+
+    def get_n_offspring_added(metrics):
+        split = jnp.cumsum(jnp.array([emitter.batch_size for emitter in map_elites._emitter.emitters]))
+        split = jnp.split(metrics["is_offspring_added"], split, axis=-1)[:-1]
+        #qpg_offspring_added, ai_offspring_added = jnp.split(split[0], (split[0].shape[1]-1,), axis=-1)
+        return (jnp.sum(split[1], axis=-1), jnp.sum(split[0], axis=-1))
 
 
 
@@ -192,6 +197,8 @@ def main(config: Config) -> None:
         return random_key, qd_score, dem
     
     reward_offset = 0
+    
+    
     
     def recreate_repertoire(
         repertoire: MapElitesRepertoire,
@@ -268,21 +275,18 @@ def main(config: Config) -> None:
     # Define the PG-emitter config
     
     me_mcpg_config = MEMCPGConfig(
-        proportion_mutation_ga=config.proportion_mutation_ga,
-        no_agents=config.no_agents,
-        buffer_sample_batch_size=config.buffer_sample_batch_size,
-        buffer_add_batch_size=config.buffer_add_batch_size,
-        #batch_size=config.batch_size,
-        #mini_batch_size=config.mini_batch_size,
-        no_epochs=config.no_epochs,
-        #buffer_size=config.buffer_size,
-        learning_rate=config.learning_rate,
-        adam_optimizer=config.adam_optimizer,
-        clip_param=config.clip_param,
+        proportion_mutation_ga=config.algo.proportion_mutation_ga,
+        no_agents=config.batch_size,
+        buffer_sample_batch_size=config.algo.buffer_sample_batch_size,
+        buffer_add_batch_size=config.batch_size,
+        no_epochs=config.algo.no_epochs,
+        learning_rate=config.algo.learning_rate,
+        clip_param=config.algo.clip_param,
+        discount_rate=config.algo.discount_rate,
     )
     
     variation_fn = partial(
-        isoline_variation, iso_sigma=config.iso_sigma, line_sigma=config.line_sigma
+        isoline_variation, iso_sigma=config.algo.iso_sigma, line_sigma=config.algo.line_sigma
     )
     
     me_mcpg_emitter = MEMCPGEmitter(
@@ -307,7 +311,7 @@ def main(config: Config) -> None:
     log_period = 10
     num_loops = int(config.num_iterations / log_period)
 
-    metrics = dict.fromkeys(["iteration", "qd_score", "coverage", "max_fitness", "qd_score_repertoire", "dem_repertoire", "time", "evaluation"], jnp.array([]))
+    metrics = dict.fromkeys(["iteration", "qd_score", "coverage", "max_fitness", "qd_score_repertoire", "dem_repertoire", "time", "evaluation", "ga_offspring_added", "qpg_offspring_added"], jnp.array([]))
     csv_logger = CSVLogger(
         "./log.csv",
         header=list(metrics.keys())
@@ -328,10 +332,11 @@ def main(config: Config) -> None:
             plt.close()
     # Main loop
     map_elites_scan_update = map_elites.scan_update
-    eval_num = config.no_agents 
+    eval_num = config.batch_size 
     print(f"Number of evaluations per iteration: {eval_num}")
     #profiler.start_trace(profiler_dir)
     #jax.profiler.start_server(9999)
+    cumulative_time = 0
     for i in range(num_loops):
         print(f"Loop {i+1}/{num_loops}")
         start_time = time.time()
@@ -343,24 +348,24 @@ def main(config: Config) -> None:
             length=log_period,
         )
         timelapse = time.time() - start_time
+        cumulative_time += timelapse
 
         # Metrics
         random_key, qd_score_repertoire, dem_repertoire = evaluate_repertoire(random_key, repertoire)
 
         current_metrics["iteration"] = jnp.arange(1+log_period*i, 1+log_period*(i+1), dtype=jnp.int32)
         current_metrics["evaluation"] = jnp.arange(1+log_period*eval_num*i, 1+log_period*eval_num*(i+1), dtype=jnp.int32)
-        current_metrics["time"] = jnp.repeat(timelapse, log_period)
+        current_metrics["time"] = jnp.repeat(cumulative_time, log_period)
         current_metrics["qd_score_repertoire"] = jnp.repeat(qd_score_repertoire, log_period)
         current_metrics["dem_repertoire"] = jnp.repeat(dem_repertoire, log_period)
-        #current_metrics["ga_offspring_added"], current_metrics["qpg_offspring_added"], current_metrics["ai_offspring_added"] = get_n_offspring_added(current_metrics)
-        #del current_metrics["is_offspring_added"]
+        current_metrics["ga_offspring_added"], current_metrics["qpg_offspring_added"] = get_n_offspring_added(current_metrics)
+        del current_metrics["is_offspring_added"]
         metrics = jax.tree_util.tree_map(lambda metric, current_metric: jnp.concatenate([metric, current_metric], axis=0), metrics, current_metrics)
 
         # Log
         log_metrics = jax.tree_util.tree_map(lambda metric: metric[-1], metrics)
-        #log_metrics["qpg_offspring_added"] = jnp.sum(current_metrics["qpg_offspring_added"])
-        #log_metrics["ga_offspring_added"] = jnp.sum(current_metrics["ga_offspring_added"])
-        #log_metrics["ai_offspring_added"] = jnp.sum(current_metrics["ai_offspring_added"])
+        log_metrics["qpg_offspring_added"] = jnp.sum(current_metrics["qpg_offspring_added"])
+        log_metrics["ga_offspring_added"] = jnp.sum(current_metrics["ga_offspring_added"])
         csv_logger.log(log_metrics)
         wandb.log(log_metrics)
     #profiler.stop_trace()
@@ -378,7 +383,7 @@ def main(config: Config) -> None:
 
     # Plot
     if env.behavior_descriptor_length == 2:
-        env_steps = jnp.arange(config.num_iterations) * config.env.episode_length * config.no_agents
+        env_steps = jnp.arange(config.num_iterations) * config.env.episode_length * config.batch_size
         fig, _ = plot_map_elites_results(env_steps=env_steps, metrics=metrics, repertoire=repertoire, min_bd=config.env.min_bd, max_bd=config.env.max_bd)
         fig.savefig("./Plots/repertoire_plot.png")
         

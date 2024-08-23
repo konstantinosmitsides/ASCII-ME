@@ -15,13 +15,13 @@ from utils import get_df
 
 # Define env and algo names
 ENV_LIST = [
-    #"ant_omni",
-    #"anttrap_omni",
-    #"humanoid_omni",
+    "ant_omni",
+    "anttrap_omni",
+    "humanoid_omni",
     "walker2d_uni",
-    #"halfcheetah_uni",
+    "halfcheetah_uni",
     "ant_uni",
-    #"humanoid_uni",
+    "humanoid_uni",
 ]
 ENV_DICT = {
     "ant_omni": " Ant Omni ",
@@ -40,7 +40,7 @@ ALGO_LIST = [
     #"qd_pg",
     #"me",
     #"me_es",
-    "ppoish_me"
+    "mcpg_me"
 ]
 ALGO_DICT = {
     "dcg_me": "DCG-MAP-Elites-AI",
@@ -49,7 +49,7 @@ ALGO_DICT = {
     "qd_pg": "QD-PG",
     "me": "MAP-Elites",
     "me_es": "MAP-Elites-ES",
-    "ppoish_me": "PPO-MCPG-Elites",
+    "mcpg_me": "MCPG-ME",
 }
 
 XLABEL = "Evaluations"
@@ -95,7 +95,8 @@ def plot(df):
 
         sns.lineplot(
             df_plot,
-            x="num_evaluations",
+            #x="num_evaluations",
+            x="time",
             y="qd_score",
             hue="algo",
             hue_order=ALGO_LIST,
@@ -119,7 +120,8 @@ def plot(df):
 
         sns.lineplot(
             df_plot,
-            x="num_evaluations",
+            #x="num_evaluations",
+            x="time",
             y="coverage",
             hue="algo",
             hue_order=ALGO_LIST,
@@ -140,7 +142,8 @@ def plot(df):
         # Max fitness
         ax = sns.lineplot(  # store ax for legend
             df_plot,
-            x="num_evaluations",
+            #x="num_evaluations",
+            x="time",
             y="max_fitness",
             hue="algo",
             hue_order=ALGO_LIST,
@@ -166,7 +169,7 @@ def plot(df):
     fig.tight_layout()
 
     # Save plot
-    fig.savefig("project/output/plot_main.pdf", bbox_inches="tight")
+    fig.savefig("testing_plots/output/plot_main.pdf", bbox_inches="tight")
     plt.close()
 
 
@@ -177,7 +180,8 @@ if __name__ == "__main__":
     plt.rc("font", size=16)
 
     # Create the DataFrame
-    results_dir = Path("project/output/")
+    results_dir = Path("testing_plots/output/")
+    #print(results_dir)
 
     df = get_df(results_dir)
 

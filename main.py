@@ -20,16 +20,7 @@ def main(config: Config) -> None:
     elif config.algo.name == "dcg_me":
         import main_dcg_me as main
     elif config.algo.name == "mcpg_me":
-        import main_me_mcpg as main
-    
-    elif config.algo.name == "ppoish_me":
-        if config.algo.NORMALIZE_ENV:
-            import main_ppoish_me_obs_norm as main
-        else:
-            if config.algo.sample_trajectory:
-                import main_ppoish_me as main
-            else:
-                import main_ppoish_me_trans as main
+        import main_mcpg_me as main
             
     else:
         raise NotImplementedError
