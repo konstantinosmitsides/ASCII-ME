@@ -76,7 +76,7 @@ class PGAMEEmitter(MultiEmitter):
 
         # define the GA emitter
         ga_emitter = MixingEmitter(
-            mutation_fn=lambda x, r: (x, r),
+            mutation_fn=None,
             variation_fn=variation_fn,
             variation_percentage=1.0,
             batch_size=ga_batch_size,

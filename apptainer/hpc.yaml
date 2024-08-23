@@ -11,24 +11,48 @@ gpu_type: RTX6000
 queue: null  # -q express -P exp-00097
 njobs: 10
 args:
-  #- "algo=ppoish_me seed=$RANDOM batch_size=512 env=ant_uni env.episode_length=1000 num_iterations=1901 algo.PG_emitter=False algo.init_lecun=True"
-  #- "algo=ppoish_me seed=$RANDOM batch_size=512 env=walker2d_uni env.episode_length=1000 num_iterations=1901 algo.PG_emitter=False algo.init_lecun=True"
-   #sample_trajectories
-  - "algo=ppoish_me seed=$RANDOM batch_size=512 env=ant_uni env.episode_length=1000 num_iterations=1901 algo.NORMALIZE_ENV=True algo.buffer_sample_batch_size=2 algo.buffer_add_batch_size=512 algo.sample_trajectory=True algo.init_lecun=False algo.LR=3e-4"
-  - "algo=ppoish_me seed=$RANDOM batch_size=512 env=walker2d_uni env.episode_length=1000 num_iterations=1901 algo.NORMALIZE_ENV=True algo.buffer_sample_batch_size=2 algo.buffer_add_batch_size=512 algo.sample_trajectory=True algo.init_lecun=False algo.LR=3e-4"
-  - "algo=ppoish_me seed=$RANDOM batch_size=512 env=humanoid_uni env.episode_length=1000 num_iterations=1901 algo.NORMALIZE_ENV=True algo.buffer_sample_batch_size=2 algo.buffer_add_batch_size=512 algo.sample_trajectory=True algo.init_lecun=False algo.LR=3e-4"
-  - "algo=ppoish_me seed=$RANDOM batch_size=512 env=ant_uni env.episode_length=1000 num_iterations=1901 algo.NORMALIZE_ENV=True algo.buffer_sample_batch_size=2 algo.buffer_add_batch_size=512 algo.sample_trajectory=True algo.init_lecun=True algo.LR=3e-4"
-  - "algo=ppoish_me seed=$RANDOM batch_size=512 env=walker2d_uni env.episode_length=1000 num_iterations=1901 algo.NORMALIZE_ENV=True algo.buffer_sample_batch_size=2 algo.buffer_add_batch_size=512 algo.sample_trajectory=True algo.init_lecun=True algo.LR=3e-4"
-  - "algo=ppoish_me seed=$RANDOM batch_size=512 env=humanoid_uni env.episode_length=1000 num_iterations=1901 algo.NORMALIZE_ENV=True algo.buffer_sample_batch_size=2 algo.buffer_add_batch_size=512 algo.sample_trajectory=True algo.init_lecun=True algo.LR=3e-4"
-  #- "algo=ppoish_me seed=$RANDOM batch_size=512 env=ant_uni env.episode_length=1000 num_iterations=1901 algo.NORMALIZE_ENV=False algo.buffer_sample_batch_size=2 algo.buffer_add_batch_size=512 algo.sample_trajectory=True algo.init_lecun=True"
-  #- "algo=ppoish_me seed=$RANDOM batch_size=512 env=walker2d_uni env.episode_length=1000 num_iterations=1901 algo.NORMALIZE_ENV=False algo.buffer_sample_batch_size=2 algo.buffer_add_batch_size=512 algo.sample_trajectory=True algo.init_lecun=True"
-  #- "algo=ppoish_me seed=$RANDOM batch_size=512 env=humanoid_uni env.episode_length=1000 num_iterations=1901 algo.NORMALIZE_ENV=False algo.buffer_sample_batch_size=2 algo.buffer_add_batch_size=512 algo.sample_trajectory=True algo.init_lecun=True"
+  # walker2d_uni
+  - "HPC=True algo=mcpg_me seed=$RANDOM env=walker2d_uni env.episode_length=1000 num_iterations=4000"
+  - "HPC=True algo=pga_me seed=$RANDOM env=walker2d_uni env.episode_length=1000 num_iterations=2000"
+  - "HPC=True algo=dcg_me seed=$RANDOM env=walker2d_uni env.episode_length=1000 num_iterations=2000"
+  - "HPC=True algo=me seed=$RANDOM env=walker2d_uni env.episode_length=1000 num_iterations=2000"
+  - "HPC=True algo=mcpg_me seed=$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=4000"
+  - "HPC=True algo=pga_me seed=$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=2000"
+  - "HPC=True algo=dcg_me seed=$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=2000"
+  - "HPC=True algo=me seed=$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=2000"
 
-  # sample_transitions
-  #- "algo=ppoish_me seed=$RANDOM batch_size=512 env=ant_uni env.episode_length=1000 num_iterations=1901 algo.NORMALIZE_ENV=False algo.buffer_sample_batch_size=128 algo.grad_steps=16 algo.sample_trajectory=False algo.init_lecun=False"
-  #- "algo=ppoish_me seed=$RANDOM batch_size=512 env=walker2d_uni env.episode_length=1000 num_iterations=1901 algo.NORMALIZE_ENV=False algo.buffer_sample_batch_size=128 algo.grad_steps=16 algo.sample_trajectory=False algo.init_lecun=False"
-  #- "algo=ppoish_me seed=$RANDOM batch_size=512 env=humanoid_uni env.episode_length=1000 num_iterations=1901 algo.NORMALIZE_ENV=False algo.buffer_sample_batch_size=128 algo.grad_steps=16 algo.sample_trajectory=False algo.init_lecun=False"
-  #- "algo=ppoish_me seed=$RANDOM batch_size=512 env=ant_uni env.episode_length=1000 num_iterations=1901 algo.NORMALIZE_ENV=False algo.buffer_sample_batch_size=128 algo.grad_steps=16 algo.sample_trajectory=False algo.init_lecun=True"
-  #- "algo=ppoish_me seed=$RANDOM batch_size=512 env=walker2d_uni env.episode_length=1000 num_iterations=1901 algo.NORMALIZE_ENV=False algo.buffer_sample_batch_size=128 algo.grad_steps=16 algo.sample_trajectory=False algo.init_lecun=True"
-  #- "algo=ppoish_me seed=$RANDOM batch_size=512 env=humanoid_uni env.episode_length=1000 num_iterations=1901 algo.NORMALIZE_ENV=False algo.buffer_sample_batch_size=128 algo.grad_steps=16 algo.sample_trajectory=False algo.init_lecun=True"
+  # ant_uni
+  - "HPC=True algo=mcpg_me seed=$RANDOM env=ant_uni env.episode_length=1000 num_iterations=4000"
+  - "HPC=True algo=pga_me seed=$RANDOM env=ant_uni env.episode_length=1000 num_iterations=2000"
+  - "HPC=True algo=dcg_me seed=$RANDOM env=ant_uni env.episode_length=1000 num_iterations=2000"
+  - "HPC=True algo=me seed=$RANDOM env=ant_uni env.episode_length=1000 num_iterations=2000"
+  - "HPC=True algo=mcpg_me seed=$RANDOM env=ant_uni env.episode_length=250 num_iterations=4000"
+  - "HPC=True algo=pga_me seed=$RANDOM env=ant_uni env.episode_length=250 num_iterations=2000"
+  - "HPC=True algo=dcg_me seed=$RANDOM env=ant_uni env.episode_length=250 num_iterations=2000"
+  - "HPC=True algo=me seed=$RANDOM env=ant_uni env.episode_length=250 num_iterations=2000"
+
+  # hopper_uni
+  - "HPC=True algo=mcpg_me seed=$RANDOM env=hopper_uni env.episode_length=1000 num_iterations=4000"
+  - "HPC=True algo=pga_me seed=$RANDOM env=hopper_uni env.episode_length=1000 num_iterations=2000"
+  - "HPC=True algo=dcg_me seed=$RANDOM env=hopper_uni env.episode_length=1000 num_iterations=2000"
+  - "HPC=True algo=me seed=$RANDOM env=hopper_uni env.episode_length=1000 num_iterations=2000"
+  - "HPC=True algo=mcpg_me seed=$RANDOM env=hopper_uni env.episode_length=250 num_iterations=4000"
+  - "HPC=True algo=pga_me seed=$RANDOM env=hopper_uni env.episode_length=250 num_iterations=2000"
+  - "HPC=True algo=dcg_me seed=$RANDOM env=hopper_uni env.episode_length=250 num_iterations=2000"
+  - "HPC=True algo=me seed=$RANDOM env=hopper_uni env.episode_length=250 num_iterations=2000"
+
+  # ant_omni
+  - "HPC=True algo=mcpg_me seed=$RANDOM env=ant_omni env.episode_length=250 num_iterations=4000"
+  - "HPC=True algo=pga_me seed=$RANDOM env=ant_omni env.episode_length=250 num_iterations=2000"
+  - "HPC=True algo=dcg_me seed=$RANDOM env=ant_omni env.episode_length=250 num_iterations=2000"
+  - "HPC=True algo=me seed=$RANDOM env=ant_omni env.episode_length=250 num_iterations=2000"
+
+  # anttrap_omni
+  - "HPC=True algo=mcpg_me seed=$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=4000"
+  - "HPC=True algo=pga_me seed=$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=2000"
+  - "HPC=True algo=dcg_me seed=$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=2000"
+  - "HPC=True algo=me seed=$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=2000"
+
+
+
 
