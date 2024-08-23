@@ -21,6 +21,8 @@ def main(config: Config) -> None:
         import main_dcg_me as main
     elif config.algo.name == "mcpg_me":
         import main_mcpg_me as main
+    elif config.algo.name == "memes":
+        import main_memes as main
             
     else:
         raise NotImplementedError

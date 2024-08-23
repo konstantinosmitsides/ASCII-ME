@@ -14,7 +14,7 @@ import pickle
 from flax import serialization
 #logging.basicConfig(level=logging.DEBUG)
 import hydra
-from omegaconf import OmegaConf, DictConfig
+from omegaconf import OmegaConf
 import jax
 import jax.numpy as jnp
 from hydra.core.config_store import ConfigStore
@@ -32,10 +32,8 @@ from utils import Config, get_env
 from qdax.core.emitters.mutation_operators import isoline_variation
 import wandb
 from qdax.utils.metrics import CSVLogger, default_qd_metrics
-from qdax.utils.plotting import plot_map_elites_results, plot_2d_map_elites_repertoire
+from qdax.utils.plotting import plot_2d_map_elites_repertoire
 import matplotlib.pyplot as plt
-from set_up_brax import get_reward_offset_brax
-from jax import profiler
 
 
 

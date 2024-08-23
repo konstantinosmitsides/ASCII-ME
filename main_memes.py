@@ -9,6 +9,8 @@ import time
 from dataclasses import dataclass
 from functools import partial
 from typing import Any, Dict, Tuple
+import wandb
+import pickle
 
 import hydra
 import jax
@@ -16,19 +18,18 @@ import jax.numpy as jnp
 from hydra.core.config_store import ConfigStore
 from qdax.core.map_elites_memes import MAPElites
 from qdax.types import RNGKey
-from qdax.utils.sampling import sampling
 from utils import Config, get_env
 from qdax.tasks.brax_envs import reset_based_scoring_function_brax_envs as scoring_function
 from qdax.utils.metrics import CSVLogger, default_qd_metrics
+from omegaconf import OmegaConf
+from qdax.environments_v1 import behavior_descriptor_extractor
+from qdax.core.neuroevolution.networks.networks import MLP
 
 
 
-from qdax.core.containers.mapelites_repertoire import compute_cvt_centroids, MapElitesRepertoire
+from qdax.core.containers.mapelites_repertoire_memes import compute_cvt_centroids, MapElitesRepertoire
 
-from core.emitters.memes_emitter import MEMESConfig, MEMESEmitter
-from core.stochasticity_utils import reevaluation_function
-from initialisation import set_up_default_metrics_dict, set_up_envs, set_up_metrics
-from main_loop import main_loop
+from qdax.core.emitters.memes_emitter import MEMESConfig, MEMESEmitter
 from qdax.core.neuroevolution.buffers.buffer import QDTransition
 
 
@@ -37,7 +38,7 @@ from qdax.core.neuroevolution.buffers.buffer import QDTransition
 
 
 @hydra.main(version_base="1.2", config_path="configs", config_name="memes")
-def train(config: Config) -> None:
+def main(config: Config) -> None:
 
     wandb.login(key="ab476069b53a15ad74ff1845e8dee5091d241297")
     wandb.init(
@@ -100,10 +101,9 @@ def train(config: Config) -> None:
     
     @jax.jit
     def play_step_fn(
-        env_state: EnvState,
-        policy_params: Params,
-        random_key: RNGKey,
-    ) -> Tuple[EnvState, Params, RNGKey, QDTransition]:
+        env_state,
+        policy_params,
+        random_key):
         """
         Play an environment step and return the updated EnvState and the transition.
 
@@ -170,12 +170,14 @@ def train(config: Config) -> None:
         config=es_emitter_config,
         batch_size=config.batch_size,
         scoring_fn=scoring_fn,
-        num_descriptors=config.env.behavior_descriptor_length,
+        num_descriptors=env.behavior_descriptor_length,
         scan_batch_size=config.algo.scan_batch_size,
         scan_novelty=config.algo.scan_novelty,
         total_generations=num_iterations,
         num_centroids=int(config.num_centroids),
     )
+    
+    reward_offset = 0
     
     metrics_fn = partial(
         default_qd_metrics,
@@ -184,14 +186,14 @@ def train(config: Config) -> None:
 
     # Instantiate MAP-Elites
     map_elites = MAPElites(
-        scoring_function=me_scoring_fn,
+        scoring_function=scoring_fn,
         emitter=es_emitter,
         metrics_function=metrics_fn,
     )
 
     # Init algorithm
     repertoire, emitter_state, random_key = map_elites.init(
-        init_variables, centroids, random_key
+        init_params, centroids, random_key
     )
     
     log_period = 10
@@ -219,7 +221,7 @@ def train(config: Config) -> None:
 
     # Main QD loop
     map_elites_scan_update = map_elites.scan_update
-    eval_num = config.batch_size * config.algo.sample_number * config.algo.num_in_optimizer_steps
+    eval_num = int((config.batch_size * config.algo.sample_number * config.algo.num_in_optimizer_steps) + config.batch_size)
     cumulative_time = 0
     
     for i in range(num_loops):
@@ -267,5 +269,5 @@ def train(config: Config) -> None:
 
 if __name__ == "__main__":
     cs = ConfigStore.instance()
-    cs.store(name="validate_experiment_config", node=ExperimentConfig)
-    train()
+    cs.store(name="main", node=Config)
+    main()

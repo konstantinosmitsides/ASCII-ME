@@ -9,7 +9,7 @@ ngpus: 1
 gpu_type: RTX6000
  
 queue: null  # -q express -P exp-00097
-njobs: 5
+njobs: 10
 args:
   #- "algo=ppoish_me seed=$RANDOM batch_size=512 env=ant_uni env.episode_length=1000 num_iterations=1901 algo.PG_emitter=False algo.init_lecun=True"
   #- "algo=ppoish_me seed=$RANDOM batch_size=512 env=walker2d_uni env.episode_length=1000 num_iterations=1901 algo.PG_emitter=False algo.init_lecun=True"
