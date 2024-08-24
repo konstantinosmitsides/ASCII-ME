@@ -35,12 +35,12 @@ from typing import Any, Dict, Tuple, List, Callable
 
 @hydra.main(version_base="1.2", config_path="configs/", config_name="me")
 def main(config: Config) -> None:
-    wandb.login(key="ab476069b53a15ad74ff1845e8dee5091d241297")
-    wandb.init(
-        project="me-mcpg",
-        name=config.algo.name,
-        config=OmegaConf.to_container(config, resolve=True),
-    )
+    #wandb.login(key="ab476069b53a15ad74ff1845e8dee5091d241297")
+    #wandb.init(
+    #    project="me-mcpg",
+    #    name=config.algo.name,
+    #    config=OmegaConf.to_container(config, resolve=True),
+    #)
 
     # Init a random key
     random_key = jax.random.PRNGKey(config.seed)
@@ -309,7 +309,7 @@ def main(config: Config) -> None:
         log_metrics = jax.tree_util.tree_map(lambda metric: metric[-1], metrics)
         log_metrics["ga_offspring_added"] = jnp.sum(current_metrics["ga_offspring_added"])
         csv_logger.log(log_metrics)
-        wandb.log(log_metrics)
+        #wandb.log(log_metrics)
 
     # Metrics
     with open("./metrics.pickle", "wb") as metrics_file:

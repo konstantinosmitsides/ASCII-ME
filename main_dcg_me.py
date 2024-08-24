@@ -42,11 +42,12 @@ from qdax.utils.sampling import sampling
 
 @hydra.main(version_base="1.2", config_path="configs/", config_name="dcg_me")
 def main(config: Config) -> None:
-    wandb.init(
-        project="me-mcpg",
-        name=config.algo.name,
-        config=OmegaConf.to_container(config, resolve=True),
-    )
+    #wandb.login(key="ab476069b53a15ad74ff1845e8dee5091d241297")
+    #wandb.init(
+    #    project="me-mcpg",
+    #    name=config.algo.name,
+    #    config=OmegaConf.to_container(config, resolve=True),
+    #)
 
     assert config.batch_size == config.algo.ga_batch_size + config.algo.qpg_batch_size + config.algo.ai_batch_size
 
@@ -406,7 +407,7 @@ def main(config: Config) -> None:
         log_metrics["qpg_offspring_added"] = jnp.sum(current_metrics["qpg_offspring_added"])
         log_metrics["ai_offspring_added"] = jnp.sum(current_metrics["ai_offspring_added"])
         csv_logger.log(log_metrics)
-        wandb.log(log_metrics)
+        #wandb.log(log_metrics)
 
     # Metrics
     with open("./metrics.pickle", "wb") as metrics_file:
