@@ -15,33 +15,40 @@ from utils import get_df
 
 # Define env and algo names
 ENV_LIST = [
-    "ant_omni",
-    #"anttrap_omni",
+    #"ant_omni_250",
+    #"anttrap_omni_250",
     #"humanoid_omni",
-    "walker2d_uni",
+    #"walker2d_uni_250",
+    "walker2d_uni_1000",
     #"halfcheetah_uni",
-    #"ant_uni",
+    #"ant_uni_250",
+    "ant_uni_1000",
+    #"hopper_uni_250",
+    "hopper_uni_1000",
     #"humanoid_uni",
 ]
 ENV_DICT = {
-    "ant_omni": " Ant Omni ",
-    "anttrap_omni": "AntTrap Omni",
+    "ant_omni_250": " Ant Omni ",
+    "anttrap_omni_250": "AntTrap Omni",
     "humanoid_omni": "Humanoid Omni",
-    "walker2d_uni": "Walker Uni",
+    "walker2d_uni_250": "Walker Uni",
+    "walker2d_uni_1000": "Walker Uni",
     "halfcheetah_uni": "HalfCheetah Uni",
-    "ant_uni": "   Ant Uni   ",
+    "ant_uni_250": "   Ant Uni   ",
+    "ant_uni_1000": "   Ant Uni   ",
     "humanoid_uni": "Humanoid Uni",
+    "hopper_uni_250": "Hopper Uni",
+    "hopper_uni_1000": "Hopper Uni",
 }
-
 ALGO_LIST = [
-    #"dcg_me",
+    "dcg_me",
     #"dcg_me_gecco",
     "pga_me",
     #"qd_pg",
     "me",
     #"me_es",
     "mcpg_me",
-    "memes",
+    #"memes",
 ]
 ALGO_DICT = {
     "dcg_me": "DCG-MAP-Elites-AI",
@@ -168,7 +175,7 @@ def plot(df):
     fig.tight_layout()
 
     # Save plot
-    fig.savefig("testing_plots/output/plot_main_time.pdf", bbox_inches="tight")
+    fig.savefig("data_time_efficiency/output/plot_main_time.pdf", bbox_inches="tight")
     plt.close()
 
 
@@ -179,10 +186,10 @@ if __name__ == "__main__":
     plt.rc("font", size=16)
 
     # Create the DataFrame
-    results_dir = Path("testing_plots/output/")
+    results_dir = Path("data_time_efficiency/output/")
     #print(results_dir)
-
-    df = get_df(results_dir)
+    EPISODE_LENGTH = 1000
+    df = get_df(results_dir, EPISODE_LENGTH)
 
     # Filter
     df = df[df["algo"].isin(ALGO_LIST)]

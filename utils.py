@@ -190,10 +190,12 @@ def get_repertoire(run_dir):
     # Return repertoire
     return MapElitesRepertoire.load(reconstruction_fn=reconstruction_fn, path=str(run_dir) + "/repertoire/")
 
-def get_df(results_dir):
+def get_df(results_dir, episode_length):
     metrics_list = []
     for env_dir in results_dir.iterdir():
-        if env_dir.is_file() or env_dir.name not in ["ant_omni", "anttrap_omni", "humanoid_omni", "walker2d_uni", "halfcheetah_uni", "ant_uni", "humanoid_uni"]:
+        if env_dir.is_file() or env_dir.name not in ["ant_omni_250", "anttrap_omni_250", "humanoid_omni", "walker2d_uni_250","walker2d_uni_1000", "halfcheetah_uni", "ant_uni_250", "ant_uni_1000", "humanoid_uni", "hopper_uni_250", "hopper_uni_1000"]:
+            continue
+        if env_dir.name[-3:] != str(episode_length)[-3:]:
             continue
         for algo_dir in env_dir.iterdir():
             for run_dir in algo_dir.iterdir():
@@ -202,7 +204,7 @@ def get_df(results_dir):
                 metrics = get_metrics(run_dir)
 
                 # Env
-                metrics["env"] = config.env.name
+                metrics["env"] = f"{config.env.name}_{episode_length}"
 
                 # Algo
                 metrics["algo"] = config.algo.name

@@ -15,13 +15,17 @@ from utils import get_df
 
 # Define env and algo names
 ENV_LIST = [
-    "ant_omni",
-    "anttrap_omni",
-    "humanoid_omni",
-    "walker2d_uni",
-    "halfcheetah_uni",
-    "ant_uni",
-    "humanoid_uni",
+    "ant_omni_250",
+    "anttrap_omni_250",
+    #"humanoid_omni",
+    "walker2d_uni_250",
+    "walker2d_uni_1000",
+    #"halfcheetah_uni",
+    "ant_uni_250",
+    "ant_uni_1000",
+    "hopper_uni_250",
+    "hopper_uni_1000",
+    #"humanoid_uni",
 ]
 ENV_DICT = {
     "ant_omni": "Ant Omni",
@@ -34,10 +38,11 @@ ENV_DICT = {
 }
 
 ALGO_LIST = [
-    #"dcg_me",
-    #"pga_me",
+    "dcg_me",
+    "pga_me",
     #"ablation_ai",
-    "mcpg_me"
+    "mcpg_me",
+    "me"
 ]
 ALGO_DICT = {
     "dcg_me": "DCG-MAP-Elites-AI",
@@ -135,7 +140,7 @@ def plot(df):
     fig.tight_layout()
 
     # Save plot
-    fig.savefig("testing_plots/output/plot_elites.pdf", bbox_inches="tight")
+    fig.savefig("data_time_efficiency/output/plot_elites.pdf", bbox_inches="tight")
     plt.close()
 
 
@@ -146,7 +151,7 @@ if __name__ == "__main__":
     plt.rc("font", size=16)
 
     # Create the DataFrame
-    results_dir = Path("testing_plots/output/")
+    results_dir = Path("data_time_efficiency/output/")
     df = get_df(results_dir)
 
     # Sum PG and AI emitters
@@ -161,3 +166,4 @@ if __name__ == "__main__":
 
     # Plot
     plot(df)
+    

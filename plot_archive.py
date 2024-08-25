@@ -18,13 +18,17 @@ from utils import get_config, get_env, get_repertoire, get_df
 ENV = "walker2d_uni"
 
 ENV_LIST = [
-    "ant_omni",
-    "anttrap_omni",
-    "humanoid_omni",
-    "walker2d_uni",
-    "halfcheetah_uni",
-    "ant_uni",
-    "humanoid_uni",
+    "ant_omni_250",
+    "anttrap_omni_250",
+    #"humanoid_omni",
+    "walker2d_uni_250",
+    "walker2d_uni_1000",
+    #"halfcheetah_uni",
+    "ant_uni_250",
+    "ant_uni_1000",
+    "hopper_uni_250",
+    "hopper_uni_1000",
+    #"humanoid_uni",
 ]
 ENV_DICT = {
     "ant_omni": "Ant Omni",
@@ -46,7 +50,7 @@ DESC_DICT = {
 }
 
 ALGO_LIST = [
-    #"dcg_me",
+    "dcg_me",
     "pga_me",
     #"qd_pg",
     "me",
@@ -162,7 +166,7 @@ def plot(repertoires, configs):
     plt.colorbar(matplotlib.cm.ScalarMappable(norm=norm, cmap=cmap), cax=cax)
 
     # Save plot
-    fig.savefig(f"testing_plots/output/plot_archive_{ENV}.pdf", bbox_inches="tight")
+    fig.savefig(f"data_time_efficiency/output/plot_archive_{ENV}.pdf", bbox_inches="tight")
     plt.close()
 
 
@@ -181,7 +185,7 @@ if __name__ == "__main__":
     plt.rc("font", size=12)
 
     # Create the DataFrame
-    results_dir = Path("testing_plots/output/")
+    results_dir = Path("data_time_efficiency/output/")
     df = get_df(results_dir)
 
     # Filter
