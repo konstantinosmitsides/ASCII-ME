@@ -44,8 +44,8 @@ def main(config: Config) -> None:
     #wandb.init(
     #    project="me-mcpg",
     #    name=config.algo.name,
-    3    config=OmegaConf.to_container(config, resolve=True),
-    3)
+    #    config=OmegaConf.to_container(config, resolve=True),
+    #)
 
     # Choose stopping criteria
     if config.num_iterations > 0 and config.algo.num_evaluations > 0:

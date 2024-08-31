@@ -1,4 +1,4 @@
-job_name: omni_data_efficiency
+job_name: memes_data_efficiency
  
 walltime: 7:59:00
  
@@ -9,7 +9,7 @@ ngpus: 1
 gpu_type: RTX6000
  
 queue: null  # -q express -P exp-00097
-njobs: 5
+njobs: 10
 args:
   # walker2d_uni
   #- "HPC=True algo=mcpg_me seed=\$RANDOM env=walker2d_uni env.episode_length=1000 num_iterations=2000"
@@ -42,16 +42,16 @@ args:
   #- "HPC=True algo=me seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=2000"
 
   # ant_omni
-  - "HPC=True algo=mcpg_me seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=2000"
-  - "HPC=True algo=pga_me seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=2000"
-  - "HPC=True algo=dcg_me seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=2000"
-  - "HPC=True algo=me seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=2000"
+  #- "HPC=True algo=mcpg_me seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=2000"
+  #- "HPC=True algo=pga_me seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=2000"
+  #- "HPC=True algo=dcg_me seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=2000"
+  #- "HPC=True algo=me seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=2000"
 
   # anttrap_omni
-  - "HPC=True algo=mcpg_me seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=2000"
-  - "HPC=True algo=pga_me seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=2000"
-  - "HPC=True algo=dcg_me seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=2000"
-  - "HPC=True algo=me seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=2000"
+  #- "HPC=True algo=mcpg_me seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=2000"
+  #- "HPC=True algo=pga_me seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=2000"
+  #- "HPC=True algo=dcg_me seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=2000"
+  #- "HPC=True algo=me seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=2000"
 
   # scalability
 
@@ -74,6 +74,16 @@ args:
   #- "HPC=True algo=mcpg_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=4096 num_iterations=1224"
   #- "HPC=True algo=mcpg_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=16384 num_iterations=306"
   #- "HPC=True algo=mcpg_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=32768 num_iterations=154"
+
+  # MEMES
+  - "HPC=True algo=memes seed=\$RANDOM env=walker2d_uni env.episode_length=1000 num_iterations=100 batch_size=32"
+  - "HPC=True algo=memes seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=100 batch_size=32"
+  - "HPC=True algo=memes seed=\$RANDOM env=ant_uni env.episode_length=1000 num_iterations=100 batch_size=32"
+  - "HPC=True algo=memes seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=100 batch_size=32"
+  #- "HPC=True algo=memes seed=\$RANDOM env=hopper_uni env.episode_length=1000 num_iterations=100 batch_size=32"
+  #- "HPC=True algo=memes seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=100 batch_size=32"
+  #- "HPC=True algo=memes seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=100 batch_size=32"
+  #- "HPC=True algo=memes seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=100 batch_size=32"
 
 
 
