@@ -40,12 +40,12 @@ from qdax.core.neuroevolution.buffers.buffer import QDTransition
 @hydra.main(version_base="1.2", config_path="configs", config_name="memes")
 def main(config: Config) -> None:
 
-    wandb.login(key="ab476069b53a15ad74ff1845e8dee5091d241297")
-    wandb.init(
-        project="me-mcpg",
-        name=config.algo.name,
-        config=OmegaConf.to_container(config, resolve=True),
-    )
+    #wandb.login(key="ab476069b53a15ad74ff1845e8dee5091d241297")
+    #wandb.init(
+    #    project="me-mcpg",
+    #    name=config.algo.name,
+    3    config=OmegaConf.to_container(config, resolve=True),
+    3)
 
     # Choose stopping criteria
     if config.num_iterations > 0 and config.algo.num_evaluations > 0:
@@ -252,7 +252,7 @@ def main(config: Config) -> None:
         #log_metrics["qpg_offspring_added"] = jnp.sum(current_metrics["qpg_offspring_added"])
         #log_metrics["ga_offspring_added"] = jnp.sum(current_metrics["ga_offspring_added"])
         csv_logger.log(log_metrics)
-        wandb.log(log_metrics)
+        #wandb.log(log_metrics)
     #profiler.stop_trace()
     # Metrics
     with open("./metrics.pickle", "wb") as metrics_file:

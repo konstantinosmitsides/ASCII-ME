@@ -199,15 +199,19 @@ def get_df(results_dir, episode_length):
             continue
         for algo_dir in env_dir.iterdir():
             for run_dir in algo_dir.iterdir():
+                
                 # Get config and metrics
+                
                 config = get_config(run_dir)
                 metrics = get_metrics(run_dir)
 
                 # Env
                 metrics["env"] = f"{config.env.name}_{episode_length}"
+                
 
                 # Algo
                 metrics["algo"] = config.algo.name
+                metrics["batch_size"] = config.batch_size
 
                 # Run
                 metrics["run"] = run_dir.name
