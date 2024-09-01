@@ -15,16 +15,16 @@ from utils import get_df
 
 # Define env and algo names
 ENV_LIST = [
-    "ant_omni_250",
+    #"ant_omni_250",
     #"anttrap_omni_250",
     #"humanoid_omni",
     #"walker2d_uni_250",
-    #"walker2d_uni_1000",
+    "walker2d_uni_1000",
     #"halfcheetah_uni",
     #"ant_uni_250",
-    #"ant_uni_1000",
+    "ant_uni_1000",
     #"hopper_uni_250",
-    #"hopper_uni_1000",
+    "hopper_uni_1000",
     #"humanoid_uni",
 ]
 ENV_DICT = {
@@ -49,14 +49,14 @@ BATCH_LIST = [
 ]
 
 ALGO_LIST = [
+    "mcpg_me",
     "dcg_me",
     #"dcg_me_gecco",
     "pga_me",
     #"qd_pg",
-    "me",
     #"me_es",
-    "mcpg_me",
-    #"memes",
+    "memes",
+    "me",
 ]
 ALGO_DICT = {
     "dcg_me": "DCG-MAP-Elites-AI",
@@ -197,13 +197,13 @@ if __name__ == "__main__":
     results_dir = Path("data_time_efficiency/output/")
     #print(results_dir)
     
-    EPISODE_LENGTH = 250
+    EPISODE_LENGTH = 1000
 
     df = get_df(results_dir, EPISODE_LENGTH)
 
     # Filter
     df = df[df["algo"].isin(ALGO_LIST)]
-    df = df[df["num_evaluations"] <= 1_000_000]
+    df = df[df["num_evaluations"] <= 1_001_400]
 
     # Plot
     plot(df)

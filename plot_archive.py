@@ -15,7 +15,7 @@ from utils import get_config, get_env, get_repertoire, get_df
 
 
 # Define env and algo names
-ENV = "walker2d_uni"
+ENV = "walker2d_uni_1000"
 
 ENV_LIST = [
     "ant_omni_250",
@@ -47,16 +47,18 @@ DESC_DICT = {
     "halfcheetah_uni": ["Foot Contact - Leg 1", "Foot Contact - Leg 2"],
     "ant_uni": ["Foot Contact - Leg 1", "Foot Contact - Leg 2", "Foot Contact - Leg 3", "Foot Contact - Leg 4"],
     "humanoid_uni": ["Foot Contact - Leg 1", "Foot Contact - Leg 2"],
+    #"hopper_uni": ["Foot Contact - Leg 1", "Foot Contact - Leg 2"],
 }
 
 ALGO_LIST = [
+    "mcpg_me",
     "dcg_me",
+    #"dcg_me_gecco",
     "pga_me",
     #"qd_pg",
-    "me",
     #"me_es",
-    "mcpg_me",
-    "memes"
+    "memes",
+    "me",
 ]
 ALGO_DICT = {
     "dcg_me": "DCG-MAP-Elites-AI",
@@ -186,11 +188,12 @@ if __name__ == "__main__":
 
     # Create the DataFrame
     results_dir = Path("data_time_efficiency/output/")
-    df = get_df(results_dir)
+    EPISODE_LENGTH = 1000
+    df = get_df(results_dir, EPISODE_LENGTH)
 
     # Filter
     df = df[df["algo"].isin(ALGO_LIST)]
-    df = df[df["num_evaluations"] <= 1_000_000]
+    df = df[df["num_evaluations"] <= 1_001_400]
 
     # Get the median QD score for each (env, algo)
     idx = df.groupby(["env", "algo", "run"])["iteration"].idxmax()

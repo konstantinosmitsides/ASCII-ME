@@ -23,6 +23,13 @@ def main(config: Config) -> None:
         import main_mcpg_me as main
     elif config.algo.name == "memes":
         import main_memes as main
+    elif config.algo.name == "mcpg_me_no_normalizer":
+        import main_mcpg_me_no_normalizer as main
+    elif config.algo.name == "mcpg_me_no_baseline":
+        import main_mcpg_me_no_baseline as main
+    elif config.algo.name == "mcpg_me_no_ppo_loss":
+        import main_mcpg_me_no_ppo_loss as main
+    
             
     else:
         raise NotImplementedError

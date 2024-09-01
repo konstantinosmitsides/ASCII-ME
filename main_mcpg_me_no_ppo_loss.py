@@ -23,7 +23,7 @@ from qdax.types import RNGKey, Genotype
 from qdax.utils.sampling import sampling 
 from qdax.core.containers.mapelites_repertoire_advanced_baseline_time_step import compute_cvt_centroids, MapElitesRepertoire
 from qdax.core.neuroevolution.networks.networks import MLPMCPG
-from qdax.core.emitters.me_mcpg_emitter_advanced_baseline_time_step import MEMCPGConfig, MEMCPGEmitter
+from qdax.core.emitters.me_mcpg_emitter_no_ppo_loss import MEMCPGConfig, MEMCPGEmitter
 #from qdax.core.emitters.rein_emitter_advanced import REINaiveConfig, REINaiveEmitter
 from qdax.core.neuroevolution.buffers.buffer import QDTransition, QDMCTransition
 from qdax.environments_v1 import behavior_descriptor_extractor

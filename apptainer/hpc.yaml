@@ -76,14 +76,14 @@ args:
   #- "HPC=True algo=mcpg_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=32768 num_iterations=154"
 
   # MEMES
-  - "HPC=True algo=memes seed=\$RANDOM env=walker2d_uni env.episode_length=1000 num_iterations=100 batch_size=32"
-  - "HPC=True algo=memes seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=100 batch_size=32"
-  - "HPC=True algo=memes seed=\$RANDOM env=ant_uni env.episode_length=1000 num_iterations=100 batch_size=32"
-  - "HPC=True algo=memes seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=100 batch_size=32"
-  #- "HPC=True algo=memes seed=\$RANDOM env=hopper_uni env.episode_length=1000 num_iterations=100 batch_size=32"
-  #- "HPC=True algo=memes seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=100 batch_size=32"
-  #- "HPC=True algo=memes seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=100 batch_size=32"
-  #- "HPC=True algo=memes seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=100 batch_size=32"
+  #- "HPC=True algo=memes seed=\$RANDOM env=walker2d_uni env.episode_length=1000 num_iterations=100 batch_size=32"
+  #- "HPC=True algo=memes seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=100 batch_size=32"
+  #- "HPC=True algo=memes seed=\$RANDOM env=ant_uni env.episode_length=1000 num_iterations=100 batch_size=32"
+  #- "HPC=True algo=memes seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=100 batch_size=32"
+  - "HPC=True algo=memes seed=\$RANDOM env=hopper_uni env.episode_length=1000 num_iterations=100 batch_size=32"
+  - "HPC=True algo=memes seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=100 batch_size=32"
+  - "HPC=True algo=memes seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=100 batch_size=32"
+  - "HPC=True algo=memes seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=100 batch_size=32"
 
 
 

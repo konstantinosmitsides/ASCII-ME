@@ -194,16 +194,28 @@ def get_df(results_dir, episode_length):
     metrics_list = []
     for env_dir in results_dir.iterdir():
         if env_dir.is_file() or env_dir.name not in ["ant_omni_250", "anttrap_omni_250", "humanoid_omni", "walker2d_uni_250","walker2d_uni_1000", "halfcheetah_uni", "ant_uni_250", "ant_uni_1000", "humanoid_uni", "hopper_uni_250", "hopper_uni_1000"]:
+            continue        
             continue
         if env_dir.name[-3:] != str(episode_length)[-3:]:
             continue
+        
+        print(env_dir.name)
         for algo_dir in env_dir.iterdir():
             for run_dir in algo_dir.iterdir():
+                if run_dir.name[:10] == "2024-08-24":
+                    continue
+                
+                
                 
                 # Get config and metrics
                 
                 config = get_config(run_dir)
                 metrics = get_metrics(run_dir)
+                
+                if config.algo.name == "mcpg_me":
+                    if run_dir.name[:17] != "2024-08-29_200827":
+                #        print('continue')
+                        continue
 
                 # Env
                 metrics["env"] = f"{config.env.name}_{episode_length}"
@@ -223,6 +235,7 @@ def get_df(results_dir, episode_length):
                     metrics["num_evaluations"] = metrics["iteration"] * (config.batch_size + config.algo.actor_batch_size)
                 elif config.algo.name == "memes":
                     metrics["num_evaluations"] = metrics["iteration"] * ((config.batch_size * config.algo.sample_number * config.algo.num_in_optimizer_steps) + config.batch_size)
+                    #print(metrics["num_evaluations"])
                 else:
                     metrics["num_evaluations"] = metrics["iteration"] * config.batch_size
 
