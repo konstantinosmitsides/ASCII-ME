@@ -1,4 +1,4 @@
-job_name: memes_data_efficiency
+job_name: scalability
  
 walltime: 7:59:00
  
@@ -56,34 +56,62 @@ args:
   # scalability
 
   # ant_uni
-  #- "HPC=True algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=1024 num_iterations=4890"
-  #- "HPC=True algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=4096 num_iterations=1224"
-  #- "HPC=True algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=16384 num_iterations=306"
-  #- "HPC=True algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=32768 num_iterations=154"
-  #- "HPC=True algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=65536 num_iterations=77"
-  #- "HPC=True algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=131072 num_iterations=39"
+  #- "HPC=True algo=pga_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=1024 num_iterations=4890 algo.replay_buffer_size=256_000"
+  #- "HPC=True algo=pga_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=4096 num_iterations=1224 algo.replay_buffer_size=1_024_000"
+  #- "HPC=True algo=pga_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=16384 num_iterations=306 algo.replay_buffer_size=4_096_000"
+  #- "HPC=True algo=pga_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=32768 num_iterations=154 algo.replay_buffer_size=8_192_000"
+
 
   # walker_uni
-  #- "HPC=True algo=mcpg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=1024 num_iterations=4890"
-  #- "HPC=True algo=mcpg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=4096 num_iterations=1224"
-  #- "HPC=True algo=mcpg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=16384 num_iterations=306"
-  #- "HPC=True algo=mcpg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=32768 num_iterations=154"
+  #- "HPC=True algo=pga_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=1024 num_iterations=4890 algo.replay_buffer_size=256_000"
+  #- "HPC=True algo=pga_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=4096 num_iterations=1224 algo.replay_buffer_size=1_024_000"
+  #- "HPC=True algo=pga_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=16384 num_iterations=306 algo.replay_buffer_size=4_096_000"
+  #- "HPC=True algo=pga_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=32768 num_iterations=154 algo.replay_buffer_size=8_192_000"
+
 
   # ant_omni
-  #- "HPC=True algo=mcpg_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=1024 num_iterations=4890"
-  #- "HPC=True algo=mcpg_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=4096 num_iterations=1224"
-  #- "HPC=True algo=mcpg_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=16384 num_iterations=306"
-  #- "HPC=True algo=mcpg_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=32768 num_iterations=154"
+  #- "HPC=True algo=pga_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=1024 num_iterations=4890 algo.replay_buffer_size=256_000"
+  #- "HPC=True algo=pga_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=4096 num_iterations=1224 algo.replay_buffer_size=1_024_000"
+  #- "HPC=True algo=pga_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=16384 num_iterations=306 algo.replay_buffer_size=4_096_000"
+  - "HPC=True algo=pga_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=32768 num_iterations=154 algo.replay_buffer_size=8_192_000"
+
+
+
+
+
+
+
+
+
 
   # MEMES
   #- "HPC=True algo=memes seed=\$RANDOM env=walker2d_uni env.episode_length=1000 num_iterations=100 batch_size=32"
   #- "HPC=True algo=memes seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=100 batch_size=32"
   #- "HPC=True algo=memes seed=\$RANDOM env=ant_uni env.episode_length=1000 num_iterations=100 batch_size=32"
   #- "HPC=True algo=memes seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=100 batch_size=32"
-  - "HPC=True algo=memes seed=\$RANDOM env=hopper_uni env.episode_length=1000 num_iterations=100 batch_size=32"
-  - "HPC=True algo=memes seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=100 batch_size=32"
-  - "HPC=True algo=memes seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=100 batch_size=32"
-  - "HPC=True algo=memes seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=100 batch_size=32"
+  #- "HPC=True algo=memes seed=\$RANDOM env=hopper_uni env.episode_length=1000 num_iterations=100 batch_size=32"
+  #- "HPC=True algo=memes seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=100 batch_size=32"
+  #- "HPC=True algo=memes seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=100 batch_size=32"
+  #- "HPC=True algo=memes seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=100 batch_size=32"
+
+  # Ablation study
+
+  # walker2d_uni
+  #- "HPC=True algo=mcpg_me_no_normalizer seed=\$RANDOM env=walker2d_uni env.episode_length=1000 num_iterations=2000"
+  #- "HPC=True algo=mcpg_me_no_baseline seed=\$RANDOM env=walker2d_uni env.episode_length=1000 num_iterations=2000"
+  #- "HPC=True algo=mcpg_me_no_ppo_loss seed=\$RANDOM env=walker2d_uni env.episode_length=1000 num_iterations=2000"
+
+  # ant_uni
+  #- "HPC=True algo=mcpg_me_no_normalizer seed=\$RANDOM env=ant_uni env.episode_length=1000 num_iterations=2000"
+  #- "HPC=True algo=mcpg_me_no_baseline seed=\$RANDOM env=ant_uni env.episode_length=1000 num_iterations=2000"
+  #- "HPC=True algo=mcpg_me_no_ppo_loss seed=\$RANDOM env=ant_uni env.episode_length=1000 num_iterations=2000"
+
+  # hopper_uni
+  #- "HPC=True algo=mcpg_me_no_normalizer seed=\$RANDOM env=hopper_uni env.episode_length=1000 num_iterations=2000"
+  #- "HPC=True algo=mcpg_me_no_baseline seed=\$RANDOM env=hopper_uni env.episode_length=1000 num_iterations=2000"
+  #- "HPC=True algo=mcpg_me_no_ppo_loss seed=\$RANDOM env=hopper_uni env.episode_length=1000 num_iterations=2000"
+
+
 
 
 

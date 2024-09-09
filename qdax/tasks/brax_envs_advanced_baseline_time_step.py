@@ -152,7 +152,7 @@ def scoring_function_brax_envs(
     fitnesses = jnp.sum(data.rewards * (1.0 - mask), axis=1)
     descriptors = behavior_descriptor_extractor(data, mask)
     returns = get_return_for_batch_episodes(data.rewards, 1.0 - mask, episode_length)
-    data = data.replace(rewards=returns)
+    data = data.replace(rewards=returns, dones=mask)
     
     
     return (

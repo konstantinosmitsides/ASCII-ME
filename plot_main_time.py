@@ -15,16 +15,16 @@ from utils import get_df
 
 # Define env and algo names
 ENV_LIST = [
-    #"ant_omni_250",
-    #"anttrap_omni_250",
+    "ant_omni_250",
+    "anttrap_omni_250",
     #"humanoid_omni",
-    #"walker2d_uni_250",
-    "walker2d_uni_1000",
+    "walker2d_uni_250",
+    #"walker2d_uni_1000",
     #"halfcheetah_uni",
-    #"ant_uni_250",
-    "ant_uni_1000",
-    #"hopper_uni_250",
-    "hopper_uni_1000",
+    "ant_uni_250",
+    #"ant_uni_1000",
+    "hopper_uni_250",
+    #"hopper_uni_1000",
     #"humanoid_uni",
 ]
 ENV_DICT = {
@@ -41,15 +41,20 @@ ENV_DICT = {
     "hopper_uni_1000": "Hopper Uni",
 }
 ALGO_LIST = [
+    "mcpg_me",
+    #"mcpg_me_no_normalizer",
+    #"mcpg_me_no_baseline",
+    #"mcpg_me_no_ppo_loss",
     "dcg_me",
     #"dcg_me_gecco",
     "pga_me",
     #"qd_pg",
-    "me",
     #"me_es",
-    "mcpg_me",
-    #"memes",
+    "memes",
+    "me",
 ]
+
+
 ALGO_DICT = {
     "dcg_me": "DCG-MAP-Elites-AI",
     "dcg_me_gecco": "DCG-MAP-Elites GECCO",
@@ -59,6 +64,9 @@ ALGO_DICT = {
     "me_es": "MAP-Elites-ES",
     "mcpg_me": "MCPG-ME",
     "memes": "MEMES",
+    "mcpg_me_no_normalizer": "MCPG-ME no normalizer",
+    "mcpg_me_no_baseline": "MCPG-ME no baseline",
+    "mcpg_me_no_ppo_loss": "MCPG-ME no PPO loss",
 }
 
 XLABEL = "Time (s)"
@@ -188,12 +196,71 @@ if __name__ == "__main__":
     # Create the DataFrame
     results_dir = Path("data_time_efficiency/output/")
     #print(results_dir)
-    EPISODE_LENGTH = 1000
+    EPISODE_LENGTH = 250
     df = get_df(results_dir, EPISODE_LENGTH)
 
     # Filter
     df = df[df["algo"].isin(ALGO_LIST)]
-    df = df[df["num_evaluations"] <= 1_000_000]
+    df = df[df["num_evaluations"] <= 1_001_400]
+    
+    
+    # Get the median time for each (env, algo)
+
+# Using .apply() to customize the index selection per group
+#    idx = df.groupby(["env", "algo", "run"]).apply(
+#    lambda x: 60 if x['algo'].iloc[0] == 'memes' else min(x['iteration'].idxmax(), x.index.min() + 1999, x.index.max())
+#)
+    idx = df.groupby(["env", "algo", "run"])["iteration"].idxmax()
+    df_last_iteration = df.loc[idx]
+    time_median = df_last_iteration.groupby(["env", "algo"])["time"].median()
+    df_last_iteration = df_last_iteration.join(time_median, on=["env", "algo"], rsuffix="_median")
+    
+    # Get the difference between the time and the median for each run
+    df_last_iteration["time_diff"] = df_last_iteration["time"] - df_last_iteration["time_median"]
+    
+    # Get the most representative run for each (env, algo)
+    idx = df_last_iteration.groupby(['env', 'algo'])['time_diff'].idxmin()
+    runs = df_last_iteration.loc[idx][["env", "algo", "run"]]
+    
+    '''
+    import os
+    import shutil
+
+    # Define the root directory for plotting
+    root_dir = './for_plotting_time'
+
+    # Ensure the root directory exists
+    if not os.path.exists(root_dir):
+        os.makedirs(root_dir)
+
+    # Iterate through each row in the runs DataFrame
+    for index, row in runs.iterrows():
+        # Construct the path for the environment directory
+        env_dir = os.path.join(root_dir, row['env'])
+        if not os.path.exists(env_dir):
+            os.makedirs(env_dir)
+
+        # Construct the path for the algorithm directory within the environment directory
+        algo_dir = os.path.join(env_dir, row['algo'])
+        if not os.path.exists(algo_dir):
+            os.makedirs(algo_dir)
+
+        # Construct the path for the run directory within the algorithm directory
+        run_dir = os.path.join(algo_dir, f"run_{row['run']}")
+        if not os.path.exists(run_dir):
+            os.makedirs(run_dir)
+
+    # Optional: Move or copy files to the run directory
+    # You can use shutil.copy(src_file, run_dir) or shutil.move(src_file, run_dir)
+    # depending on whether you want to copy or move files
+    '''
+
+    merged_df = pd.merge(runs, df, on=['env', 'algo', 'run'], how='inner')
+
+    
+    # Select every kth element
+    #k = 500  # Adjust this value to your needs
+    #df = df.iloc[::k, :]
 
     # Plot
-    plot(df)
+    plot(merged_df)

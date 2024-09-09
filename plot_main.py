@@ -9,6 +9,9 @@ import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.ticker import ScalarFormatter, PercentFormatter
 import seaborn as sns
+import matplotlib.patches as mpatches
+import matplotlib.lines as mlines
+
 
 from utils import get_df
 
@@ -50,13 +53,16 @@ BATCH_LIST = [
 
 ALGO_LIST = [
     "mcpg_me",
-    "dcg_me",
+    "mcpg_me_no_normalizer",
+    "mcpg_me_no_baseline",
+    "mcpg_me_no_ppo_loss",
+    #"dcg_me",
     #"dcg_me_gecco",
-    "pga_me",
+    #"pga_me",
     #"qd_pg",
     #"me_es",
-    "memes",
-    "me",
+    #"memes",
+    #"me",
 ]
 ALGO_DICT = {
     "dcg_me": "DCG-MAP-Elites-AI",
@@ -67,6 +73,9 @@ ALGO_DICT = {
     "me_es": "MAP-Elites-ES",
     "mcpg_me": "MCPG-ME",
     "memes": "MEMES",
+    "mcpg_me_no_normalizer": "Ablation 1",
+    "mcpg_me_no_baseline": "Ablation 2",
+    "mcpg_me_no_ppo_loss": "Ablation 3",
 }
 
 XLABEL = "Evaluations"
@@ -90,6 +99,7 @@ def plot(df):
     fig, axes = plt.subplots(nrows=3, ncols=len(ENV_LIST), sharex=True, squeeze=False, figsize=(25, 10))
 
     # Create formatter
+    #x_ticks = np.arange(0, 1_000_001, 500_000)
     formatter = ScalarFormatter(useMathText=True)
     formatter.set_scientific(True)
     formatter.set_powerlimits((0, 0))
@@ -102,6 +112,7 @@ def plot(df):
 
         # Set the x label and formatter for the column
         axes[2, col].set_xlabel(XLABEL)
+        #axes[2, col].set_xticks(x_ticks)
         axes[2, col].xaxis.set_major_formatter(formatter)
 
         # Get df for the current env
@@ -176,14 +187,20 @@ def plot(df):
         customize_axis(axes[2, col])
 
     # Legend
-    fig.legend(ax.get_lines(), [ALGO_DICT[algo] for algo in ALGO_LIST], loc="lower center", bbox_to_anchor=(0.5, -0.03), ncols=len(ALGO_LIST), frameon=False)
-
+    #fig.legend(ax.get_lines(), [ALGO_DICT[algo] for algo in ALGO_LIST], loc="lower center", bbox_to_anchor=(0.5, -0.03), ncols=len(ALGO_LIST), frameon=False)
+    colors = sns.color_palette(n_colors=len(ALGO_LIST))  # Get a color palette with 3 distinct colors
+    #patches = [mpatches.Patch(color=colors[i], label=ALGO_DICT[algo]) for i, algo in enumerate(ALGO_LIST)]
+    #fig.legend(ax_.get_lines(), [ALGO_DICT[algo] for algo in ALGO_LIST], loc="lower center", bbox_to_anchor=(0.5, -0.03), ncols=len(ALGO_LIST), frameon=False)
+    #fig.legend(handles=patches, loc='lower center', bbox_to_anchor=(0.5, -0.07), ncols=len(ALGO_LIST), frameon=False)
+    patches = [mlines.Line2D([], [], color=colors[i], label=ALGO_DICT[algo], linewidth=2.2, linestyle='-') for i, algo in enumerate(ALGO_LIST)]
+    fig.legend(handles=patches, loc='lower center', bbox_to_anchor=(0.5, -0.03), ncols=len(ALGO_LIST), frameon=False)
     # Aesthetic
     fig.align_ylabels(axes)
     fig.tight_layout()
 
     # Save plot
-    fig.savefig("data_time_efficiency/output/plot_main.pdf", bbox_inches="tight")
+    fig.savefig("ablation/output/plot_main.pdf", bbox_inches="tight")
+    #fig.savefig("ablation/output/plot_main.pdf", bbox_inches="tight")
     plt.close()
 
 
@@ -194,7 +211,8 @@ if __name__ == "__main__":
     plt.rc("font", size=16)
 
     # Create the DataFrame
-    results_dir = Path("data_time_efficiency/output/")
+    results_dir = Path("ablation/output/")
+    #results_dir = Path("ablation/output/")
     #print(results_dir)
     
     EPISODE_LENGTH = 1000
@@ -207,3 +225,6 @@ if __name__ == "__main__":
 
     # Plot
     plot(df)
+    
+    
+    

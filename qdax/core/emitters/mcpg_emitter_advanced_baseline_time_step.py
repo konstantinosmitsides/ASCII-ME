@@ -216,7 +216,7 @@ class MCPGEmitter(Emitter):
         batch = self._buffer.sample(emitter_state.buffer_state, random_key)
         trans = batch.experience
 
-        
+        #mask = self.compute_mask(trans.dones)
         standardized_returns = (trans.rewards - returns) 
 
         
@@ -235,7 +235,7 @@ class MCPGEmitter(Emitter):
                 trans.actions,
                 standardized_returns,
                 trans.logp,
-                #mask
+                trans.dones
             )
             return (new_policy_params, new_policy_opt_state), None
             
@@ -259,12 +259,12 @@ class MCPGEmitter(Emitter):
         actions,
         standardized_returns,
         logps,
-        #mask
+        mask
     ) -> Tuple[MCPGEmitterState, Genotype, optax.OptState]:
         """Train the policy.
         """
         
-        grads = jax.grad(self.loss_ppo)(policy_params, obs, actions, logps, standardized_returns)
+        grads = jax.grad(self.loss_ppo)(policy_params, obs, actions, logps, standardized_returns, mask)
         updates, new_policy_opt_state = self._policy_opt.update(grads, policy_opt_state)
         new_policy_params = optax.apply_updates(policy_params, updates)
 
@@ -278,8 +278,8 @@ class MCPGEmitter(Emitter):
         obs,
         actions,
         logps,
-        #mask,
         standardized_returns,
+        mask
     ):
 
         pi, _ = self._policy.apply(params, obs)
@@ -287,10 +287,10 @@ class MCPGEmitter(Emitter):
         
         ratio = jnp.exp(logps_ - jax.lax.stop_gradient(logps))
         
-        pg_loss_1 = jnp.multiply(ratio, jax.lax.stop_gradient(standardized_returns))
-        pg_loss_2 = jax.lax.stop_gradient(standardized_returns) * jax.lax.clamp(1. - self._config.clip_param, ratio, 1. + self._config.clip_param) 
+        pg_loss_1 = jnp.multiply(ratio, jax.lax.stop_gradient(standardized_returns * (1.0 - mask)))
+        pg_loss_2 = jax.lax.stop_gradient(standardized_returns * (1.0 - mask)) * jax.lax.clamp(1. - self._config.clip_param, ratio, 1. + self._config.clip_param) 
         
-        return (-jnp.sum(jnp.minimum(pg_loss_1, pg_loss_2))) / jnp.sum(ratio)
+        return (-jnp.sum(jnp.minimum(pg_loss_1, pg_loss_2))) / jnp.sum(ratio * (1.0 - mask)) 
         
     
         

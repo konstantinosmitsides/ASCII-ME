@@ -15,7 +15,7 @@ from utils import get_config, get_env, get_repertoire, get_df
 
 
 # Define env and algo names
-ENV = "walker2d_uni_1000"
+ENV = "anttrap_omni_250"
 
 ENV_LIST = [
     "ant_omni_250",
@@ -188,7 +188,7 @@ if __name__ == "__main__":
 
     # Create the DataFrame
     results_dir = Path("data_time_efficiency/output/")
-    EPISODE_LENGTH = 1000
+    EPISODE_LENGTH = 250
     df = get_df(results_dir, EPISODE_LENGTH)
 
     # Filter
@@ -196,6 +196,9 @@ if __name__ == "__main__":
     df = df[df["num_evaluations"] <= 1_001_400]
 
     # Get the median QD score for each (env, algo)
+    #idx = df.groupby(["env", "algo", "run"]).apply(
+    #lambda x: min(x['iteration'].idxmax(), x.index.min() + 1999, x.index.max())
+#)
     idx = df.groupby(["env", "algo", "run"])["iteration"].idxmax()
     df_last_iteration = df.loc[idx]
     qd_score_median = df_last_iteration.groupby(["env", "algo"])["qd_score"].median()

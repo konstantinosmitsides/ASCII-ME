@@ -9,6 +9,8 @@ import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.ticker import ScalarFormatter, PercentFormatter
 import seaborn as sns
+import matplotlib.lines as mlines
+
 
 from utils import get_df
 
@@ -51,11 +53,11 @@ BATCH_LIST = [
 ALGO_LIST = [
     #"dcg_me",
     #"dcg_me_gecco",
-    #"pga_me",
+    "pga_me",
     #"qd_pg",
     #"me",
     #"me_es",
-    "mcpg_me",
+    #"mcpg_me",
     #"memes",
 ]
 ALGO_DICT = {
@@ -85,64 +87,136 @@ def customize_axis(ax):
     return ax
 
 def plot__(df):
-    # Create subplots
-    fig, axes = plt.subplots(nrows=len(ENV_LIST), ncols=3, sharex='col', figsize=(25, 15))  # Adjusted subplot dimensions
+    fig, axes = plt.subplots(nrows=len(ENV_LIST), ncols=3, sharex='col', figsize=(25, 15))
 
-    # Metrics to plot, adjust according to your data
-    metrics = ['qd_score', 'qd_score', 'qd_score']
-    x_axes = ['num_evaluations', 'time', 'iteration']
-    y_labels = ['QD Score', 'QD Score', 'QD Score']
+    # Metrics and axes labels
+    x_metrics = ['num_evaluations', 'iteration']#, 'time']
+    y_metrics = ['qd_score', 'qd_score']#, 'qd_score']
+    x_labels = ['Evaluations', 'Iterations']#, 'Runtime (s)']
+    y_labels = ['QD score', 'QD score']#, 'QD score']
 
     # Define a suitable color palette
-    color_palette = sns.color_palette("Set2", len(BATCH_LIST))  # Change the palette if needed
+    color_palette = sns.color_palette("Set2", len(BATCH_LIST))
 
-    # Loop over each metric
-    for col, (metric, x_axis, y_label) in enumerate(zip(metrics, x_axes, y_labels)):
-        # Create formatter
-        formatter = ScalarFormatter(useMathText=True)
-        formatter.set_scientific(True)
-        formatter.set_powerlimits((0, 0))
-
+    for col, (x_metric, y_metric, x_label, y_label) in enumerate(zip(x_metrics, y_metrics, x_labels, y_labels)):
         for row, env in enumerate(ENV_LIST):
-            # Set title for each column in the first row
-            if row == 0:
-                axes[row, col].set_title(f"{y_label} vs. {x_axis}")
+            ax = axes[row, col]
 
-            # Get df for the current environment
-            df_plot = df[df["env"] == env]
+            # Set titles and labels
+            if row == 0:
+                ax.set_title(f"{y_label} vs. {x_label}")
+            if col == 0:
+                ax.set_ylabel(ENV_DICT[env])
+            if row == len(ENV_LIST) - 1:
+                ax.set_xlabel(x_label)
+
+            # Apply formatter
+            ax.xaxis.set_major_formatter(ScalarFormatter(useMathText=True))
+            ax.xaxis.get_major_formatter().set_scientific(True)
+            ax.xaxis.get_major_formatter().set_powerlimits((0, 0))
+
+            ax.yaxis.set_major_formatter(ScalarFormatter(useMathText=True))
+            ax.yaxis.get_major_formatter().set_scientific(True)
+            ax.yaxis.get_major_formatter().set_powerlimits((0, 0))
+            
 
             # Plotting
-            ax = sns.lineplot(
-                data=df_plot,
-                x=x_axis,
-                y=metric,
+            sns.lineplot(
+                data=df[df["env"] == env],
+                x=x_metric,
+                y=y_metric,
                 hue="batch_size",
                 hue_order=BATCH_LIST,
-                palette=color_palette,  # Use the defined color palette
+                palette=color_palette,
                 estimator=np.median,
                 errorbar=lambda x: (np.quantile(x, 0.25), np.quantile(x, 0.75)),
                 legend=False,
-                ax=axes[row, col],
+                ax=ax
             )
+            
+            ax.set_xlabel(None)
+            if col != 0:
+                ax.set_ylabel(None)
+            customize_axis(ax)
+            
+    formatter = ScalarFormatter(useMathText=True)
+    formatter.set_scientific(True)
+    formatter.set_powerlimits((0, 0))
+    
+    
+    idx = df.groupby(["env", "algo", "batch_size", "run"])["iteration"].idxmax()
+    df_last_iteration = df.loc[idx]
 
-            # Set the y-axis label for the first column
-            if col == 0:
-                axes[row, col].set_ylabel(ENV_DICT[env])
+    # Extract only the relevant columns for easier readability
+    summary_df = df_last_iteration[['env', 'algo', "batch_size", 'time']]
+    
+    
+    col = 2
+    y_label = "Runtime (s)"
+    x_label = "Batch size"
+    for row, env in enumerate(ENV_LIST):
+        ax = axes[row, col]
+        
+        # Set title for each subplot
+        #ax.set_title(ENV_DICT[env])
+        if row == 0:
+            ax.set_title(f"{y_label} vs. {x_label}")
+        ax.xaxis.set_major_formatter(formatter)
 
-            # Customize axis formatting
-            axes[row, col].yaxis.set_major_formatter(formatter if metric != 'coverage' else PercentFormatter(1))
-            customize_axis(axes[row, col])
+        
+        # Get df for the current env
+        df_plot = summary_df[summary_df["env"] == env]
+        ax.yaxis.set_major_formatter(formatter)
+        
+        # Create boxplot for 'time' of each algorithm
+        #sns.boxplot(
+        #    data=df_plot,
+        #    x="batch_size",
+        #    y="time",
+        #    hue="batch_size",
+        #    hue_order=BATCH_LIST,
+        #    order=BATCH_LIST,
+        #    palette=color_palette,
+        #    legend=False,
+        #    ax=ax,
+        #)
+        sns.barplot(
+            data=df_plot,
+            x="batch_size",
+            y="time",
+            estimator=np.median,  
+            errorbar=None,
+            ax=ax,
+            hue="batch_size",
+            hue_order=BATCH_LIST,  
+            order=BATCH_LIST,  
+            palette=color_palette,
+            legend=False,  
+        )
+        
+        
+        # Set the x-axis labels (Algorithm names) with rotation for better visibility
+        ax.set_xticklabels([str(batch_size) for batch_size in BATCH_LIST], rotation=45, ha="right")
+        
+        # Label the y-axis with 'Time (s)' for the first subplot only
+        ax.set_ylim(0.0)
+        ax.set_xlabel(None)
+        ax.set_ylabel(None)
 
-    # Legend handling for the whole figure
-    fig.legend(ax.get_lines(), [str(batch_size) for batch_size in BATCH_LIST], loc="lower center", bbox_to_anchor=(0.5, -0.03), ncols=len(BATCH_LIST), frameon=False)
-    # Aesthetic and layout adjustments
-    fig.align_ylabels(axes[:, 0])  # align y labels in the first column
-    fig.tight_layout(rect=[0, 0.03, 1, 1])  # Adjust the rectangle in tight_layout
+        # Customize the axis aesthetics
+        customize_axis(ax)
+    
 
-    # Save plot
+    # Legend and final adjustments
+    colors = sns.color_palette(palette=color_palette, n_colors=len(BATCH_LIST))  # Get a color palette with 3 distinct colors
+    patches = [mlines.Line2D([], [], color=colors[i], label=str(batch_size), linewidth=2.2, linestyle='-') for i, batch_size in enumerate(BATCH_LIST)]
+    fig.legend(handles=patches, loc='lower center', bbox_to_anchor=(0.5, -0.03), ncols=len(BATCH_LIST), frameon=False)    
+ 
+    #fig.legend(ax_.get_lines(), [str(batch_size) for batch_size in BATCH_LIST], loc="lower center", bbox_to_anchor=(0.5, -0.03), ncols=len(BATCH_LIST), frameon=False)
+    fig.align_ylabels(axes[:, 0])
+    fig.tight_layout()
     fig.savefig("scalability/output/plot_main.pdf", bbox_inches="tight")
     plt.close()
-
 
 def plot_(df):
     # Create subplots
@@ -163,7 +237,7 @@ def plot_(df):
         for row, env in enumerate(ENV_LIST):
             # Set title for each column in the first row
             if row == 0:
-                axes[row, col].set_title(f"{y_label} vs. {x_axis}")
+                axes[row, col].set_title(f"{y_label} vs {x_axis}")
 
             # Get df for the current environment
             df_plot = df[df["env"] == env]
