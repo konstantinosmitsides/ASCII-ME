@@ -13,6 +13,7 @@ from qdax.core.containers.mapelites_repertoire import MapElitesRepertoire
 from functools import partial
 
 from omegaconf import OmegaConf
+from functools import partial
 
 
 @dataclass
@@ -78,7 +79,8 @@ def get_env(config: Config):
                 config.env.name,
                 episode_length=config.env.episode_length,
                 exclude_current_positions_from_observation=config.env.exclude_current_positions_from_observation,
-                backend=config.env.backend)
+                #backend=config.env.backend
+            )
         else:
             raise ValueError("Invalid environment name.")
     elif config.env.version == "v2":
