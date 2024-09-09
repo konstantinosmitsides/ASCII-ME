@@ -1,3 +1,9 @@
+import os
+
+# Set environment variables to redirect cache directories
+os.environ['MPLCONFIGDIR'] = '/tmp/matplotlib'
+os.environ['WANDB_CACHE_DIR'] = '/tmp/wandb_cache'
+
 from typing import Any, Dict, Tuple, List, Callable
 from dataclasses import dataclass
 import functools
@@ -36,11 +42,12 @@ from qdax.utils.sampling import sampling
 
 @hydra.main(version_base="1.2", config_path="configs/", config_name="dcg_me")
 def main(config: Config) -> None:
-    wandb.init(
-        project="me-mcpg",
-        name=config.algo.name,
-        config=OmegaConf.to_container(config, resolve=True),
-    )
+    #wandb.login(key="ab476069b53a15ad74ff1845e8dee5091d241297")
+    #wandb.init(
+    #    project="me-mcpg",
+    #    name=config.algo.name,
+    #    config=OmegaConf.to_container(config, resolve=True),
+    #)
 
     assert config.batch_size == config.algo.ga_batch_size + config.algo.qpg_batch_size + config.algo.ai_batch_size
 
@@ -110,7 +117,7 @@ def main(config: Config) -> None:
             desc_prime=jnp.zeros(env.behavior_descriptor_length,) * jnp.nan,
         )
 
-        return next_state, policy_params, random_key, transition
+        return (next_state, policy_params, random_key), transition
 
     # Prepare the scoring function
     bd_extraction_fn = behavior_descriptor_extractor[config.env.name]
@@ -323,7 +330,25 @@ def main(config: Config) -> None:
     log_period = 10
     num_loops = int(config.num_iterations / log_period)
 
-    metrics = dict.fromkeys(["iteration", "qd_score", "coverage", "max_fitness", "qd_score_repertoire", "dem_repertoire", "qd_score_actor", "dem_actor", "time", "evaluation"], jnp.array([]))
+    metrics = dict.fromkeys(
+        ["iteration", 
+         "qd_score", 
+         "coverage", 
+         "max_fitness", 
+         #"qd_score_repertoire", 
+         #"dem_repertoire", 
+         #"qd_score_actor", 
+         #"dem_actor", 
+         "time", 
+         "evaluation", 
+         "ga_offspring_added", 
+         "qpg_offspring_added", 
+         "ai_offspring_added"
+         ], 
+        jnp.array([])
+        )
+    
+    
     csv_logger = CSVLogger(
         "./log.csv",
         header=list(metrics.keys())
@@ -348,6 +373,8 @@ def main(config: Config) -> None:
     # Main loop
     map_elites_scan_update = map_elites.scan_update
     eval_num = config.batch_size
+    
+    cumulative_time = 0
     for i in range(num_loops):
         start_time = time.time()
         (repertoire, emitter_state, random_key,), current_metrics = jax.lax.scan(
@@ -357,29 +384,30 @@ def main(config: Config) -> None:
             length=log_period,
         )
         timelapse = time.time() - start_time
+        cumulative_time += timelapse
 
         # Metrics
-        random_key, qd_score_repertoire, dem_repertoire = evaluate_repertoire(random_key, repertoire)
-        random_key, qd_score_actor, dem_actor = evaluate_actor(random_key, repertoire, emitter_state.emitter_states[0].actor_params)
+        #random_key, qd_score_repertoire, dem_repertoire = evaluate_repertoire(random_key, repertoire)
+        #random_key, qd_score_actor, dem_actor = evaluate_actor(random_key, repertoire, emitter_state.emitter_states[0].actor_params)
 
         current_metrics["iteration"] = jnp.arange(1+log_period*i, 1+log_period*(i+1), dtype=jnp.int32)
         current_metrics["evaluation"] = jnp.arange(1+log_period*eval_num*i, 1+log_period*eval_num*(i+1), dtype=jnp.int32)
-        current_metrics["time"] = jnp.repeat(timelapse, log_period)
-        current_metrics["qd_score_repertoire"] = jnp.repeat(qd_score_repertoire, log_period)
-        current_metrics["dem_repertoire"] = jnp.repeat(dem_repertoire, log_period)
-        current_metrics["qd_score_actor"] = jnp.repeat(qd_score_actor, log_period)
-        current_metrics["dem_actor"] = jnp.repeat(dem_actor, log_period)
-        #current_metrics["ga_offspring_added"], current_metrics["qpg_offspring_added"], current_metrics["ai_offspring_added"] = get_n_offspring_added(current_metrics)
-        #del current_metrics["is_offspring_added"]
+        current_metrics["time"] = jnp.repeat(cumulative_time, log_period)
+        #current_metrics["qd_score_repertoire"] = jnp.repeat(qd_score_repertoire, log_period)
+        #current_metrics["dem_repertoire"] = jnp.repeat(dem_repertoire, log_period)
+        #current_metrics["qd_score_actor"] = jnp.repeat(qd_score_actor, log_period)
+        #current_metrics["dem_actor"] = jnp.repeat(dem_actor, log_period)
+        current_metrics["ga_offspring_added"], current_metrics["qpg_offspring_added"], current_metrics["ai_offspring_added"] = get_n_offspring_added(current_metrics)
+        del current_metrics["is_offspring_added"]
         metrics = jax.tree_util.tree_map(lambda metric, current_metric: jnp.concatenate([metric, current_metric], axis=0), metrics, current_metrics)
 
         # Log
         log_metrics = jax.tree_util.tree_map(lambda metric: metric[-1], metrics)
-        #log_metrics["ga_offspring_added"] = jnp.sum(current_metrics["ga_offspring_added"])
-        #log_metrics["qpg_offspring_added"] = jnp.sum(current_metrics["qpg_offspring_added"])
-        #log_metrics["ai_offspring_added"] = jnp.sum(current_metrics["ai_offspring_added"])
+        log_metrics["ga_offspring_added"] = jnp.sum(current_metrics["ga_offspring_added"])
+        log_metrics["qpg_offspring_added"] = jnp.sum(current_metrics["qpg_offspring_added"])
+        log_metrics["ai_offspring_added"] = jnp.sum(current_metrics["ai_offspring_added"])
         csv_logger.log(log_metrics)
-        wandb.log(log_metrics)
+        #wandb.log(log_metrics)
 
     # Metrics
     with open("./metrics.pickle", "wb") as metrics_file:
@@ -388,10 +416,10 @@ def main(config: Config) -> None:
     # Repertoire
     os.mkdir("./repertoire/")
     repertoire.save(path="./repertoire/")
-    os.mkdir("./Plots/")
-    repertoire.save(path="./repertoire/")
+    #os.mkdir("./Plots/")
+    #repertoire.save(path="./repertoire/")
     
-    plot_metrics_vs_iterations(metrics, log_period)
+    #plot_metrics_vs_iterations(metrics, log_period)
 
     # Actor
     state_dict = serialization.to_state_dict(emitter_state.emitter_states[0].actor_params)
@@ -399,12 +427,12 @@ def main(config: Config) -> None:
         pickle.dump(state_dict, params_file)
 
     # Plot
-    if env.behavior_descriptor_length == 2:
-        env_steps = jnp.arange(config.num_iterations) * config.env.episode_length * config.batch_size
-        fig, _ = plot_map_elites_results(env_steps=env_steps, metrics=metrics, repertoire=repertoire, min_bd=config.env.min_bd, max_bd=config.env.max_bd)
-        fig.savefig("./plot.png")
+    #if env.behavior_descriptor_length == 2:
+        #env_steps = jnp.arange(config.num_iterations) * config.env.episode_length * config.batch_size
+        #fig, _ = plot_map_elites_results(env_steps=env_steps, metrics=metrics, repertoire=repertoire, min_bd=config.env.min_bd, max_bd=config.env.max_bd)
+        #fig.savefig("./plot.png")
 
-    recreate_repertoire(repertoire, centroids, metrics_function, random_key)
+    #recreate_repertoire(repertoire, centroids, metrics_function, random_key)
 
 if __name__ == "__main__":
     cs = ConfigStore.instance()

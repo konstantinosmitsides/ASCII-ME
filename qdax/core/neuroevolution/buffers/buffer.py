@@ -278,6 +278,8 @@ class QDMCTransition(QDTransition):
     
     logp: jnp.ndarray
     
+    
+    '''
     @property
     def logp_dim(self) -> int:
         """
@@ -285,6 +287,8 @@ class QDMCTransition(QDTransition):
             the dimension of the logp.
         """
         return self.logp.shape[-1]
+        
+    '''
     
     @property
     def flatten_dim(self) -> int:
@@ -297,7 +301,7 @@ class QDMCTransition(QDTransition):
             + self.action_dim
             + 3
             + 2 * self.state_descriptor_dim
-            + self.logp_dim
+            + 1
         )
         return flatten_dim
     
@@ -316,7 +320,7 @@ class QDMCTransition(QDTransition):
                 self.actions,
                 self.state_desc,
                 self.next_state_desc,
-                self.logp,
+                jnp.expand_dims(self.logp, axis=-1),
             ],
             axis=-1,
         )
@@ -341,7 +345,7 @@ class QDMCTransition(QDTransition):
         obs_dim = transition.observation_dim
         action_dim = transition.action_dim
         desc_dim = transition.state_descriptor_dim
-        logp_dim = transition.logp_dim
+        #logp_dim = transition.logp_dim
 
         obs = flattened_transition[:, :obs_dim]
         next_obs = flattened_transition[:, obs_dim : (2 * obs_dim)]
@@ -365,12 +369,18 @@ class QDMCTransition(QDTransition):
                 2 * obs_dim + 3 + action_dim + 2 * desc_dim
             ),
         ]
+        
+        logp = jnp.ravel(flattened_transition[:, (2 * obs_dim + 3 + action_dim + 2 * desc_dim) : (2 * obs_dim + 3 + action_dim + 2 * desc_dim + 1)])
+        
+        '''
         logp = flattened_transition[
             :,
             (2 * obs_dim + 3 + action_dim + 2 * desc_dim) : (
                 2 * obs_dim + 3 + action_dim + 2 * desc_dim + logp_dim
             ),
         ]
+        '''
+        
         return cls(
             obs=obs,
             next_obs=next_obs,

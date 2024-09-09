@@ -163,7 +163,7 @@ class MAPElites:
         #jax.debug.print("dones : {}", extra_scores['transitions'].dones)
 
         # add genotypes in the repertoire
-        repertoire = repertoire.add(genotypes, descriptors, fitnesses, extra_scores)
+        repertoire, is_offspring_added = repertoire.add(genotypes, descriptors, fitnesses, extra_scores)
 
         # update emitter state after scoring is made
         emitter_state = self._emitter.state_update(
@@ -177,6 +177,7 @@ class MAPElites:
 
         # update the metrics
         metrics = self._metrics_function(repertoire)
+        metrics["is_offspring_added"] = is_offspring_added
 
         return repertoire, emitter_state, metrics, random_key
 

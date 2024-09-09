@@ -35,12 +35,12 @@ from typing import Any, Dict, Tuple, List, Callable
 
 @hydra.main(version_base="1.2", config_path="configs/", config_name="me")
 def main(config: Config) -> None:
-    wandb.login(key="ab476069b53a15ad74ff1845e8dee5091d241297")
-    wandb.init(
-        project="me-mcpg",
-        name=config.algo.name,
-        config=OmegaConf.to_container(config, resolve=True),
-    )
+    #wandb.login(key="ab476069b53a15ad74ff1845e8dee5091d241297")
+    #wandb.init(
+    #    project="me-mcpg",
+    #    name=config.algo.name,
+    #    config=OmegaConf.to_container(config, resolve=True),
+    #)
 
     # Init a random key
     random_key = jax.random.PRNGKey(config.seed)
@@ -87,6 +87,7 @@ def main(config: Config) -> None:
     print("Number of parameters in policy_network: ", param_count)
 
     # Define the fonction to play a step with the policy in the environment
+    @jax.jit
     def play_step_fn(env_state, policy_params, random_key):
         actions = policy_network.apply(policy_params, env_state.obs)
         state_desc = env_state.info["state_descriptor"]
@@ -101,8 +102,6 @@ def main(config: Config) -> None:
             actions=actions,
             state_desc=state_desc,
             next_state_desc=next_state.info["state_descriptor"],
-            #desc=jnp.zeros(env.behavior_descriptor_length,) * jnp.nan,
-            #desc_prime=jnp.zeros(env.behavior_descriptor_length,) * jnp.nan,
         )
 
         return (next_state, policy_params, random_key), transition
@@ -238,13 +237,26 @@ def main(config: Config) -> None:
     )
 
     # Compute initial repertoire and emitter state
-    repertoire, emitter_state, random_key, obs_normalizer, reward_normalizer = map_elites.init(init_params, centroids, random_key)
+    repertoire, emitter_state, random_key = map_elites.init(init_params, centroids, random_key)
 
     log_period = 10
     num_loops = int(config.num_iterations / log_period)
 
-    #metrics = dict.fromkeys(["iteration", "qd_score", "coverage", "max_fitness", "qd_score_repertoire", "dem_repertoire", "time", "evaluation"], jnp.array([]))
-    metrics = dict.fromkeys(["iteration", "qd_score", "coverage", "max_fitness", "time", "evaluation"], jnp.array([]))
+    metrics = dict.fromkeys(
+        [
+            "iteration", 
+            "qd_score", 
+            "coverage", 
+            "max_fitness", 
+            #"qd_score_repertoire", 
+            #"dem_repertoire", 
+            "time", 
+            "evaluation", 
+            "ga_offspring_added"
+            ], 
+        jnp.array([])
+        )
+    #metrics = dict.fromkeys(["iteration", "qd_score", "coverage", "max_fitness", "time", "evaluation"], jnp.array([]))
     csv_logger = CSVLogger(
         "./log.csv",
         header=list(metrics.keys())
@@ -268,34 +280,36 @@ def main(config: Config) -> None:
     # Main loop
     map_elites_scan_update = map_elites.scan_update
     eval_num = config.batch_size
-    print(f"Number of evaluations per iteration: {eval_num}")
+    #print(f"Number of evaluations per iteration: {eval_num}")
+    cumulative_time = 0
     for i in range(num_loops):
         start_time = time.time()
-        (repertoire, emitter_state, random_key, obs_normalizer, reward_normalizer), current_metrics = jax.lax.scan(
+        (repertoire, emitter_state, random_key), current_metrics = jax.lax.scan(
             map_elites_scan_update,
-            (repertoire, emitter_state, random_key, obs_normalizer, reward_normalizer),
+            (repertoire, emitter_state, random_key),
             (),
             length=log_period,
         )
         timelapse = time.time() - start_time
+        cumulative_time += timelapse
 
         # Metrics
         #random_key, qd_score_repertoire, dem_repertoire = evaluate_repertoire(random_key, repertoire)
 
         current_metrics["iteration"] = jnp.arange(1+log_period*i, 1+log_period*(i+1), dtype=jnp.int32)
         current_metrics["evaluation"] = jnp.arange(1+log_period*eval_num*i, 1+log_period*eval_num*(i+1), dtype=jnp.int32)
-        current_metrics["time"] = jnp.repeat(timelapse, log_period)
+        current_metrics["time"] = jnp.repeat(cumulative_time, log_period)
         #current_metrics["qd_score_repertoire"] = jnp.repeat(qd_score_repertoire, log_period)
         #current_metrics["dem_repertoire"] = jnp.repeat(dem_repertoire, log_period)
-        #current_metrics["ga_offspring_added"] = get_n_offspring_added(current_metrics)
-        #del current_metrics["is_offspring_added"]
+        current_metrics["ga_offspring_added"] = get_n_offspring_added(current_metrics)
+        del current_metrics["is_offspring_added"]
         metrics = jax.tree_util.tree_map(lambda metric, current_metric: jnp.concatenate([metric, current_metric], axis=0), metrics, current_metrics)
 
         # Log
         log_metrics = jax.tree_util.tree_map(lambda metric: metric[-1], metrics)
-        #log_metrics["ga_offspring_added"] = jnp.sum(current_metrics["ga_offspring_added"])
+        log_metrics["ga_offspring_added"] = jnp.sum(current_metrics["ga_offspring_added"])
         csv_logger.log(log_metrics)
-        wandb.log(log_metrics)
+        #wandb.log(log_metrics)
 
     # Metrics
     with open("./metrics.pickle", "wb") as metrics_file:
@@ -303,18 +317,18 @@ def main(config: Config) -> None:
 
     # Repertoire
     os.mkdir("./repertoire/")
-    os.mkdir("./Plots/")
+    #os.mkdir("./Plots/")
     repertoire.save(path="./repertoire/")
     
-    plot_metrics_vs_iterations(metrics, log_period)
+    #plot_metrics_vs_iterations(metrics, log_period)
     
     
 
     # Plot
-    if env.behavior_descriptor_length == 2:
-        env_steps = jnp.arange(config.num_iterations) * config.env.episode_length * config.batch_size
-        fig, _ = plot_map_elites_results(env_steps=env_steps, metrics=metrics, repertoire=repertoire, min_bd=config.env.min_bd, max_bd=config.env.max_bd)
-        fig.savefig("./Plots/repertoire_plot.png")
+    #if env.behavior_descriptor_length == 2:
+    #    env_steps = jnp.arange(config.num_iterations) * config.env.episode_length * config.batch_size
+    #    fig, _ = plot_map_elites_results(env_steps=env_steps, metrics=metrics, repertoire=repertoire, min_bd=config.env.min_bd, max_bd=config.env.max_bd)
+    #    fig.savefig("./Plots/repertoire_plot.png")
 
     #recreate_repertoire(repertoire, centroids, metrics_function, random_key)
 

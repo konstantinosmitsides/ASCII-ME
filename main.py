@@ -20,13 +20,16 @@ def main(config: Config) -> None:
     elif config.algo.name == "dcg_me":
         import main_dcg_me as main
     elif config.algo.name == "mcpg_me":
-        import main_me_mcpg as main
+        import main_mcpg_me as main
+    elif config.algo.name == "memes":
+        import main_memes as main
+    elif config.algo.name == "mcpg_me_no_normalizer":
+        import main_mcpg_me_no_normalizer as main
+    elif config.algo.name == "mcpg_me_no_baseline":
+        import main_mcpg_me_no_baseline as main
+    elif config.algo.name == "mcpg_me_no_ppo_loss":
+        import main_mcpg_me_no_ppo_loss as main
     
-    elif config.algo.name == "ppoish_me":
-        if config.algo.NORMALIZE_ENV:
-            import main_ppoish_me_obs_norm as main
-        else:
-            import main_ppoish_me as main
             
     else:
         raise NotImplementedError

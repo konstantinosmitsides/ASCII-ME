@@ -185,5 +185,8 @@ grad_steps_experiments_stage_2/
 grad_steps_experiments.ipynb
 time_execution_mcpg.ipynb
 prev_output/
+hpc.sh
 2024-08-19_141121_177022/
+test_folder/
+not_needed_now/
 extra_results/

@@ -8,8 +8,9 @@ import jax
 import jax.numpy as jnp
 from jax.flatten_util import ravel_pytree
 from qdax import environments_v1, environments
-from qdax.core.neuroevolution.networks.networks import MLP
+from qdax.core.neuroevolution.networks.networks import MLP, MLPMCPG
 from qdax.core.containers.mapelites_repertoire import MapElitesRepertoire
+from functools import partial
 
 from omegaconf import OmegaConf
 from functools import partial
@@ -146,6 +147,7 @@ def get_config(run_dir):
 def get_metrics(run_dir):
     with open(run_dir / "metrics.pickle", "rb") as metrics_file:
         metrics = pickle.load(metrics_file)
+        del metrics["evaluation"]
     return pd.DataFrame.from_dict(metrics)
 
 def get_log(run_dir):
@@ -162,12 +164,22 @@ def get_repertoire(run_dir):
     env = get_env(config)
 
     # Init policy network
-    policy_layer_sizes = config.policy_hidden_layer_sizes + (env.action_size,)
-    policy_network = MLP(
-        layer_sizes=policy_layer_sizes,
-        kernel_init=jax.nn.initializers.lecun_uniform(),
-        final_activation=jnp.tanh,
+    
+    if config.algo.name == "mcpg_me":
+        policy_network = MLPMCPG(
+        action_dim=env.action_size,
+        activation=config.algo.activation,
+        no_neurons=config.algo.no_neurons,
     )
+    else:
+        
+        policy_layer_sizes = config.policy_hidden_layer_sizes + (env.action_size,)
+        policy_network = MLP(
+            layer_sizes=policy_layer_sizes,
+            kernel_init=jax.nn.initializers.lecun_uniform(),
+            final_activation=jnp.tanh,
+        )
+    
 
     # Init fake params
     random_key, random_subkey = jax.random.split(random_key)
@@ -180,22 +192,47 @@ def get_repertoire(run_dir):
     # Return repertoire
     return MapElitesRepertoire.load(reconstruction_fn=reconstruction_fn, path=str(run_dir) + "/repertoire/")
 
-def get_df(results_dir):
+def get_df(results_dir, episode_length):
     metrics_list = []
     for env_dir in results_dir.iterdir():
-        if env_dir.is_file() or env_dir.name not in ["ant_omni", "anttrap_omni", "humanoid_omni", "walker2d_uni", "halfcheetah_uni", "ant_uni", "humanoid_uni"]:
+        if env_dir.is_file() or env_dir.name not in ["ant_omni_250", "anttrap_omni_250", "humanoid_omni", "walker2d_uni_250","walker2d_uni_1000", "halfcheetah_uni", "ant_uni_250", "ant_uni_1000", "humanoid_uni", "hopper_uni_250", "hopper_uni_1000"]:
+            continue        
+            
+        if env_dir.name[-3:] != str(episode_length)[-3:]:
             continue
+        
+        print(env_dir.name)
         for algo_dir in env_dir.iterdir():
             for run_dir in algo_dir.iterdir():
+                #if run_dir.name[:10] == "2024-08-24":
+                #    continue
+                
+                
+                
                 # Get config and metrics
+                
                 config = get_config(run_dir)
                 metrics = get_metrics(run_dir)
-
+                
+                #if config.algo.name == "pga_me":
+                #    if env_dir.name not in ["ant_uni_1000", "ant_uni_250"]:
+                        #print('continue')
+                #        continue
+                    
+                #if config.algo.name == "memes":
+                #    if run_dir.name != "yolo":
+                #        continue
+                
+                #if config.algo.name == "dcg_me":
+                #    if run_dir.name != "2024-08-30_190606_169737":
+                #        continue
                 # Env
-                metrics["env"] = config.env.name
+                metrics["env"] = f"{config.env.name}_{episode_length}"
+                
 
                 # Algo
                 metrics["algo"] = config.algo.name
+                metrics["batch_size"] = config.batch_size
 
                 # Run
                 metrics["run"] = run_dir.name
@@ -205,6 +242,9 @@ def get_df(results_dir):
                     metrics["num_evaluations"] = metrics["iteration"] * 1050
                 elif config.algo.name == "dcg_me_gecco":
                     metrics["num_evaluations"] = metrics["iteration"] * (config.batch_size + config.algo.actor_batch_size)
+                elif config.algo.name == "memes":
+                    metrics["num_evaluations"] = metrics["iteration"] * ((config.batch_size * config.algo.sample_number * config.algo.num_in_optimizer_steps) + config.batch_size)
+                    #print(metrics["num_evaluations"])
                 else:
                     metrics["num_evaluations"] = metrics["iteration"] * config.batch_size
 
@@ -273,10 +313,24 @@ def transfer_params(target_params, source_params):
     return target_params
 
 @jax.jit
+def transfer_params_no_pg(target_params, source_params):
+    source_params_ = source_params['params']
+    target_params_ = target_params['params']
+    target_params_['Dense_0']['kernel'] = source_params_['Dense_0']['kernel']
+    target_params_['Dense_0']['bias'] = source_params_['Dense_0']['bias']
+    target_params_['Dense_1']['kernel'] = source_params_['Dense_1']['kernel']
+    target_params_['Dense_1']['bias'] = source_params_['Dense_1']['bias']
+    target_params_['Dense_2']['kernel'] = source_params_['Dense_2']['kernel']
+    target_params_['Dense_2']['bias'] = source_params_['Dense_2']['bias']
+    #target_params_['log_std'] = source_params_['log_std']
+    target_params['params'] = target_params_
+    
+    return target_params
+
+@jax.jit
 def normalize_obs(obs, mean, var):
     return (obs - mean) / jnp.sqrt(var + 1e-8)
     
-
 @partial(jax.jit, static_argnames=("episode_length",))
 def get_return_for_episode(
     rewards,
