@@ -392,7 +392,7 @@ if __name__ == "__main__":
 
     # Filter
     df = df[df["algo"].isin(ALGO_LIST)]
-    df = df[df["num_evaluations"] <= 10_000_000]
+    df = df[df["num_evaluations"] <= 5_000_000]
 
     # Plot
     #plot(df)
