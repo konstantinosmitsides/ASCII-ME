@@ -46,12 +46,12 @@ import matplotlib.pyplot as plt
 def main(config: Config) -> None:
     #profiler_dir = "Memory_Investigation"
     #os.makedirs(profiler_dir, exist_ok=True)
-    wandb.login(key="ab476069b53a15ad74ff1845e8dee5091d241297")
-    wandb.init(
-        project="me-mcpg",
-        name=config.algo.name,
-        config=OmegaConf.to_container(config, resolve=True),
-    )
+    #wandb.login(key="ab476069b53a15ad74ff1845e8dee5091d241297")
+    #wandb.init(
+    #    project="me-mcpg",
+    #    name=config.algo.name,
+    #    config=OmegaConf.to_container(config, resolve=True),
+    #)
     # Init a random key
     random_key = jax.random.PRNGKey(config.seed)
 
@@ -350,7 +350,7 @@ def main(config: Config) -> None:
         log_metrics["qpg_offspring_added"] = jnp.sum(current_metrics["qpg_offspring_added"])
         log_metrics["ga_offspring_added"] = jnp.sum(current_metrics["ga_offspring_added"])
         csv_logger.log(log_metrics)
-        wandb.log(log_metrics)
+        #wandb.log(log_metrics)
     #profiler.stop_trace()
     # Metrics
     with open("./metrics.pickle", "wb") as metrics_file:
