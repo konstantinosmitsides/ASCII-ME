@@ -393,6 +393,13 @@ if __name__ == "__main__":
     # Filter
     df = df[df["algo"].isin(ALGO_LIST)]
     df = df[df["num_evaluations"] <= 5_000_000]
+    
+    
+    idx = df.groupby(["env", "algo", "run"])["iteration"].idxmax()
+    df_last_iteration = df.loc[idx]
+
+    # Extract only the relevant columns for easier readability
+    summary_df = df_last_iteration[['env', 'algo', 'time', 'qd_score']]
 
     # Plot
     #plot(df)

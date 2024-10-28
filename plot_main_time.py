@@ -71,6 +71,38 @@ ALGO_DICT = {
 
 XLABEL = "Time (s)"
 
+def simple_moving_average(data, window_size):
+    """Calculates the simple moving average over a specified window size."""
+    return data.rolling(window=window_size, center=False).mean()
+
+# Function to concatenate data and apply moving average
+def aggregate_and_smooth(df, window_size=100):
+    # Empty DataFrame to store results
+    smoothed_data = pd.DataFrame()
+    
+    # Loop over each unique environment and algorithm combination
+    for (env, algo), group in df.groupby(['env', 'algo']):
+        # Concatenate the relevant columns for all runs
+        aggregated_qd_score = pd.concat([group.loc[group['run'] == run, 'qd_score'] for run in group['run'].unique()])
+        aggregated_max_fitness = pd.concat([group.loc[group['run'] == run, 'max_fitness'] for run in group['run'].unique()])
+        aggregated_coverage = pd.concat([group.loc[group['run'] == run, 'coverage'] for run in group['run'].unique()])
+        
+        # Calculate moving averages
+        qd_score_sma = simple_moving_average(aggregated_qd_score, window_size)
+        max_fitness_sma = simple_moving_average(aggregated_max_fitness, window_size)
+        coverage_sma = simple_moving_average(aggregated_coverage, window_size)
+        
+        # Collect results in a DataFrame
+        result = pd.DataFrame({
+            'env': env,
+            'algo': algo,
+            'qd_score': qd_score_sma,
+            'max_fitness': max_fitness_sma,
+            'coverage_sma': coverage_sma
+        })
+        smoothed_data = pd.concat([smoothed_data, result])
+    
+    return smoothed_data.reset_index(drop=True)
 
 def customize_axis(ax):
     # Remove spines
@@ -183,7 +215,7 @@ def plot(df):
     fig.tight_layout()
 
     # Save plot
-    fig.savefig("data_time_efficiency/output/plot_main_time.pdf", bbox_inches="tight")
+    fig.savefig("output/plot_main_time.pdf", bbox_inches="tight")
     plt.close()
 
 
@@ -194,7 +226,7 @@ if __name__ == "__main__":
     plt.rc("font", size=16)
 
     # Create the DataFrame
-    results_dir = Path("data_time_efficiency/output/")
+    results_dir = Path("output/")
     #print(results_dir)
     EPISODE_LENGTH = 250
     df = get_df(results_dir, EPISODE_LENGTH)
@@ -210,6 +242,7 @@ if __name__ == "__main__":
 #    idx = df.groupby(["env", "algo", "run"]).apply(
 #    lambda x: 60 if x['algo'].iloc[0] == 'memes' else min(x['iteration'].idxmax(), x.index.min() + 1999, x.index.max())
 #)
+    '''
     idx = df.groupby(["env", "algo", "run"])["iteration"].idxmax()
     df_last_iteration = df.loc[idx]
     time_median = df_last_iteration.groupby(["env", "algo"])["time"].median()
@@ -221,39 +254,7 @@ if __name__ == "__main__":
     # Get the most representative run for each (env, algo)
     idx = df_last_iteration.groupby(['env', 'algo'])['time_diff'].idxmin()
     runs = df_last_iteration.loc[idx][["env", "algo", "run"]]
-    
-    '''
-    import os
-    import shutil
 
-    # Define the root directory for plotting
-    root_dir = './for_plotting_time'
-
-    # Ensure the root directory exists
-    if not os.path.exists(root_dir):
-        os.makedirs(root_dir)
-
-    # Iterate through each row in the runs DataFrame
-    for index, row in runs.iterrows():
-        # Construct the path for the environment directory
-        env_dir = os.path.join(root_dir, row['env'])
-        if not os.path.exists(env_dir):
-            os.makedirs(env_dir)
-
-        # Construct the path for the algorithm directory within the environment directory
-        algo_dir = os.path.join(env_dir, row['algo'])
-        if not os.path.exists(algo_dir):
-            os.makedirs(algo_dir)
-
-        # Construct the path for the run directory within the algorithm directory
-        run_dir = os.path.join(algo_dir, f"run_{row['run']}")
-        if not os.path.exists(run_dir):
-            os.makedirs(run_dir)
-
-    # Optional: Move or copy files to the run directory
-    # You can use shutil.copy(src_file, run_dir) or shutil.move(src_file, run_dir)
-    # depending on whether you want to copy or move files
-    '''
 
     merged_df = pd.merge(runs, df, on=['env', 'algo', 'run'], how='inner')
 
@@ -264,3 +265,41 @@ if __name__ == "__main__":
 
     # Plot
     plot(merged_df)
+    '''
+    
+    '''
+    df['iteration_block'] = (df['iteration'] - 1) // 10  # Blocks of 10 iterations
+
+    # Step 2: Group by 'env', 'algo', 'iteration_block', and aggregate the required metrics
+    aggregated_df = df.groupby(['env', 'algo', 'iteration_block']).agg({
+        'qd_score': 'mean',
+        'coverage': 'mean',
+        'max_fitness': 'mean',
+        'time': 'mean'
+    }).reset_index()
+
+    # Step 3: Since we want the mean of means across all 10 runs per block, we need another aggregation step
+    final_df = aggregated_df.groupby(['env', 'algo', 'iteration_block']).mean().reset_index()
+
+    # Printing the result to check
+    print(final_df.head())
+    '''
+    
+    df['iteration_block'] = (df['iteration'] - 1) // 10
+
+    # Step 2: Group by 'env', 'algo', 'run', 'iteration_block' and calculate the means for each metric per run
+    metrics = ['qd_score', 'coverage', 'max_fitness']
+    grouped = df.groupby(['env', 'algo', 'run', 'iteration_block'])
+    aggregated_per_run = grouped[metrics].mean().reset_index()
+
+    # Calculate the average time across all runs for each iteration block in each env and algo
+    average_time = df.groupby(['env', 'algo', 'iteration_block'])['time'].mean().reset_index()
+
+    # Merge the average time back with the per-run metrics
+    final_df = pd.merge(aggregated_per_run, average_time, on=['env', 'algo', 'iteration_block'])
+
+    # Sorting for better structure and resetting index for cleanliness
+    final_df = final_df.sort_values(by=['env', 'algo', 'run', 'iteration_block']).reset_index(drop=True)
+
+    # Plot
+    plot(final_df)

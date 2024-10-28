@@ -18,16 +18,16 @@ from utils import get_df
 
 # Define env and algo names
 ENV_LIST = [
-    #"ant_omni_250",
-    #"anttrap_omni_250",
+    "ant_omni_250",
+    "anttrap_omni_250",
     #"humanoid_omni",
-    #"walker2d_uni_250",
-    "walker2d_uni_1000",
+    "walker2d_uni_250",
+    #"walker2d_uni_1000",
     #"halfcheetah_uni",
-    #"ant_uni_250",
-    "ant_uni_1000",
-    #"hopper_uni_250",
-    "hopper_uni_1000",
+    "ant_uni_250",
+    #"ant_uni_1000",
+    "hopper_uni_250",
+    #"hopper_uni_1000",
     #"humanoid_uni",
 ]
 ENV_DICT = {
@@ -142,51 +142,51 @@ def plot(df):
         customize_axis(axes[0, col])
 
         # Coverage
-        #axes[1, col].set_ylim(0., 1.05)
-        #axes[1, col].yaxis.set_major_formatter(PercentFormatter(1))
+        axes[1, col].set_ylim(0., 1.05)
+        axes[1, col].yaxis.set_major_formatter(PercentFormatter(1))
 
-        #sns.lineplot(
-        #    df_plot,
-        #    x="num_evaluations",
-        #    y="coverage",
-        #    hue="algo",
-        #    hue_order=ALGO_LIST,
-        #    estimator=np.median,
-        #    errorbar=lambda x: (np.quantile(x, 0.25), np.quantile(x, 0.75)),
-        #    legend=False,
-        #    ax=axes[1, col],
-        #)
-        #axes[1, col].xaxis.set_major_formatter(formatter)
+        sns.lineplot(
+            df_plot,
+            x="num_evaluations",
+            y="coverage",
+            hue="algo",
+            hue_order=ALGO_LIST,
+            estimator=np.median,
+            errorbar=lambda x: (np.quantile(x, 0.25), np.quantile(x, 0.75)),
+            legend=False,
+            ax=axes[1, col],
+        )
+        axes[1, col].xaxis.set_major_formatter(formatter)
 
 
-        #if col == 0:
-        #    axes[1, col].set_ylabel("Coverage")
-        #else:
-        #    axes[1, col].set_ylabel(None)
+        if col == 0:
+            axes[1, col].set_ylabel("Coverage")
+        else:
+            axes[1, col].set_ylabel(None)
 
         # Customize axis
-        #customize_axis(axes[1, col])
+        customize_axis(axes[1, col])
 
         # Max fitness
-        #ax = sns.lineplot(  # store ax for legend
-        #    df_plot,
-        #    x="num_evaluations",
-        #    y="max_fitness",
-        #    hue="algo",
-        #    hue_order=ALGO_LIST,
-        #    estimator=np.median,
-        #    errorbar=lambda x: (np.quantile(x, 0.25), np.quantile(x, 0.75)),
-        #    legend=False,
-        #    ax=axes[2, col],
-        #)
+        ax = sns.lineplot(  # store ax for legend
+            df_plot,
+            x="num_evaluations",
+            y="max_fitness",
+            hue="algo",
+            hue_order=ALGO_LIST,
+            estimator=np.median,
+            errorbar=lambda x: (np.quantile(x, 0.25), np.quantile(x, 0.75)),
+            legend=False,
+            ax=axes[2, col],
+        )
 
-        #if col == 0:
-        #    axes[2, col].set_ylabel("Max Fitness")
-        #else:
-        #    axes[2, col].set_ylabel(None)
+        if col == 0:
+            axes[2, col].set_ylabel("Max Fitness")
+        else:
+            axes[2, col].set_ylabel(None)
 
         # Customize axis
-        #customize_axis(axes[2, col])
+        customize_axis(axes[2, col])
 
     # Legend
     #fig.legend(ax.get_lines(), [ALGO_DICT[algo] for algo in ALGO_LIST], loc="lower center", bbox_to_anchor=(0.5, -0.03), ncols=len(ALGO_LIST), frameon=False)
@@ -201,7 +201,7 @@ def plot(df):
     fig.tight_layout()
 
     # Save plot
-    fig.savefig("data_time_efficiency/output/plot_main.pdf", bbox_inches="tight")
+    fig.savefig("output/plot_main.pdf", bbox_inches="tight")
     #fig.savefig("ablation/output/plot_main.pdf", bbox_inches="tight")
     plt.close()
 
@@ -213,11 +213,11 @@ if __name__ == "__main__":
     plt.rc("font", size=16)
 
     # Create the DataFrame
-    results_dir = Path("data_time_efficiency/output/")
+    results_dir = Path("output/")
     #results_dir = Path("ablation/output/")
     #print(results_dir)
     
-    EPISODE_LENGTH = 1000
+    EPISODE_LENGTH = 250
 
     df = get_df(results_dir, EPISODE_LENGTH)
 
