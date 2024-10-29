@@ -17,7 +17,7 @@ from utils import get_df
 
 # Define env and algo names
 ENV_LIST = [
-    "ant_omni_250",
+    #"ant_omni_250",
     #"anttrap_omni_250",
     #"humanoid_omni",
     "walker2d_uni_250",
@@ -86,7 +86,7 @@ def customize_axis(ax):
     ax.grid(which="major", axis="y", color="0.9")
     return ax
 
-def plot__(df):
+def plot__(summary_df):
     fig, axes = plt.subplots(nrows=len(ENV_LIST), ncols=2, sharex='col', figsize=(25, 15))
 
 
@@ -167,7 +167,7 @@ def plot__(df):
         #fig.legend(ax_.get_lines(), [str(batch_size) for batch_size in BATCH_LIST], loc="lower center", bbox_to_anchor=(0.5, -0.03), ncols=len(BATCH_LIST), frameon=False)
         fig.align_ylabels(axes[:, 0])
         fig.tight_layout()
-        fig.savefig("scalability/output/plot_main.png", bbox_inches="tight")
+        fig.savefig("testing_gpu_for_scalability/output/plot_main.png", bbox_inches="tight")
         plt.close()
 
 
@@ -180,7 +180,7 @@ if __name__ == "__main__":
     plt.rc("font", size=16)
 
     # Create the DataFrame
-    results_dir = Path("scalability/output/")
+    results_dir = Path("testing_gpu_for_scalability/output/")
     #print(results_dir)
     
     EPISODE_LENGTH = 250

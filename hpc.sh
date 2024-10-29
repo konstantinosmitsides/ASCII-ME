@@ -72,8 +72,8 @@ tmp_dir=$(mktemp -d)
 git log --decorate --color -10 $commit > $tmp_dir/git-log.txt
 
 # Send container and git log to the HPC
-ssh km2120@login.hpc.imperial.ac.uk "mkdir -p ~/$repository_name/$container_directory/"
-rsync --verbose --ignore-existing --progress -e ssh $container_path $tmp_dir/git-log.txt km2120@login.hpc.imperial.ac.uk:~/$repository_name/$container_directory/
+ssh km2120@login.cx3.hpc.imperial.ac.uk "mkdir -p ~/$repository_name/$container_directory/"
+rsync --verbose --ignore-existing --progress -e ssh $container_path $tmp_dir/git-log.txt km2120@login.cx3.hpc.imperial.ac.uk:~/$repository_name/$container_directory/
 
 # Create jobscripts
 table="|Job ID|Job Name|Job Script|Status|args\n"
@@ -95,15 +95,15 @@ for args in $args_; do
 	sed -i "s/{{ args }}/$args/g" $tmp_jobscript
 
 	# Send jobscript to the HPC
-	rsync --quiet --progress -e ssh $tmp_jobscript km2120@login.hpc.imperial.ac.uk:~/$repository_name/$container_directory/
-	jobid=$(ssh km2120@login.hpc.imperial.ac.uk "cd ~/$repository_name/$container_directory/ && /opt/pbs/bin/qsub $queue ~/$repository_name/$container_directory/${tmp_jobscript##*/} 2> /dev/null")
+	rsync --quiet --progress -e ssh $tmp_jobscript km2120@login.cx3.hpc.imperial.ac.uk:~/$repository_name/$container_directory/
+	jobid=$(ssh km2120@login.cx3.hpc.imperial.ac.uk "cd ~/$repository_name/$container_directory/ && /opt/pbs/bin/qsub $queue ~/$repository_name/$container_directory/${tmp_jobscript##*/} 2> /dev/null")
 
 	# Rename jobscript to $jobid.job
 	if [ $? == 0 ]; then
-		ssh km2120@login.hpc.imperial.ac.uk "mv ~/$repository_name/$container_directory/${tmp_jobscript##*/} ~/$repository_name/$container_directory/${job_name}_${jobid%.*}.job"
+		ssh km2120@login.cx3.hpc.imperial.ac.uk "mv ~/$repository_name/$container_directory/${tmp_jobscript##*/} ~/$repository_name/$container_directory/${job_name}_${jobid%.*}.job"
 		table+="$counter|${jobid%.*}|$job_name|${job_name}_${jobid%.*}.job|Queued|$args\n"
 	else
-		ssh km2120@login.hpc.imperial.ac.uk "rm ~/$repository_name/$container_directory/${tmp_jobscript##*/}"
+		ssh km2120@login.cx3.hpc.imperial.ac.uk "rm ~/$repository_name/$container_directory/${tmp_jobscript##*/}"
 		table+="$counter|-|-|-|Failed|$args\n"
 	fi
 
