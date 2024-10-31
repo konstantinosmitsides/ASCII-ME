@@ -15,16 +15,16 @@ from utils import get_df
 
 # Define env and algo names
 ENV_LIST = [
-    "ant_omni_250",
-    "anttrap_omni_250",
+    #"ant_omni_250",
+    #"anttrap_omni_250",
     #"humanoid_omni",
-    "walker2d_uni_250",
-    #"walker2d_uni_1000",
+    #"walker2d_uni_250",
+    "walker2d_uni_1000",
     #"halfcheetah_uni",
-    "ant_uni_250",
-    #"ant_uni_1000",
-    "hopper_uni_250",
-    #"hopper_uni_1000",
+    #"ant_uni_250",
+    "ant_uni_1000",
+    #"hopper_uni_250",
+    "hopper_uni_1000",
     #"humanoid_uni",
 ]
 ENV_DICT = {
@@ -215,7 +215,7 @@ def plot(df):
     fig.tight_layout()
 
     # Save plot
-    fig.savefig("output/plot_main_time.pdf", bbox_inches="tight")
+    fig.savefig("data_time_efficiency/output/plot_main_time.png", bbox_inches="tight")
     plt.close()
 
 
@@ -226,9 +226,9 @@ if __name__ == "__main__":
     plt.rc("font", size=16)
 
     # Create the DataFrame
-    results_dir = Path("output/")
+    results_dir = Path("data_time_efficiency/output/")
     #print(results_dir)
-    EPISODE_LENGTH = 250
+    EPISODE_LENGTH = 1000
     df = get_df(results_dir, EPISODE_LENGTH)
 
     # Filter
