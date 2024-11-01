@@ -9,6 +9,8 @@ import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.ticker import ScalarFormatter, PercentFormatter
 import seaborn as sns
+import matplotlib.lines as mlines
+
 
 from utils import get_df
 
@@ -45,9 +47,9 @@ ALGO_LIST = [
     #"mcpg_me_no_normalizer",
     #"mcpg_me_no_baseline",
     #"mcpg_me_no_ppo_loss",
-    "dcg_me",
+    #"dcg_me",
     #"dcg_me_gecco",
-    "pga_me",
+    #"pga_me",
     #"qd_pg",
     #"me_es",
     #"memes",
@@ -132,6 +134,7 @@ def plot(df):
     formatter.set_scientific(True)
     formatter.set_powerlimits((0, 0))
     
+    color_palette = sns.color_palette("Set2", len(BATCH_LIST))
     
 
     for col, env in enumerate(ENV_LIST):
@@ -154,8 +157,9 @@ def plot(df):
             df_plot,
             x="time",
             y="qd_score",
-            hue="algo",
-            hue_order=ALGO_LIST,
+            hue="batch_size",
+            hue_order=BATCH_LIST,
+            palette=color_palette,
             estimator=np.median,
             errorbar=lambda x: (np.quantile(x, 0.25), np.quantile(x, 0.75)),
             legend=False,
@@ -178,8 +182,9 @@ def plot(df):
             df_plot,
             x="time",
             y="coverage",
-            hue="algo",
-            hue_order=ALGO_LIST,
+            hue="batch_size",
+            hue_order=BATCH_LIST,
+            palette=color_palette,
             estimator=np.median,
             errorbar=lambda x: (np.quantile(x, 0.25), np.quantile(x, 0.75)),
             legend=False,
@@ -199,8 +204,9 @@ def plot(df):
             df_plot,
             x="time",
             y="max_fitness",
-            hue="algo",
-            hue_order=ALGO_LIST,
+            hue="batch_size",
+            hue_order=BATCH_LIST,
+            palette=color_palette,
             estimator=np.median,
             errorbar=lambda x: (np.quantile(x, 0.25), np.quantile(x, 0.75)),
             legend=False,
@@ -216,7 +222,11 @@ def plot(df):
         customize_axis(axes[2, col])
 
     # Legend
-    fig.legend(ax.get_lines(), [ALGO_DICT[algo] for algo in ALGO_LIST], loc="lower center", bbox_to_anchor=(0.5, -0.03), ncols=len(ALGO_LIST), frameon=False)
+    fig.legend(ax.get_lines(), [str(size) for size in BATCH_LIST], loc="lower center", bbox_to_anchor=(0.5, -0.03), ncols=len(BATCH_LIST), frameon=False)
+    
+    colors = sns.color_palette(palette=color_palette, n_colors=len(BATCH_LIST))  # Get a color palette with 3 distinct colors
+    patches = [mlines.Line2D([], [], color=colors[i], label=str(batch_size), linewidth=2.2, linestyle='-') for i, batch_size in enumerate(BATCH_LIST)]
+    fig.legend(handles=patches, loc='lower center', bbox_to_anchor=(0.5, -0.03), ncols=len(BATCH_LIST), frameon=False)    
 
     # Aesthetic
     fig.align_ylabels(axes)
@@ -242,10 +252,6 @@ if __name__ == "__main__":
     # Filter
     df = df[df["algo"].isin(ALGO_LIST)]
     df = df[df["num_evaluations"] <= 1_001_400]
-    df = df.loc[
-    (df['algo'] != "mcpg_me") | 
-    ((df['algo'] == "mcpg_me") & (df['batch_size'] == 4096))
-]
     
     
     # Get the median time for each (env, algo)
@@ -301,17 +307,17 @@ if __name__ == "__main__":
 
     # Step 2: Group by 'env', 'algo', 'run', 'iteration_block' and calculate the means for each metric per run
     metrics = ['qd_score', 'coverage', 'max_fitness']
-    grouped = df.groupby(['env', 'algo', 'run', 'iteration_block'])
+    grouped = df.groupby(['env', 'algo', 'run', 'batch_size', 'iteration_block'])
     aggregated_per_run = grouped[metrics].mean().reset_index()
 
     # Calculate the average time across all runs for each iteration block in each env and algo
-    average_time = df.groupby(['env', 'algo', 'iteration_block'])['time'].mean().reset_index()
+    average_time = df.groupby(['env', 'algo', 'batch_size', 'iteration_block'])['time'].mean().reset_index()
 
     # Merge the average time back with the per-run metrics
-    final_df = pd.merge(aggregated_per_run, average_time, on=['env', 'algo', 'iteration_block'])
+    final_df = pd.merge(aggregated_per_run, average_time, on=['env', 'algo', 'batch_size', 'iteration_block'])
 
     # Sorting for better structure and resetting index for cleanliness
-    final_df = final_df.sort_values(by=['env', 'algo', 'run', 'iteration_block']).reset_index(drop=True)
+    final_df = final_df.sort_values(by=['env', 'algo', 'batch_size', 'run', 'iteration_block']).reset_index(drop=True)
 
     # Plot
     plot(final_df)
