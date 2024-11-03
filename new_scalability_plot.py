@@ -17,7 +17,7 @@ from utils import get_df
 
 # Define env and algo names
 ENV_LIST = [
-    #"ant_omni_250",
+    "ant_omni_250",
     #"anttrap_omni_250",
     #"humanoid_omni",
     "walker2d_uni_250",
@@ -95,14 +95,15 @@ def plot__(summary_df):
     color_palette = sns.color_palette("Set1", len(BATCH_LIST))
 
             
-    formatter = ScalarFormatter(useMathText=True)
-    formatter.set_scientific(True)
-    formatter.set_powerlimits((0, 0))
+    #formatter = ScalarFormatter(useMathText=True)
+    #formatter.set_scientific(True)
+    #formatter.set_powerlimits((0, 0))
+
     
 
     
     x_label = "Batch Size"
-    y_labels = ["QD Score", "Runtime (s)"]
+    y_labels = ["QD Score after 5M evaluations", "Runtime (s) after 5M evaluations"]
 
     for col in range(2):
         for row, env in enumerate(ENV_LIST):
@@ -113,8 +114,13 @@ def plot__(summary_df):
                 ax.set_title(f"{y_labels[col]} vs. {x_label}")
             
             # Formatter for the x-axis
-            ax.xaxis.set_major_formatter(formatter)
-            ax.yaxis.set_major_formatter(formatter)
+            ax.xaxis.set_major_formatter(ScalarFormatter(useMathText=True))
+            ax.xaxis.get_major_formatter().set_scientific(True)
+            ax.xaxis.get_major_formatter().set_powerlimits((0, 0))
+
+            ax.yaxis.set_major_formatter(ScalarFormatter(useMathText=True))
+            ax.yaxis.get_major_formatter().set_scientific(True)
+            ax.yaxis.get_major_formatter().set_powerlimits((0, 0))
 
             # Get df for the current env
             df_plot = summary_df[summary_df["env"] == env]
@@ -149,7 +155,7 @@ def plot__(summary_df):
 
                 # Set the x-axis labels with rotation for better visibility
                 #ax.set_xticklabels([str(batch_size) for batch_size in BATCH_LIST], rotation=45, ha="right")
-            ax.set_xticklabels([ALGO_DICT.get(algo, algo) for algo in df_plot['algo'].unique()], ha="right")
+            ax.set_xticklabels([ALGO_DICT.get(algo, algo) for algo in df_plot['algo'].unique()], ha="center")
             # Set y-axis label and limits
             #ax.set_ylim(0.0)
             #ax.set_ylabel(None)
@@ -167,7 +173,7 @@ def plot__(summary_df):
         #fig.legend(ax_.get_lines(), [str(batch_size) for batch_size in BATCH_LIST], loc="lower center", bbox_to_anchor=(0.5, -0.03), ncols=len(BATCH_LIST), frameon=False)
         fig.align_ylabels(axes[:, 0])
         fig.tight_layout()
-        fig.savefig("testing_gpu_for_scalability/output/plot_main.png", bbox_inches="tight")
+        fig.savefig("scalability/output/plot_main_.png", bbox_inches="tight")
         plt.close()
 
 
@@ -180,7 +186,7 @@ if __name__ == "__main__":
     plt.rc("font", size=16)
 
     # Create the DataFrame
-    results_dir = Path("testing_gpu_for_scalability/output/")
+    results_dir = Path("scalability/output/")
     #print(results_dir)
     
     EPISODE_LENGTH = 250

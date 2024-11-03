@@ -1,4 +1,4 @@
-job_name: scalability_testing_higher_vram
+job_name: sample_eff_test_corrected
  
 walltime: 07:59:00
  
@@ -9,12 +9,13 @@ ngpus: 1
 gpu_type: L40S
  
 queue: null  # -q express -P exp-00097
-njobs: 5
+njobs: 10
 args:
   # walker2d_uni
-  - "HPC=True algo=mcpg_me seed=\$RANDOM env=walker2d_uni env.episode_length=1000 num_iterations=1000 batch_size=1024"
-  - "HPC=True algo=mcpg_me seed=\$RANDOM env=walker2d_uni env.episode_length=1000 num_iterations=500 batch_size=2048"
-  - "HPC=True algo=mcpg_me seed=\$RANDOM env=walker2d_uni env.episode_length=1000 num_iterations=250 batch_size=4096"
+  #- "HPC=True algo=mcpg_me seed=\$RANDOM env=walker2d_uni env.episode_length=1000 num_iterations=2000"
+  #- "HPC=True algo=mcpg_me seed=\$RANDOM env=walker2d_uni env.episode_length=1000 num_iterations=1000 batch_size=1024"
+  #- "HPC=True algo=mcpg_me seed=\$RANDOM env=walker2d_uni env.episode_length=1000 num_iterations=500 batch_size=2048"
+  #- "HPC=True algo=mcpg_me seed=\$RANDOM env=walker2d_uni env.episode_length=1000 num_iterations=250 batch_size=4096"
   #- "HPC=True algo=pga_me seed=\$RANDOM env=walker2d_uni env.episode_length=1000 num_iterations=2000"
   #- "HPC=True algo=dcg_me seed=\$RANDOM env=walker2d_uni env.episode_length=1000 num_iterations=2000"
   #- "HPC=True algo=me seed=\$RANDOM env=walker2d_uni env.episode_length=1000 num_iterations=2000"
@@ -24,9 +25,10 @@ args:
   #- "HPC=True algo=me seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=2000"
 
   # ant_uni
-  - "HPC=True algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=1000 num_iterations=1000 batch_size=1024"
-  - "HPC=True algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=1000 num_iterations=500 batch_size=2048"
-  - "HPC=True algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=1000 num_iterations=250 batch_size=4096"
+  #- "HPC=True algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=1000 num_iterations=2000"
+  #- "HPC=True algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=1000 num_iterations=1000 batch_size=1024"
+  #- "HPC=True algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=1000 num_iterations=500 batch_size=2048"
+  #- "HPC=True algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=1000 num_iterations=250 batch_size=4096"
   #- "HPC=True algo=pga_me seed=\$RANDOM env=ant_uni env.episode_length=1000 num_iterations=2000"
   #- "HPC=True algo=dcg_me seed=\$RANDOM env=ant_uni env.episode_length=1000 num_iterations=2000"
   #- "HPC=True algo=me seed=\$RANDOM env=ant_uni env.episode_length=1000 num_iterations=2000"
@@ -36,6 +38,7 @@ args:
   #- "HPC=True algo=me seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=2000"
 
   # hopper_uni
+  - "HPC=True algo=mcpg_me seed=\$RANDOM env=hopper_uni env.episode_length=1000 num_iterations=2000"
   #- "HPC=True algo=pga_me seed=\$RANDOM env=hopper_uni env.episode_length=1000 num_iterations=2000"
   #- "HPC=True algo=mcpg_me seed=\$RANDOM env=hopper_uni env.episode_length=1000 num_iterations=2000"
   #- "HPC=True algo=me seed=\$RANDOM env=hopper_uni env.episode_length=1000 num_iterations=2000"
