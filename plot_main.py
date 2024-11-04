@@ -18,16 +18,16 @@ from utils import get_df
 
 # Define env and algo names
 ENV_LIST = [
-    #"ant_omni_250",
-    #"anttrap_omni_250",
+    "ant_omni_250",
+    "anttrap_omni_250",
     #"humanoid_omni",
     #"walker2d_uni_250",
-    "walker2d_uni_1000",
+    #"walker2d_uni_1000",
     #"halfcheetah_uni",
     #"ant_uni_250",
-    "ant_uni_1000",
+    #"ant_uni_1000",
     #"hopper_uni_250",
-    "hopper_uni_1000",
+    #"hopper_uni_1000",
     #"humanoid_uni",
 ]
 ENV_DICT = {
@@ -53,16 +53,17 @@ BATCH_LIST = [
 
 ALGO_LIST = [
     "mcpg_me",
+    "mcpg_me_"
     #"mcpg_me_no_normalizer",
     #"mcpg_me_no_baseline",
     #"mcpg_me_no_ppo_loss",
-    "dcg_me",
+    #"dcg_me",
     #"dcg_me_gecco",
-    "pga_me",
+    #"pga_me",
     #"qd_pg",
     #"me_es",
     #"memes",
-    "me",
+    #"me",
 ]
 ALGO_DICT = {
     "dcg_me": "DCG-MAP-Elites-AI",
@@ -76,6 +77,7 @@ ALGO_DICT = {
     "mcpg_me_no_normalizer": "Ablation 1",
     "mcpg_me_no_baseline": "Ablation 2",
     "mcpg_me_no_ppo_loss": "Ablation 3",
+    "mcpg_me_": "MCPG-ME new",
 }
 
 XLABEL = "Evaluations"
@@ -201,7 +203,7 @@ def plot(df):
     fig.tight_layout()
 
     # Save plot
-    fig.savefig("data_eff_new/output/plot_main.png", bbox_inches="tight")
+    fig.savefig("old/output/plot_main.png", bbox_inches="tight")
     #fig.savefig("ablation/output/plot_main.pdf", bbox_inches="tight")
     plt.close()
 
@@ -213,11 +215,11 @@ if __name__ == "__main__":
     plt.rc("font", size=16)
 
     # Create the DataFrame
-    results_dir = Path("data_eff_new/output/")
+    results_dir = Path("old/output/")
     #results_dir = Path("ablation/output/")
     #print(results_dir)
     
-    EPISODE_LENGTH = 1000
+    EPISODE_LENGTH = 250
 
     df = get_df(results_dir, EPISODE_LENGTH)
 
