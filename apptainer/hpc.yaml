@@ -38,7 +38,7 @@ args:
   #- "HPC=True algo=me seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=2000"
 
   # hopper_uni
-  - "HPC=True algo=mcpg_me seed=\$RANDOM env=hopper_uni env.episode_length=1000 num_iterations=2000"
+  #- "HPC=True algo=mcpg_me seed=\$RANDOM env=hopper_uni env.episode_length=1000 num_iterations=2000"
   #- "HPC=True algo=pga_me seed=\$RANDOM env=hopper_uni env.episode_length=1000 num_iterations=2000"
   #- "HPC=True algo=mcpg_me seed=\$RANDOM env=hopper_uni env.episode_length=1000 num_iterations=2000"
   #- "HPC=True algo=me seed=\$RANDOM env=hopper_uni env.episode_length=1000 num_iterations=2000"
@@ -49,13 +49,13 @@ args:
   #- "HPC=True algo=me seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=2000"
 
   # ant_omni
-  #- "HPC=True algo=mcpg_me seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=2000"
+  - "HPC=True algo=mcpg_me seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=2000"
   #- "HPC=True algo=pga_me seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=2000"
   #- "HPC=True algo=dcg_me seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=2000"
   #- "HPC=True algo=me seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=2000"
 
   # anttrap_omni
-  #- "HPC=True algo=mcpg_me seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=2000"
+  - "HPC=True algo=mcpg_me seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=2000"
   #- "HPC=True algo=pga_me seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=2000"
   #- "HPC=True algo=dcg_me seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=2000"
   #- "HPC=True algo=me seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=2000"

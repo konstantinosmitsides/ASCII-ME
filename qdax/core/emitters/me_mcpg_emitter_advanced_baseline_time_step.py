@@ -3,7 +3,7 @@ from typing import Callable, Tuple
 import flax.linen as nn
 
 from qdax.core.emitters.multi_emitter import MultiEmitter
-from qdax.core.emitters.mcpg_emitter_advanced_baseline_time_step import MCPGConfig, MCPGEmitter
+from qdax.core.emitters.mcpg_emitter_before import MCPGConfig, MCPGEmitter
 from qdax.core.emitters.standard_emitters_advanced_baseline import MixingEmitter
 from qdax.environments.base_wrappers import QDEnv
 from qdax.types import Params, RNGKey
