@@ -24,7 +24,7 @@ ENV_LIST = [
     #"ant_uni_250",
     "ant_uni_1000",
     #"hopper_uni_250",
-    #"hopper_uni_1000",
+    "hopper_uni_1000",
     #"humanoid_uni",
 ]
 ENV_DICT = {
@@ -41,13 +41,14 @@ ENV_DICT = {
     "hopper_uni_1000": "Hopper Uni",
 }
 ALGO_LIST = [
-    "mcpg_me",
+    #"mcpg_me",
     #"mcpg_me_no_normalizer",
     #"mcpg_me_no_baseline",
     #"mcpg_me_no_ppo_loss",
     "dcg_me",
+    "dcg_me_"
     #"dcg_me_gecco",
-    "pga_me",
+    #"pga_me",
     #"qd_pg",
     #"me_es",
     #"memes",
@@ -62,7 +63,8 @@ BATCH_LIST = [
 ]
 
 ALGO_DICT = {
-    "dcg_me": "DCG-MAP-Elites-AI",
+    "dcg_me": "DCRL-AI-only",
+    "dcg_me_" : "DCRL",
     "dcg_me_gecco": "DCG-MAP-Elites GECCO",
     "pga_me": "PGA-MAP-Elites",
     "qd_pg": "QD-PG",
@@ -223,7 +225,7 @@ def plot(df):
     fig.tight_layout()
 
     # Save plot
-    fig.savefig("new_data_eff/plot_main_time.png", bbox_inches="tight")
+    fig.savefig("data_eff_new/output/plot_main_time.png", bbox_inches="tight")
     plt.close()
 
 
@@ -234,7 +236,7 @@ if __name__ == "__main__":
     plt.rc("font", size=16)
 
     # Create the DataFrame
-    results_dir = Path("new_data_eff/")
+    results_dir = Path("data_eff_new/output/")
     #print(results_dir)
     EPISODE_LENGTH = 1000
     df = get_df(results_dir, EPISODE_LENGTH)

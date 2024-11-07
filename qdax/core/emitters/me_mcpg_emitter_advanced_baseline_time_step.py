@@ -42,29 +42,58 @@ class MEMCPGEmitter(MultiEmitter):
         ga_no_agents = int(self._config.proportion_mutation_ga * config.no_agents)
         mcpg_no_agents = config.no_agents - ga_no_agents
         
-        mcpg_config = MCPGConfig(
-            no_agents=mcpg_no_agents,
-            buffer_sample_batch_size=config.buffer_sample_batch_size,
-            buffer_add_batch_size=config.buffer_add_batch_size,
-            #batch_size=config.batch_size,
-            #mini_batch_size=config.mini_batch_size,
-            no_epochs=config.no_epochs,
-            #buffer_size=config.buffer_size,
-            learning_rate=config.learning_rate,
-            discount_rate=config.discount_rate,
-            clip_param=config.clip_param
+        if mcpg_no_agents == 0:
+            ga_emitter = MixingEmitter(
+                mutation_fn=None,
+                variation_fn=variation_fn,
+                variation_percentage=1.0,
+                batch_size=ga_no_agents
         )
+            super().__init__(emitters=(ga_emitter,))
+            
+        elif ga_no_agents == 0:
+            mcpg_config = MCPGConfig(
+                no_agents=mcpg_no_agents,
+                buffer_sample_batch_size=config.buffer_sample_batch_size,
+                buffer_add_batch_size=config.buffer_add_batch_size,
+                no_epochs=config.no_epochs,
+                learning_rate=config.learning_rate,
+                discount_rate=config.discount_rate,
+                clip_param=config.clip_param
+            )
 
-        # define the quality emitter
-        mcpg_emitter = MCPGEmitter(
-            config=mcpg_config, policy_net=policy_network, env=env
-        )
-        
-        ga_emitter = MixingEmitter(
-            mutation_fn=None,
-            variation_fn=variation_fn,
-            variation_percentage=1.0,
-            batch_size=ga_no_agents
-        )
-        
-        super().__init__(emitters=(mcpg_emitter, ga_emitter))
+            mcpg_emitter = MCPGEmitter(
+                config=mcpg_config, policy_net=policy_network, env=env
+            )
+            
+            super().__init__(emitters=(mcpg_emitter,))
+            
+        else:
+            
+            
+            mcpg_config = MCPGConfig(
+                no_agents=mcpg_no_agents,
+                buffer_sample_batch_size=config.buffer_sample_batch_size,
+                buffer_add_batch_size=config.buffer_add_batch_size,
+                #batch_size=config.batch_size,
+                #mini_batch_size=config.mini_batch_size,
+                no_epochs=config.no_epochs,
+                #buffer_size=config.buffer_size,
+                learning_rate=config.learning_rate,
+                discount_rate=config.discount_rate,
+                clip_param=config.clip_param
+            )
+
+            # define the quality emitter
+            mcpg_emitter = MCPGEmitter(
+                config=mcpg_config, policy_net=policy_network, env=env
+            )
+            
+            ga_emitter = MixingEmitter(
+                mutation_fn=None,
+                variation_fn=variation_fn,
+                variation_percentage=1.0,
+                batch_size=ga_no_agents
+            )
+            
+            super().__init__(emitters=(mcpg_emitter, ga_emitter))

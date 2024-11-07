@@ -53,11 +53,11 @@ BATCH_LIST = [
 ALGO_LIST = [
     #"dcg_me",
     #"dcg_me_gecco",
-    "pga_me",
+    #"pga_me",
     #"qd_pg",
-    #"me",
+    "me",
     #"me_es",
-    #"mcpg_me",
+    "mcpg_me",
     #"memes",
 ]
 ALGO_DICT = {

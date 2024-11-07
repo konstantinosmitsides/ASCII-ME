@@ -227,12 +227,17 @@ def get_df(results_dir, episode_length):
                 #    if run_dir.name != "2024-08-30_190606_169737":
                 #        continue
                 # Env
-                metrics["env"] = f"{config.env.name}_{episode_length}"
+                #metrics["env"] = f"{config.env.name}_{episode_length}"
+                metrics["env"] = env_dir.name
                 
 
                 # Algo
                 metrics["algo"] = config.algo.name
                 metrics["batch_size"] = config.batch_size
+                if config.algo.name == "dcg_me":
+                    metrics["ga_batch_size"] = config.algo.ga_batch_size
+                    
+                metrics['gpu'] = config.HPC
 
                 # Run
                 metrics["run"] = run_dir.name

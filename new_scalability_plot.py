@@ -17,19 +17,23 @@ from utils import get_df
 
 # Define env and algo names
 ENV_LIST = [
-    "ant_omni_250",
+    "A100",
+    "L40S",
+    #"ant_omni_250",
     #"anttrap_omni_250",
     #"humanoid_omni",
-    "walker2d_uni_250",
+    #"walker2d_uni_250",
     #"walker2d_uni_1000",
     #"halfcheetah_uni",
-    "ant_uni_250",
+    #"ant_uni_250",
     #"ant_uni_1000",
     #"hopper_uni_250",
     #"hopper_uni_1000",
     #"humanoid_uni",
 ]
 ENV_DICT = {
+    "A100": "GPU: A100",
+    "L40S": "GPU: L40S",
     "ant_omni_250": " Ant Omni ",
     "anttrap_omni_250": "AntTrap Omni",
     "humanoid_omni": "Humanoid Omni",
@@ -48,12 +52,14 @@ BATCH_LIST = [
     4096,
     16384,
     32768,
+    65536
+    
 ]
 
 ALGO_LIST = [
     #"dcg_me",
     #"dcg_me_gecco",
-    "pga_me",
+    #"pga_me",
     #"qd_pg",
     #"me",
     #"me_es",
@@ -72,6 +78,17 @@ ALGO_DICT = {
 }
 
 XLABEL = "Evaluations"
+
+
+def filter_gpu_variants(df_row):
+    if df_row["algo"] == "mcpg_me":
+        if df_row["gpu"] == "A100":
+            return 'A100'
+        
+        else:
+            return 'L40S'
+    else:
+        return df_row["algo"]
 
 
 def customize_axis(ax):
@@ -123,7 +140,7 @@ def plot__(summary_df):
             ax.yaxis.get_major_formatter().set_powerlimits((0, 0))
 
             # Get df for the current env
-            df_plot = summary_df[summary_df["env"] == env]
+            df_plot = summary_df[summary_df["env_"] == env]
             
             if col == 0:
                 sns.barplot(
@@ -173,7 +190,7 @@ def plot__(summary_df):
         #fig.legend(ax_.get_lines(), [str(batch_size) for batch_size in BATCH_LIST], loc="lower center", bbox_to_anchor=(0.5, -0.03), ncols=len(BATCH_LIST), frameon=False)
         fig.align_ylabels(axes[:, 0])
         fig.tight_layout()
-        fig.savefig("scalability/output/plot_main_.png", bbox_inches="tight")
+        fig.savefig("A100/output/plot_main_.png", bbox_inches="tight")
         plt.close()
 
 
@@ -186,7 +203,7 @@ if __name__ == "__main__":
     plt.rc("font", size=16)
 
     # Create the DataFrame
-    results_dir = Path("scalability/output/")
+    results_dir = Path("A100/output/")
     #print(results_dir)
     
     EPISODE_LENGTH = 250
@@ -196,13 +213,18 @@ if __name__ == "__main__":
     # Filter
     df = df[df["algo"].isin(ALGO_LIST)]
     df = df[df["num_evaluations"] <= 5_000_000]
+    df['env_'] = df.apply(filter_gpu_variants, axis=1)
+
     
     
     idx = df.groupby(["env", "algo", "run"])["iteration"].idxmax()
+
     df_last_iteration = df.loc[idx]
 
     # Extract only the relevant columns for easier readability
-    summary_df = df_last_iteration[['env', 'algo', 'time', 'qd_score', 'batch_size']]
+    summary_df = df_last_iteration[['env', 'algo', 'time', 'qd_score', 'batch_size', 'env_']]
+    
+    df['env_'] = df.apply(filter_gpu_variants, axis=1)
 
     # Plot
     #plot(df)

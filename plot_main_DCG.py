@@ -22,12 +22,12 @@ ENV_LIST = [
     "anttrap_omni_250",
     #"humanoid_omni",
     #"walker2d_uni_250",
-    #"walker2d_uni_1000",
+    "walker2d_uni_1000",
     #"halfcheetah_uni",
     #"ant_uni_250",
     #"hopper_uni_250",
-    #"hopper_uni_1000",
-    #"ant_uni_1000",
+    "hopper_uni_1000",
+    "ant_uni_1000",
     #"humanoid_uni",
 ]
 ENV_DICT = {
@@ -43,6 +43,12 @@ ENV_DICT = {
     "hopper_uni_250": "Hopper Uni",
     "hopper_uni_1000": "Hopper Uni",
 }
+
+
+AI_BATCH_LIST = [
+    128,
+    254,
+]
 
 BATCH_LIST = [
     1024,
@@ -66,9 +72,20 @@ ALGO_LIST = [
     #"memes",
     #"me",
 ]
+
+NEW_ALGO_LIST = [
+    "dcg_me_",
+    "dcg_me_75",
+    "dcg_me_50",
+    "dcg_me_25"
+]
+
 ALGO_DICT = {
     "dcg_me": "DCRL-AI-only",
     "dcg_me_": "DCRL",
+    "dcg_me_75": "DCRL ~75% GA 25% AI",
+    "dcg_me_50": "DCRL 50% GA ~50% AI",
+    "dcg_me_25": "DCRL 25% GA ~75% AI",
     "dcg_me_gecco": "DCG-MAP-Elites GECCO",
     "pga_me": "PGA-MAP-Elites",
     "qd_pg": "QD-PG",
@@ -83,6 +100,18 @@ ALGO_DICT = {
 }
 
 XLABEL = "Evaluations"
+
+def filter_dcg_variants(df_row):
+    if df_row["algo"] == "dcg_me":
+        if df_row["ga_batch_size"] == 382:
+            return 'dcg_me_75'
+        
+        elif df_row["ga_batch_size"] == 256:
+            return "dcg_me_50"
+        else:
+            return 'dcg_me_25'
+    else:
+        return df_row["algo"]
 
 
 def customize_axis(ax):
@@ -115,7 +144,7 @@ def plot(df):
         axes[0, col].set_title(ENV_DICT[env])
 
         # Set the x label and formatter for the column
-        axes[0, col].set_xlabel(XLABEL)
+        axes[2, col].set_xlabel(XLABEL)
         #axes[2, col].set_xticks(x_ticks)
         axes[0, col].xaxis.set_major_formatter(formatter)
 
@@ -129,8 +158,8 @@ def plot(df):
             df_plot,
             x="num_evaluations",
             y="qd_score",
-            hue="algo",
-            hue_order=ALGO_LIST,
+            hue="algo_",
+            hue_order=NEW_ALGO_LIST,
             estimator=np.median,
             errorbar=lambda x: (np.quantile(x, 0.25), np.quantile(x, 0.75)),
             legend=False,
@@ -153,8 +182,8 @@ def plot(df):
             df_plot,
             x="num_evaluations",
             y="coverage",
-            hue="algo",
-            hue_order=ALGO_LIST,
+            hue="algo_",
+            hue_order=NEW_ALGO_LIST,
             estimator=np.median,
             errorbar=lambda x: (np.quantile(x, 0.25), np.quantile(x, 0.75)),
             legend=False,
@@ -176,8 +205,8 @@ def plot(df):
             df_plot,
             x="num_evaluations",
             y="max_fitness",
-            hue="algo",
-            hue_order=ALGO_LIST,
+            hue="algo_",
+            hue_order=NEW_ALGO_LIST,
             estimator=np.median,
             errorbar=lambda x: (np.quantile(x, 0.25), np.quantile(x, 0.75)),
             legend=False,
@@ -191,21 +220,22 @@ def plot(df):
 
         # Customize axis
         customize_axis(axes[2, col])
+    
 
     # Legend
     #fig.legend(ax.get_lines(), [ALGO_DICT[algo] for algo in ALGO_LIST], loc="lower center", bbox_to_anchor=(0.5, -0.03), ncols=len(ALGO_LIST), frameon=False)
-    colors = sns.color_palette(n_colors=len(ALGO_LIST))  # Get a color palette with 3 distinct colors
+    colors = sns.color_palette(n_colors=len(NEW_ALGO_LIST))  # Get a color palette with 3 distinct colors
     #patches = [mpatches.Patch(color=colors[i], label=ALGO_DICT[algo]) for i, algo in enumerate(ALGO_LIST)]
     #fig.legend(ax_.get_lines(), [ALGO_DICT[algo] for algo in ALGO_LIST], loc="lower center", bbox_to_anchor=(0.5, -0.03), ncols=len(ALGO_LIST), frameon=False)
     #fig.legend(handles=patches, loc='lower center', bbox_to_anchor=(0.5, -0.07), ncols=len(ALGO_LIST), frameon=False)
-    patches = [mlines.Line2D([], [], color=colors[i], label=ALGO_DICT[algo], linewidth=2.2, linestyle='-') for i, algo in enumerate(ALGO_LIST)]
-    fig.legend(handles=patches, loc='lower center', bbox_to_anchor=(0.5, -0.03), ncols=len(ALGO_LIST), frameon=False)
+    patches = [mlines.Line2D([], [], color=colors[i], label=ALGO_DICT[algo], linewidth=2.2, linestyle='-') for i, algo in enumerate(NEW_ALGO_LIST)]
+    fig.legend(handles=patches, loc='lower center', bbox_to_anchor=(0.5, -0.1), ncols=len(NEW_ALGO_LIST), frameon=False)
     # Aesthetic
     fig.align_ylabels(axes)
     fig.tight_layout()
 
     # Save plot
-    fig.savefig("data_eff_new/output/plot_main.png", bbox_inches="tight")
+    fig.savefig("data_eff_new/output/plot_main_dcg.png", bbox_inches="tight")
     #fig.savefig("ablation/output/plot_main.pdf", bbox_inches="tight")
     plt.close()
 
@@ -228,10 +258,11 @@ if __name__ == "__main__":
     # Filter
     df = df[df["algo"].isin(ALGO_LIST)]
     df = df[df["num_evaluations"] <= 1_001_400]
-    df = df.loc[
-    (df['algo'] != "dcg_me") | 
-    ((df['algo'] == "dcg_me") & (df['ga_batch_size'] == 382))
-]
+    #df = df.loc[
+    #(df['algo'] != "dcg_me") | 
+    #((df['algo'] == "dcg_me") & (df['ga_batch_size'] == 382))
+#]
+    df['algo_'] = df.apply(filter_dcg_variants, axis=1)
 
     # Plot
     plot(df)

@@ -46,12 +46,12 @@ import matplotlib.pyplot as plt
 def main(config: Config) -> None:
     #profiler_dir = "Memory_Investigation"
     #os.makedirs(profiler_dir, exist_ok=True)
-    wandb.login(key="ab476069b53a15ad74ff1845e8dee5091d241297")
-    wandb.init(
-        project="me-mcpg",
-        name=config.algo.name,
-        config=OmegaConf.to_container(config, resolve=True),
-    )
+    #wandb.login(key="ab476069b53a15ad74ff1845e8dee5091d241297")
+    #wandb.init(
+    #    project="me-mcpg",
+    #    name=config.algo.name,
+    #    config=OmegaConf.to_container(config, resolve=True),
+    #)
     # Init a random key
     random_key = jax.random.PRNGKey(config.seed)
 
@@ -122,7 +122,12 @@ def main(config: Config) -> None:
     def get_n_offspring_added(metrics):
         split = jnp.cumsum(jnp.array([emitter.batch_size for emitter in map_elites._emitter.emitters]))
         split = jnp.split(metrics["is_offspring_added"], split, axis=-1)[:-1]
-        return (jnp.sum(split[1], axis=-1), jnp.sum(split[0], axis=-1))
+        if config.algo.proportion_mutation_ga == 0:
+            return (jnp.array([0]) , jnp.sum(split[0], axis=-1))
+        elif config.algo.proportion_mutation_ga == 1:
+            return (jnp.sum(split[0], axis=-1), jnp.array([0]))
+        else:
+            return (jnp.sum(split[1], axis=-1), jnp.sum(split[0], axis=-1))
 
 
 
@@ -350,7 +355,7 @@ def main(config: Config) -> None:
         log_metrics["qpg_offspring_added"] = jnp.sum(current_metrics["qpg_offspring_added"])
         log_metrics["ga_offspring_added"] = jnp.sum(current_metrics["ga_offspring_added"])
         csv_logger.log(log_metrics)
-        wandb.log(log_metrics)
+        #wandb.log(log_metrics)
     #profiler.stop_trace()
     # Metrics
     with open("./metrics.pickle", "wb") as metrics_file:
