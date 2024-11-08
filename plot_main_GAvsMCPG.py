@@ -21,11 +21,11 @@ ENV_LIST = [
     "ant_omni_250",
     "anttrap_omni_250",
     #"humanoid_omni",
-    #"walker2d_uni_250",
+    "walker2d_uni_250",
     #"walker2d_uni_1000",
     #"halfcheetah_uni",
-    #"ant_uni_250",
-    #"hopper_uni_250",
+    "ant_uni_250",
+    "hopper_uni_250",
     #"hopper_uni_1000",
     #"ant_uni_1000",
     #"humanoid_uni",
@@ -51,14 +51,14 @@ BATCH_LIST = [
     32768,
 ]
 
-ALGO_LIST = [
-    #"mcpg_me",
+INIT_ALGO_LIST = [
+    "mcpg_me",
     #"mcpg_me_"
     #"mcpg_me_no_normalizer",
     #"mcpg_me_no_baseline",
     #"mcpg_me_no_ppo_loss",
-    "dcg_me",
-    "dcg_me_"
+    #"dcg_me",
+    #"dcg_me_"
     #"dcg_me_gecco",
     #"pga_me",
     #"qd_pg",
@@ -66,7 +66,20 @@ ALGO_LIST = [
     #"memes",
     #"me",
 ]
+
+ALGO_LIST = [
+    "mcpg_me_0",
+    "mcpg_me_0.25",
+    "mcpg_me_0.5",
+    "mcpg_me_0.75",
+    "mcpg_me_1",
+]
 ALGO_DICT = {
+    "mcpg_me_0": "MCPG-ME 0% GA",
+    "mcpg_me_0.25": "MCPG-ME 25% GA",
+    "mcpg_me_0.5": "MCPG-ME 50% GA",
+    "mcpg_me_0.75": "MCPG-ME 75% GA",
+    "mcpg_me_1": "MCPG-ME 100% GA",
     "dcg_me": "DCRL-AI-only",
     "dcg_me_": "DCRL",
     "dcg_me_gecco": "DCG-MAP-Elites GECCO",
@@ -83,6 +96,19 @@ ALGO_DICT = {
 }
 
 XLABEL = "Evaluations"
+
+def filter_ga_variants(df_row):
+    if df_row["algo"] == "mcpg_me":
+        if df_row["proportion_mutation_ga"] == 0:
+            return 'mcpg_me_0'
+        elif df_row["proportion_mutation_ga"] == 0.25:
+            return 'mcpg_me_0.25'
+        elif df_row["proportion_mutation_ga"] == 0.5:
+            return 'mcpg_me_0.5'
+        elif df_row["proportion_mutation_ga"] == 0.75:
+            return 'mcpg_me_0.75'
+        else:
+            return 'mcpg_me_1'
 
 
 def customize_axis(ax):
@@ -115,7 +141,7 @@ def plot(df):
         axes[0, col].set_title(ENV_DICT[env])
 
         # Set the x label and formatter for the column
-        axes[0, col].set_xlabel(XLABEL)
+        axes[2, col].set_xlabel(XLABEL)
         #axes[2, col].set_xticks(x_ticks)
         axes[0, col].xaxis.set_major_formatter(formatter)
 
@@ -129,7 +155,7 @@ def plot(df):
             df_plot,
             x="num_evaluations",
             y="qd_score",
-            hue="algo",
+            hue="algo_",
             hue_order=ALGO_LIST,
             estimator=np.median,
             errorbar=lambda x: (np.quantile(x, 0.25), np.quantile(x, 0.75)),
@@ -153,7 +179,7 @@ def plot(df):
             df_plot,
             x="num_evaluations",
             y="coverage",
-            hue="algo",
+            hue="algo_",
             hue_order=ALGO_LIST,
             estimator=np.median,
             errorbar=lambda x: (np.quantile(x, 0.25), np.quantile(x, 0.75)),
@@ -176,7 +202,7 @@ def plot(df):
             df_plot,
             x="num_evaluations",
             y="max_fitness",
-            hue="algo",
+            hue="algo_",
             hue_order=ALGO_LIST,
             estimator=np.median,
             errorbar=lambda x: (np.quantile(x, 0.25), np.quantile(x, 0.75)),
@@ -205,7 +231,7 @@ def plot(df):
     fig.tight_layout()
 
     # Save plot
-    fig.savefig("data_eff_new/output/plot_main.png", bbox_inches="tight")
+    fig.savefig("GAvsMCPG/output/plot_main.png", bbox_inches="tight")
     #fig.savefig("ablation/output/plot_main.pdf", bbox_inches="tight")
     plt.close()
 
@@ -217,7 +243,7 @@ if __name__ == "__main__":
     plt.rc("font", size=16)
 
     # Create the DataFrame
-    results_dir = Path("data_eff_new/output/")
+    results_dir = Path("GAvsMCPG/output/")
     #results_dir = Path("ablation/output/")
     #print(results_dir)
     
@@ -226,8 +252,9 @@ if __name__ == "__main__":
     df = get_df(results_dir, EPISODE_LENGTH)
 
     # Filter
-    df = df[df["algo"].isin(ALGO_LIST)]
+    df = df[df["algo"].isin(INIT_ALGO_LIST)]
     df = df[df["num_evaluations"] <= 1_001_400]
+    df['algo_'] = df.apply(filter_ga_variants, axis=1)
 
 
     # Plot

@@ -147,6 +147,13 @@ def get_config(run_dir):
 def get_metrics(run_dir):
     with open(run_dir / "metrics.pickle", "rb") as metrics_file:
         metrics = pickle.load(metrics_file)
+        if "ga_offspring_added" in metrics.keys():
+            if metrics["ga_offspring_added"].shape[0] == metrics["iteration"].shape[0] // 10:
+                metrics["ga_offspring_added"] = jnp.tile(metrics["ga_offspring_added"], 10)
+        if "qpd_offspring_added" in metrics.keys():
+            if metrics["qpg_offspring_added"].shape[0] == metrics["iteration"].shape[0] // 10:
+                metrics["qpg_offspring_added"] = jnp.tile(metrics["qpg_offspring_added"], 10)
+            
         del metrics["evaluation"]
     return pd.DataFrame.from_dict(metrics)
 
@@ -236,6 +243,9 @@ def get_df(results_dir, episode_length):
                 metrics["batch_size"] = config.batch_size
                 if config.algo.name == "dcg_me":
                     metrics["ga_batch_size"] = config.algo.ga_batch_size
+                    
+                if config.algo.name == "mcpg_me":
+                    metrics["proportion_mutation_ga"] = config.algo.proportion_mutation_ga
                     
                 metrics['gpu'] = config.HPC
 
