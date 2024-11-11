@@ -19,43 +19,80 @@ ENV_LIST = [
     "anttrap_omni_250",
     #"humanoid_omni",
     "walker2d_uni_250",
-    "walker2d_uni_1000",
+    #"walker2d_uni_1000",
     #"halfcheetah_uni",
     "ant_uni_250",
-    "ant_uni_1000",
+    #"ant_uni_1000",
     "hopper_uni_250",
-    "hopper_uni_1000",
+    #"hopper_uni_1000",
     #"humanoid_uni",
 ]
 ENV_DICT = {
-    "ant_omni": "Ant Omni",
-    "anttrap_omni": "AntTrap Omni",
+    "ant_omni_250": " Ant Omni ",
+    "anttrap_omni_250": "AntTrap Omni",
     "humanoid_omni": "Humanoid Omni",
-    "walker2d_uni": "Walker Uni",
+    "walker2d_uni_250": "Walker Uni",
+    "walker2d_uni_1000": "Walker Uni",
     "halfcheetah_uni": "HalfCheetah Uni",
-    "ant_uni": "Ant Uni",
+    "ant_uni_250": "   Ant Uni   ",
+    "ant_uni_1000": "   Ant Uni   ",
     "humanoid_uni": "Humanoid Uni",
+    "hopper_uni_250": "Hopper Uni",
+    "hopper_uni_1000": "Hopper Uni",
 }
 
-ALGO_LIST = [
-    "dcg_me",
-    "pga_me",
-    #"ablation_ai",
+INIT_ALGO_LIST = [
     "mcpg_me",
-    "me"
+    #"mcpg_me_"
+    #"mcpg_me_no_normalizer",
+    #"mcpg_me_no_baseline",
+    #"mcpg_me_no_ppo_loss",
+    #"dcg_me",
+    #"dcg_me_"
+    #"dcg_me_gecco",
+    #"pga_me",
+    #"qd_pg",
+    #"me_es",
+    #"memes",
+    #"me",
 ]
+
+ALGO_LIST = [
+    "mcpg_me_0",
+    "mcpg_me_0.25",
+    "mcpg_me_0.5",
+    "mcpg_me_0.75",
+    "mcpg_me_1",
+]
+
 ALGO_DICT = {
-    "dcg_me": "DCG-MAP-Elites-AI",
+    "mcpg_me_0": "MCPG-ME 0% GA",
+    "mcpg_me_0.25": "MCPG-ME 25% GA",
+    "mcpg_me_0.5": "MCPG-ME 50% GA",
+    "mcpg_me_0.75": "MCPG-ME 75% GA",
+    "mcpg_me_1": "MCPG-ME 100% GA",
+    "dcg_me": "DCRL-AI-only",
+    "dcg_me_": "DCRL",
+    "dcg_me_gecco": "DCG-MAP-Elites GECCO",
     "pga_me": "PGA-MAP-Elites",
     "qd_pg": "QD-PG",
     "me": "MAP-Elites",
     "me_es": "MAP-Elites-ES",
-    "ablation_ai": "Ablation AI",
     "mcpg_me": "MCPG-ME",
+    "memes": "MEMES",
+    "mcpg_me_no_normalizer": "Ablation 1",
+    "mcpg_me_no_baseline": "Ablation 2",
+    "mcpg_me_no_ppo_loss": "Ablation 3",
+    "mcpg_me_": "MCPG-ME new",
 }
 
 EMITTER_LIST = {
     "mcpg_me": ["ga_offspring_added", "qpg_offspring_added"],
+    "mcpg_me_0": ["ga_offspring_added", "qpg_offspring_added"],
+    "mcpg_me_0.25": ["ga_offspring_added", "qpg_offspring_added"],
+    "mcpg_me_0.5": ["ga_offspring_added", "qpg_offspring_added"],
+    "mcpg_me_0.75": ["ga_offspring_added", "qpg_offspring_added"],
+    "mcpg_me_1": ["ga_offspring_added", "qpg_offspring_added"],
     "dcg_me": ["ga_offspring_added", "qpg_ai_offspring_added"],
     "pga_me": ["ga_offspring_added", "qpg_ai_offspring_added"],
     "qd_pg": ["ga_offspring_added", "qpg_ai_offspring_added"],
@@ -72,6 +109,19 @@ EMITTER_DICT = {
 }
 
 XLABEL = "Evaluations"
+
+def filter_ga_variants(df_row):
+    if df_row["algo"] == "mcpg_me":
+        if df_row["proportion_mutation_ga"] == 0:
+            return 'mcpg_me_0'
+        elif df_row["proportion_mutation_ga"] == 0.25:
+            return 'mcpg_me_0.25'
+        elif df_row["proportion_mutation_ga"] == 0.5:
+            return 'mcpg_me_0.5'
+        elif df_row["proportion_mutation_ga"] == 0.75:
+            return 'mcpg_me_0.75'
+        else:
+            return 'mcpg_me_1'
 
 
 def customize_axis(ax):
@@ -108,7 +158,7 @@ def plot(df):
         axes[nrows-1, col].xaxis.set_major_formatter(formatter)
 
         # Get df for the current env
-        df_plot = df[(df["env"] == env) & (df["algo"].isin(ALGO_LIST))]
+        df_plot = df[(df["env"] == env)]  
 
         # Plot
         for i, emitter in enumerate(EMITTER_LIST[ALGO_LIST[0]]):
@@ -116,7 +166,7 @@ def plot(df):
                 df_plot,
                 x="num_evaluations",
                 y=emitter,
-                hue="algo",
+                hue="algo_",
                 hue_order=ALGO_LIST,
                 estimator=np.median,
                 errorbar=lambda x: (np.quantile(x, 0.25), np.quantile(x, 0.75)),
@@ -140,7 +190,7 @@ def plot(df):
     fig.tight_layout()
 
     # Save plot
-    fig.savefig("data_time_efficiency/output/plot_elites.pdf", bbox_inches="tight")
+    fig.savefig("GAvsMCPG/output/plot_main_emitters.png", bbox_inches="tight")
     plt.close()
 
 
@@ -151,8 +201,11 @@ if __name__ == "__main__":
     plt.rc("font", size=16)
 
     # Create the DataFrame
-    results_dir = Path("data_time_efficiency/output/")
-    df = get_df(results_dir)
+    results_dir = Path("GAvsMCPG/output/")
+        
+    EPISODE_LENGTH = 250
+
+    df = get_df(results_dir, EPISODE_LENGTH)
 
     # Sum PG and AI emitters
     #df["qpg_ai_offspring_added"] = df["qpg_offspring_added"] + df["ai_offspring_added"]
@@ -162,8 +215,9 @@ if __name__ == "__main__":
         df[emitter] = df.groupby(['env', 'algo', 'run'])[emitter].cumsum()
 
     # Filter
-    df = df[df["num_evaluations"] <= 1_000_000]
-
+    df = df[df["algo"].isin(INIT_ALGO_LIST)]
+    df = df[df["num_evaluations"] <= 1_001_400]
+    df['algo_'] = df.apply(filter_ga_variants, axis=1)
     # Plot
     plot(df)
     

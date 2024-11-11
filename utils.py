@@ -150,7 +150,7 @@ def get_metrics(run_dir):
         if "ga_offspring_added" in metrics.keys():
             if metrics["ga_offspring_added"].shape[0] == metrics["iteration"].shape[0] // 10:
                 metrics["ga_offspring_added"] = jnp.tile(metrics["ga_offspring_added"], 10)
-        if "qpd_offspring_added" in metrics.keys():
+        if "qpg_offspring_added" in metrics.keys():
             if metrics["qpg_offspring_added"].shape[0] == metrics["iteration"].shape[0] // 10:
                 metrics["qpg_offspring_added"] = jnp.tile(metrics["qpg_offspring_added"], 10)
             

@@ -60,7 +60,7 @@ ALGO_LIST = [
     #"qd_pg",
     "me",
     #"me_es",
-    #"mcpg_me",
+    "mcpg_me",
     #"memes",
 ]
 ALGO_DICT = {
@@ -77,16 +77,11 @@ ALGO_DICT = {
 XLABEL = "Evaluations"
 
 
-def filter_gpu_variants(df_row):
+def filter_ga_variants(df_row):
     if df_row["algo"] == "mcpg_me":
-        if df_row["gpu"] == "A100":
-            return 'A100'
+        if df_row["proportion_mutation_ga"] == "1":
+            return 'mcpg_me'
         
-        else:
-            return 'L40S'
-    else:
-        return df_row["algo"]
-
 
 def customize_axis(ax):
     # Remove spines
@@ -211,6 +206,10 @@ if __name__ == "__main__":
     df = df[df["algo"].isin(ALGO_LIST)]
     df = df[df["num_evaluations"] <= 5_000_000]
     #df['env_'] = df.apply(filter_gpu_variants, axis=1)
+    df = df.loc[
+    (df['algo'] != "mcpg_me") | 
+    ((df['algo'] == "mcpg_me") & (df['proportion_mutation_ga'] == 1))
+]
 
     
     

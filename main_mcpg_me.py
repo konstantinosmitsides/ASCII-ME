@@ -73,12 +73,21 @@ def main(config: Config) -> None:
     
 
     
-    
-    policy_network = MLPMCPG(
-        action_dim=env.action_size,
-        activation=config.algo.activation,
-        no_neurons=config.algo.no_neurons,
-    )
+    if config.init == "uniform":
+        policy_network = MLPMCPG(
+            action_dim=env.action_size,
+            activation=config.algo.activation,
+            no_neurons=config.algo.no_neurons,
+            kernel_init=jax.nn.initializers.lecun_uniform(),
+            final_init=jax.nn.initializers.lecun_uniform(),
+        )
+        
+    else:
+        policy_network = MLPMCPG(
+            action_dim=env.action_size,
+            activation=config.algo.activation,
+            no_neurons=config.algo.no_neurons,
+        )
     
     # Init population of controllers
     
