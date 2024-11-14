@@ -11,8 +11,8 @@ from hydra.core.config_store import ConfigStore
 def main(config: Config) -> None:
     if config.algo.name == "me":
         import main_me as main
-    #elif config.algo.name == "me_es":
-    #    import main_me_es as main
+    elif config.algo.name == "me_2":
+        import main_me_2 as main
     elif config.algo.name == "pga_me":
         import main_pga_me as main
     #elif config.algo.name == "qd_pg":

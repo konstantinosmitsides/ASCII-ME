@@ -49,7 +49,8 @@ BATCH_LIST = [
     1024,
     4096,
     16384,
-    65536
+    32768,
+    #65536
     
 ]
 
@@ -63,6 +64,14 @@ ALGO_LIST = [
     "mcpg_me",
     #"memes",
 ]
+
+NEW_ALGO_LIST = [
+    "mcpg_me_1",
+    "mcpg_me_4",
+    "mcpg_me_8",
+    "mcpg_me_16",
+    "mcpg_me_32",
+]
 ALGO_DICT = {
     "dcg_me": "DCG-MAP-Elites-AI",
     "dcg_me_gecco": "DCG-MAP-Elites GECCO",
@@ -70,17 +79,30 @@ ALGO_DICT = {
     "qd_pg": "QD-PG",
     "me": "MAP-Elites",
     "me_es": "MAP-Elites-ES",
-    "mcpg_me": "MCPG-ME",
+    "mcpg_me_32": "32 epochs",
+    "mcpg_me_1": "1 epoch",
+    "mcpg_me_4": "4 epochs",
+    "mcpg_me_8": "8 epochs",
+    "mcpg_me_16": "16 epochs",
     "memes": "MEMES",
 }
 
 XLABEL = "Evaluations"
 
 
-def filter_ga_variants(df_row):
+def filter_epoch_variants(df_row):
     if df_row["algo"] == "mcpg_me":
-        if df_row["proportion_mutation_ga"] == "1":
-            return 'mcpg_me'
+        if df_row["no_epochs"] == 1:
+            return "mcpg_me_1"
+        elif df_row["no_epochs"] == 4:
+            return "mcpg_me_4"
+        elif df_row["no_epochs"] == 8:
+            return "mcpg_me_8"
+        elif df_row["no_epochs"] == 16:
+            return "mcpg_me_16"
+        elif df_row["no_epochs"] == 32:
+            return "mcpg_me_32"
+    return df_row["algo"]
         
 
 def customize_axis(ax):
@@ -137,7 +159,7 @@ def plot__(summary_df):
             if col == 0:
                 sns.barplot(
                     data=df_plot,
-                    x="algo",
+                    x="algo_",
                     y="qd_score",
                     hue="batch_size",
                     ax=ax,
@@ -150,7 +172,7 @@ def plot__(summary_df):
             else:
                 sns.barplot(
                     data=df_plot,
-                    x="algo",
+                    x="algo_",
                     y="time",
                     hue="batch_size",
                     ax=ax,
@@ -164,7 +186,7 @@ def plot__(summary_df):
 
                 # Set the x-axis labels with rotation for better visibility
                 #ax.set_xticklabels([str(batch_size) for batch_size in BATCH_LIST], rotation=45, ha="right")
-            ax.set_xticklabels([ALGO_DICT.get(algo, algo) for algo in df_plot['algo'].unique()], ha="center")
+            ax.set_xticklabels([ALGO_DICT.get(algo, algo) for algo in df_plot['algo_'].unique()], ha="center")
             # Set y-axis label and limits
             #ax.set_ylim(0.0)
             #ax.set_ylabel(None)
@@ -182,7 +204,7 @@ def plot__(summary_df):
         #fig.legend(ax_.get_lines(), [str(batch_size) for batch_size in BATCH_LIST], loc="lower center", bbox_to_anchor=(0.5, -0.03), ncols=len(BATCH_LIST), frameon=False)
         fig.align_ylabels(axes[:, 0])
         fig.tight_layout()
-        fig.savefig("scalability/output/plot_main_.png", bbox_inches="tight")
+        fig.savefig("testing_gpu_for_scalability/output/plot_main_.png", bbox_inches="tight")
         plt.close()
 
 
@@ -195,7 +217,7 @@ if __name__ == "__main__":
     plt.rc("font", size=16)
 
     # Create the DataFrame
-    results_dir = Path("scalability/output/")
+    results_dir = Path("testing_gpu_for_scalability/output/")
     #print(results_dir)
     
     EPISODE_LENGTH = 250
@@ -206,11 +228,11 @@ if __name__ == "__main__":
     df = df[df["algo"].isin(ALGO_LIST)]
     df = df[df["num_evaluations"] <= 5_000_000]
     #df['env_'] = df.apply(filter_gpu_variants, axis=1)
-    df = df.loc[
-    (df['algo'] != "mcpg_me") | 
-    ((df['algo'] == "mcpg_me") & (df['proportion_mutation_ga'] == 1))
-]
-
+#    df = df.loc[
+#    (df['algo'] != "mcpg_me") | 
+#    ((df['algo'] == "mcpg_me") & (df['proportion_mutation_ga'] == 1))
+#]
+    df['algo_'] = df.apply(filter_epoch_variants, axis=1)
     
     
     idx = df.groupby(["env", "algo", "run"])["iteration"].idxmax()
@@ -218,7 +240,7 @@ if __name__ == "__main__":
     df_last_iteration = df.loc[idx]
 
     # Extract only the relevant columns for easier readability
-    summary_df = df_last_iteration[['env', 'algo', 'time', 'qd_score', 'batch_size']]
+    summary_df = df_last_iteration[['env', 'algo_', 'time', 'qd_score', 'batch_size']]
     
     #df['env_'] = df.apply(filter_gpu_variants, axis=1)
 

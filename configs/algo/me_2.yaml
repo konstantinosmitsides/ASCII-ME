@@ -1,0 +1,10 @@
+name: me_2
+
+# GA emitter
+proportion_mutation_ga: 0.5
+
+iso_sigma: 0.005
+line_sigma: 0.05
+
+iso_sigma_2: 0.005
+line_sigma_2: 0.05
