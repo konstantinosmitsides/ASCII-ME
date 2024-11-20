@@ -16,6 +16,7 @@ from qdax.core.neuroevolution.buffers.buffer import QDTransition, QDMCTransition
 #from qdax.core.neuroevolution.buffers.trajectory_buffer import TrajectoryBuffer
 import flashbax as fbx
 import chex
+from utils import find_magnitude_of_updates, concatenate_params
 
 from qdax.core.emitters.emitter import Emitter, EmitterState
 from jax import profiler
@@ -57,9 +58,16 @@ class MCPGEmitter(Emitter):
         self._policy = policy_net
         self._env = env
         
-        self._policy_opt = optax.adam(
-            learning_rate=self._config.learning_rate
+        self._policy_opt = optax.chain(
+            optax.zero_nans(),
+            optax.clip_by_global_norm(0.5),
+            optax.adam(learning_rate=self._config.learning_rate),
         )
+        
+        #self._policy_opt = optax.adam(
+        #    learning_rate=self._config.learning_rate
+        #)
+        
         buffer = fbx.make_trajectory_buffer(
             max_length_time_axis=self._env.episode_length,
             min_length_time_axis=self._env.episode_length,
@@ -144,8 +152,24 @@ class MCPGEmitter(Emitter):
         )
         
         offsprings_mcpg = self.emit_mcpg(emitter_state, parents, returns, random_keys[:no_agents])
+        #jax.debug.breakpoint()
+        new_params = concatenate_params(offsprings_mcpg)
+        mean_new = jnp.mean(new_params)
+        old_params = concatenate_params(parents)
+        mean_old = jnp.mean(old_params)
+        update_magnitudes = find_magnitude_of_updates(new_params, old_params)
+        #genotype_differences = jax.tree_util.tree_map(lambda x, y: y - x, parents, offsprings_mcpg)
+        #magnitude_of_differences = jax.tree_util.tree_map(jnp.linalg.norm, genotype_differences)
+
         
-        return offsprings_mcpg, {}, random_keys[-2]
+
+        
+        #first_parent = jax.tree_util.tree_map(lambda x: x[0], parents)
+        #first_offspring = jax.tree_util.tree_map(lambda x: x[0], offsprings_mcpg)
+        
+        #jax.debug.breakpoint()
+        
+        return offsprings_mcpg, {'update_magns_pg' : update_magnitudes}, random_keys[-2]
     
     @partial(jax.jit, static_argnames=("self",))
     def emit_mcpg(
@@ -165,6 +189,7 @@ class MCPGEmitter(Emitter):
         '''
         
         offsprings = jax.vmap(self._mutation_function_mcpg, in_axes=(0, 0, None, 0))(parents, returns, emitter_state, random_keys)
+        
         
         
         return offsprings
@@ -246,6 +271,8 @@ class MCPGEmitter(Emitter):
             length=self._config.no_epochs,
         )
         
+        
+        
         return policy_params
         
         
@@ -265,8 +292,12 @@ class MCPGEmitter(Emitter):
         """
         
         grads = jax.grad(self.loss_ppo)(policy_params, obs, actions, logps, standardized_returns, mask)
+        #jax.debug.print("grads : {}", grads)
+        
+        
         updates, new_policy_opt_state = self._policy_opt.update(grads, policy_opt_state)
         new_policy_params = optax.apply_updates(policy_params, updates)
+        
 
         return new_policy_params, new_policy_opt_state
     
@@ -291,3 +322,6 @@ class MCPGEmitter(Emitter):
         pg_loss_2 = jax.lax.stop_gradient(standardized_returns * (1.0 - mask)) * jax.lax.clamp(1. - self._config.clip_param, ratio, 1. + self._config.clip_param) 
         
         return (-jnp.sum(jnp.minimum(pg_loss_1, pg_loss_2))) / jnp.sum(ratio * (1.0 - mask)) 
+        
+    
+        

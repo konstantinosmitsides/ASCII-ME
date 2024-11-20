@@ -1,4 +1,4 @@
-job_name: lower_epochs
+job_name: me_2
  
 walltime: 07:59:00
  
@@ -14,54 +14,54 @@ njobs: 5
 
 args:
   # new me
-  - "HPC=L40S algo=me_2 seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal iso_sigma=0.005 line_sigma=0.05 iso_sigma_2=0.05 line_sigma_2=0.05"
-  - "HPC=L40S algo=me_2 seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal iso_sigma=0.005 line_sigma=0.05 iso_sigma_2=0.5 line_sigma_2=0.05"
+  - "HPC=L40S algo=me_2 seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.05 algo.line_sigma_2=0.05"
+  - "HPC=L40S algo=me_2 seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.5 algo.line_sigma_2=0.05"
 
-  - "HPC=L40S algo=me_2 seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal iso_sigma=0.005 line_sigma=0.05 iso_sigma_2=0.005 line_sigma_2=0.5"
-  - "HPC=L40S algo=me_2 seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal iso_sigma=0.005 line_sigma=0.05 iso_sigma_2=0.005 line_sigma_2=1.0"
+  - "HPC=L40S algo=me_2 seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.005 algo.line_sigma_2=0.5"
+  - "HPC=L40S algo=me_2 seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.005 algo.line_sigma_2=1.0"
 
-  - "HPC=L40S algo=me_2 seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal iso_sigma=0.005 line_sigma=0.05 iso_sigma_2=0.05 line_sigma_2=0.5"
-  - "HPC=L40S algo=me_2 seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal iso_sigma=0.005 line_sigma=0.05 iso_sigma_2=0.5 line_sigma_2=1.0"
+  - "HPC=L40S algo=me_2 seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.05 algo.line_sigma_2=0.5"
+  - "HPC=L40S algo=me_2 seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.5 algo.line_sigma_2=1.0"
 
 
-  - "HPC=L40S algo=me_2 seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal iso_sigma=0.005 line_sigma=0.05 iso_sigma_2=0.05 line_sigma_2=0.05"
-  - "HPC=L40S algo=me_2 seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal iso_sigma=0.005 line_sigma=0.05 iso_sigma_2=0.5 line_sigma_2=0.05"
+  - "HPC=L40S algo=me_2 seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.05 algo.line_sigma_2=0.05"
+  - "HPC=L40S algo=me_2 seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.5 algo.line_sigma_2=0.05"
 
-  - "HPC=L40S algo=me_2 seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal iso_sigma=0.005 line_sigma=0.05 iso_sigma_2=0.005 line_sigma_2=0.5"
-  - "HPC=L40S algo=me_2 seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal iso_sigma=0.005 line_sigma=0.05 iso_sigma_2=0.005 line_sigma_2=1.0"
+  - "HPC=L40S algo=me_2 seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.005 algo.line_sigma_2=0.5"
+  - "HPC=L40S algo=me_2 seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.005 algo.line_sigma_2=1.0"
   
-  - "HPC=L40S algo=me_2 seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal iso_sigma=0.005 line_sigma=0.05 iso_sigma_2=0.05 line_sigma_2=0.5"
-  - "HPC=L40S algo=me_2 seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal iso_sigma=0.005 line_sigma=0.05 iso_sigma_2=0.5 line_sigma_2=1.0"
+  - "HPC=L40S algo=me_2 seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.05 algo.line_sigma_2=0.5"
+  - "HPC=L40S algo=me_2 seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.5 algo.line_sigma_2=1.0"
 
 
-  - "HPC=L40S algo=me_2 seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal iso_sigma=0.005 line_sigma=0.05 iso_sigma_2=0.05 line_sigma_2=0.05"
-  - "HPC=L40S algo=me_2 seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal iso_sigma=0.005 line_sigma=0.05 iso_sigma_2=0.5 line_sigma_2=0.05"
+  - "HPC=L40S algo=me_2 seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.05 algo.line_sigma_2=0.05"
+  - "HPC=L40S algo=me_2 seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.5 algo.line_sigma_2=0.05"
 
-  - "HPC=L40S algo=me_2 seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal iso_sigma=0.005 line_sigma=0.05 iso_sigma_2=0.005 line_sigma_2=0.5"
-  - "HPC=L40S algo=me_2 seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal iso_sigma=0.005 line_sigma=0.05 iso_sigma_2=0.005 line_sigma_2=1.0"
+  - "HPC=L40S algo=me_2 seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.005 algo.line_sigma_2=0.5"
+  - "HPC=L40S algo=me_2 seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.005 algo.line_sigma_2=1.0"
   
-  - "HPC=L40S algo=me_2 seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal iso_sigma=0.005 line_sigma=0.05 iso_sigma_2=0.05 line_sigma_2=0.5"
-  - "HPC=L40S algo=me_2 seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal iso_sigma=0.005 line_sigma=0.05 iso_sigma_2=0.5 line_sigma_2=1.0"
+  - "HPC=L40S algo=me_2 seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.05 algo.line_sigma_2=0.5"
+  - "HPC=L40S algo=me_2 seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.5 algo.line_sigma_2=1.0"
 
 
-  - "HPC=L40S algo=me_2 seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal iso_sigma=0.005 line_sigma=0.05 iso_sigma_2=0.05 line_sigma_2=0.05"
-  - "HPC=L40S algo=me_2 seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal iso_sigma=0.005 line_sigma=0.05 iso_sigma_2=0.5 line_sigma_2=0.05"
+  - "HPC=L40S algo=me_2 seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.05 algo.line_sigma_2=0.05"
+  - "HPC=L40S algo=me_2 seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.5 algo.line_sigma_2=0.05"
 
-  - "HPC=L40S algo=me_2 seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal iso_sigma=0.005 line_sigma=0.05 iso_sigma_2=0.005 line_sigma_2=0.5"
-  - "HPC=L40S algo=me_2 seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal iso_sigma=0.005 line_sigma=0.05 iso_sigma_2=0.005 line_sigma_2=1.0"
+  - "HPC=L40S algo=me_2 seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.005 algo.line_sigma_2=0.5"
+  - "HPC=L40S algo=me_2 seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.005 algo.line_sigma_2=1.0"
   
-  - "HPC=L40S algo=me_2 seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal iso_sigma=0.005 line_sigma=0.05 iso_sigma_2=0.05 line_sigma_2=0.5"
-  - "HPC=L40S algo=me_2 seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal iso_sigma=0.005 line_sigma=0.05 iso_sigma_2=0.5 line_sigma_2=1.0"
+  - "HPC=L40S algo=me_2 seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.05 algo.line_sigma_2=0.5"
+  - "HPC=L40S algo=me_2 seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.5 algo.line_sigma_2=1.0"
 
 
-  - "HPC=L40S algo=me_2 seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal iso_sigma=0.005 line_sigma=0.05 iso_sigma_2=0.05 line_sigma_2=0.05"
-  - "HPC=L40S algo=me_2 seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal iso_sigma=0.005 line_sigma=0.05 iso_sigma_2=0.5 line_sigma_2=0.05"
+  - "HPC=L40S algo=me_2 seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.05 algo.line_sigma_2=0.05"
+  - "HPC=L40S algo=me_2 seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.5 algo.line_sigma_2=0.05"
 
-  - "HPC=L40S algo=me_2 seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal iso_sigma=0.005 line_sigma=0.05 iso_sigma_2=0.005 line_sigma_2=0.5"
-  - "HPC=L40S algo=me_2 seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal iso_sigma=0.005 line_sigma=0.05 iso_sigma_2=0.005 line_sigma_2=1.0"
+  - "HPC=L40S algo=me_2 seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.005 algo.line_sigma_2=0.5"
+  - "HPC=L40S algo=me_2 seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.005 algo.line_sigma_2=1.0"
   
-  - "HPC=L40S algo=me_2 seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal iso_sigma=0.005 line_sigma=0.05 iso_sigma_2=0.05 line_sigma_2=0.5"
-  - "HPC=L40S algo=me_2 seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal iso_sigma=0.005 line_sigma=0.05 iso_sigma_2=0.5 line_sigma_2=1.0"
+  - "HPC=L40S algo=me_2 seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.05 algo.line_sigma_2=0.5"
+  - "HPC=L40S algo=me_2 seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.5 algo.line_sigma_2=1.0"
 
 
 

@@ -168,6 +168,8 @@ class MCPGEmitter(Emitter):
         
         offsprings_mcpg = self.emit_mcpg(emitter_state, parents, random_keys[:no_agents])
         
+        #jax.debug.breakpoint()
+        
         return offsprings_mcpg, {}, random_keys[-2]
     
     @partial(jax.jit, static_argnames=("self",))

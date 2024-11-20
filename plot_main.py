@@ -52,9 +52,9 @@ BATCH_LIST = [
 ]
 
 ALGO_LIST = [
-    "mcpg_me",
+    #"mcpg_me",
     #"mcpg_me__"
-    "mcpg_me_"
+    #"mcpg_me_"
     #"mcpg_me_no_normalizer",
     #"mcpg_me_no_baseline",
     #"mcpg_me_no_ppo_loss",
@@ -66,8 +66,25 @@ ALGO_LIST = [
     #"me_es",
     #"memes",
     #"me",
+    "me_2",
 ]
+
+NEW_ALGO_LIST = [
+    "me_0.05_0.05",
+    "me_0.5_0.05",
+    "me_0.005_0.5",
+    "me_0.005_1.0",
+    "me_0.05_0.5",
+    "me_0.5_1.0",
+]
+
 ALGO_DICT = {
+    "me_0.05_0.05": "ME (0.05, 0.05)",
+    "me_0.5_0.05": "ME (0.5, 0.05)",
+    "me_0.005_0.5": "ME (0.005, 0.5)",
+    "me_0.005_1.0": "ME (0.005, 1.0)",
+    "me_0.05_0.5": "ME (0.05, 0.5)",
+    "me_0.5_1.0": "ME (0.5, 1.0)",
     "dcg_me": "DCRL-AI-only",
     "dcg_me_": "DCRL",
     "dcg_me_gecco": "DCG-MAP-Elites GECCO",
@@ -85,6 +102,23 @@ ALGO_DICT = {
 }
 
 XLABEL = "Evaluations"
+
+def filter_sigma_variants(df_row):
+    if df_row["algo"] == "me_2":
+        if df_row["iso_sigma_2"] == 0.05 and df_row["line_sigma_2"] == 0.05:
+            return "me_0.05_0.05"
+        elif df_row["iso_sigma_2"] == 0.5 and df_row["line_sigma_2"] == 0.05:
+            return "me_0.5_0.05"
+        elif df_row["iso_sigma_2"] == 0.005 and df_row["line_sigma_2"] == 0.5:
+            return "me_0.005_0.5"
+        elif df_row["iso_sigma_2"] == 0.005 and df_row["line_sigma_2"] == 1.0:
+            return "me_0.005_1.0"
+        elif df_row["iso_sigma_2"] == 0.05 and df_row["line_sigma_2"] == 0.5:
+            return "me_0.05_0.5"
+        elif df_row["iso_sigma_2"] == 0.5 and df_row["line_sigma_2"] == 1.0:
+            return "me_0.5_1.0"
+            
+    return df_row["algo"]
 
 
 def customize_axis(ax):
@@ -131,8 +165,8 @@ def plot(df):
             df_plot,
             x="num_evaluations",
             y="qd_score",
-            hue="algo",
-            hue_order=ALGO_LIST,
+            hue="algo_",
+            hue_order=NEW_ALGO_LIST,
             estimator=np.median,
             errorbar=lambda x: (np.quantile(x, 0.25), np.quantile(x, 0.75)),
             legend=False,
@@ -155,8 +189,8 @@ def plot(df):
             df_plot,
             x="num_evaluations",
             y="coverage",
-            hue="algo",
-            hue_order=ALGO_LIST,
+            hue="algo_",
+            hue_order=NEW_ALGO_LIST,
             estimator=np.median,
             errorbar=lambda x: (np.quantile(x, 0.25), np.quantile(x, 0.75)),
             legend=False,
@@ -178,8 +212,8 @@ def plot(df):
             df_plot,
             x="num_evaluations",
             y="max_fitness",
-            hue="algo",
-            hue_order=ALGO_LIST,
+            hue="algo_",
+            hue_order=NEW_ALGO_LIST,
             estimator=np.median,
             errorbar=lambda x: (np.quantile(x, 0.25), np.quantile(x, 0.75)),
             legend=False,
@@ -196,18 +230,18 @@ def plot(df):
 
     # Legend
     #fig.legend(ax.get_lines(), [ALGO_DICT[algo] for algo in ALGO_LIST], loc="lower center", bbox_to_anchor=(0.5, -0.03), ncols=len(ALGO_LIST), frameon=False)
-    colors = sns.color_palette(n_colors=len(ALGO_LIST))  # Get a color palette with 3 distinct colors
+    colors = sns.color_palette(n_colors=len(NEW_ALGO_LIST))  # Get a color palette with 3 distinct colors
     #patches = [mpatches.Patch(color=colors[i], label=ALGO_DICT[algo]) for i, algo in enumerate(ALGO_LIST)]
     #fig.legend(ax_.get_lines(), [ALGO_DICT[algo] for algo in ALGO_LIST], loc="lower center", bbox_to_anchor=(0.5, -0.03), ncols=len(ALGO_LIST), frameon=False)
     #fig.legend(handles=patches, loc='lower center', bbox_to_anchor=(0.5, -0.07), ncols=len(ALGO_LIST), frameon=False)
-    patches = [mlines.Line2D([], [], color=colors[i], label=ALGO_DICT[algo], linewidth=2.2, linestyle='-') for i, algo in enumerate(ALGO_LIST)]
-    fig.legend(handles=patches, loc='lower center', bbox_to_anchor=(0.5, -0.03), ncols=len(ALGO_LIST), frameon=False)
+    patches = [mlines.Line2D([], [], color=colors[i], label=ALGO_DICT[algo], linewidth=2.2, linestyle='-') for i, algo in enumerate(NEW_ALGO_LIST)]
+    fig.legend(handles=patches, loc='lower center', bbox_to_anchor=(0.5, -0.03), ncols=len(NEW_ALGO_LIST), frameon=False)
     # Aesthetic
     fig.align_ylabels(axes)
     fig.tight_layout()
 
     # Save plot
-    fig.savefig("inits/output/plot_main.png", bbox_inches="tight")
+    fig.savefig("me_variants/output/plot_main.png", bbox_inches="tight")
     #fig.savefig("ablation/output/plot_main.pdf", bbox_inches="tight")
     plt.close()
 
@@ -219,7 +253,7 @@ if __name__ == "__main__":
     plt.rc("font", size=16)
 
     # Create the DataFrame
-    results_dir = Path("inits/output/")
+    results_dir = Path("me_variants/output/")
     #results_dir = Path("ablation/output/")
     #print(results_dir)
     
@@ -230,6 +264,8 @@ if __name__ == "__main__":
     # Filter
     df = df[df["algo"].isin(ALGO_LIST)]
     df = df[df["num_evaluations"] <= 1_001_400]
+    
+    df['algo_'] = df.apply(filter_sigma_variants, axis=1)
 
 
     # Plot

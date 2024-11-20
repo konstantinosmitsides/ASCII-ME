@@ -7,6 +7,7 @@ import jax.numpy as jnp
 from qdax.core.containers.repertoire import Repertoire
 from qdax.core.emitters.emitter import Emitter, EmitterState
 from qdax.types import ExtraScores, Genotype, RNGKey
+from utils import find_magnitude_of_updates, concatenate_params
 
 
 class MixingEmitter(Emitter):
@@ -55,13 +56,13 @@ class MixingEmitter(Emitter):
         n_mutation = self._batch_size - n_variation
 
         if n_variation > 0:
-            x1, _, random_key = repertoire.sample(random_key, n_variation)
-            x2, _, random_key = repertoire.sample(random_key, n_variation)
+            x1, _, random_key, _ = repertoire.sample(random_key, n_variation)
+            x2, _, random_key, _ = repertoire.sample(random_key, n_variation)
 
             x_variation, random_key = self._variation_fn(x1, x2, random_key)
 
         if n_mutation > 0:
-            x1, _, random_key = repertoire.sample(random_key, n_mutation)
+            x1, _, random_key, _ = repertoire.sample(random_key, n_mutation)
             x_mutation, random_key = self._mutation_fn(x1, random_key)
             
         #if n_variation == 0 and n_mutation == 0:
@@ -77,8 +78,12 @@ class MixingEmitter(Emitter):
                 x_variation,
                 x_mutation,
             )
+            
+        new_params = concatenate_params(genotypes)
+        old_params = concatenate_params(x1)
+        update_magnitudes = find_magnitude_of_updates(new_params, old_params)
 
-        return genotypes, {}, random_key
+        return genotypes, {"update_magns_ga" : update_magnitudes}, random_key
 
     @property
     def batch_size(self) -> int:

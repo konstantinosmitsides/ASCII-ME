@@ -248,6 +248,10 @@ def get_df(results_dir, episode_length):
                     metrics["proportion_mutation_ga"] = config.algo.proportion_mutation_ga
                     metrics["no_epochs"] = config.algo.no_epochs
                     
+                if config.algo.name == "me_2":
+                    metrics["iso_sigma_2"] = config.algo.iso_sigma_2
+                    metrics["line_sigma_2"] = config.algo.line_sigma_2
+                    
                 metrics['gpu'] = config.HPC
 
                 # Run
@@ -385,3 +389,65 @@ def get_return_for_batch_episodes(
     #jax.debug.print("mask: {}", mask.shape)
     #jax.debug.print("rewards*mask: {}", (rewards * mask).shape)
     return jax.vmap(get_return_for_episode, in_axes=(0, None))(rewards * mask, episode_length)
+
+
+@jax.jit
+def concatenate_params(param_dict):
+    concatenated_arrays = []
+    for layer in param_dict['params']:
+        if layer == 'log_std':
+            continue
+        layer_data = param_dict['params'][layer]
+        # Extract and flatten the arrays if necessary
+        bias = layer_data['bias']
+        kernel = layer_data['kernel']
+        kernel = kernel.reshape(kernel.shape[0], -1)
+        # Concatenate bias and kernel horizontally
+        concatenated = jnp.concatenate((bias, kernel), axis=1)
+        concatenated_arrays.append(concatenated)
+    # Concatenate all layers vertically if needed
+    final_array = jnp.concatenate(concatenated_arrays, axis=1)
+    return final_array
+
+
+@jax.jit
+def find_magnitude_of_updates(params, new_params):
+    diff = new_params - params
+    return jnp.linalg.norm(diff, axis=1)
+
+@jax.jit
+def compute_cosine_similarity(states1, states2):
+    """
+    Compute the cosine similarity between corresponding pairs of states in two arrays.
+
+    Parameters:
+    - states1: JAX array of shape (N, D), where N is the number of states and D is the state dimension.
+    - states2: JAX array of shape (N, D), must have the same shape as states1.
+
+    Returns:
+    - similarities: JAX array of shape (N,), containing the cosine similarities.
+    """
+    # Compute the dot product between corresponding states
+    dot_products = jnp.sum(states1 * states2, axis=1)
+    
+    # Compute the norms (magnitudes) of each state vector
+    norms1 = jnp.linalg.norm(states1, axis=1)
+    norms2 = jnp.linalg.norm(states2, axis=1)
+    
+    # Compute the product of norms
+    norm_products = norms1 * norms2
+    
+    # Handle cases where norms are zero to avoid division by zero
+    # Use jnp.where to avoid division by zero
+    safe_norm_products = jnp.where(norm_products == 0, 1.0, norm_products)
+    
+    # Compute cosine similarities
+    cosine_similarities = dot_products / safe_norm_products
+    
+    # Set similarities to zero where norms were zero
+    cosine_similarities = jnp.where(norm_products == 0, 0.0, cosine_similarities)
+    
+    # Set negative similarities to zero
+    cosine_similarities = jnp.maximum(cosine_similarities, 0.25)
+
+    return cosine_similarities

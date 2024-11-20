@@ -18,12 +18,12 @@ from omegaconf import OmegaConf
 import jax
 import jax.numpy as jnp
 from hydra.core.config_store import ConfigStore
-from qdax.core.map_elites_advanced_baseline_time_step import MAPElites
+from qdax.core.map_elites_upd_magns import MAPElites
 from qdax.types import RNGKey, Genotype
 from qdax.utils.sampling import sampling 
 from qdax.core.containers.mapelites_repertoire_advanced_baseline_time_step import compute_cvt_centroids, MapElitesRepertoire
-from qdax.core.neuroevolution.networks.networks import MLPMCPG
-from qdax.core.emitters.me_mcpg_emitter_advanced_baseline_time_step import MEMCPGConfig, MEMCPGEmitter
+from qdax.core.neuroevolution.networks.networks import MLPMCPG_
+from qdax.core.emitters.me_mcpg_emitter_upd_magns import MEMCPGConfig, MEMCPGEmitter
 #from qdax.core.emitters.rein_emitter_advanced import REINaiveConfig, REINaiveEmitter
 from qdax.core.neuroevolution.buffers.buffer import QDTransition, QDMCTransition
 from qdax.environments_v1 import behavior_descriptor_extractor
@@ -46,12 +46,12 @@ import matplotlib.pyplot as plt
 def main(config: Config) -> None:
     #profiler_dir = "Memory_Investigation"
     #os.makedirs(profiler_dir, exist_ok=True)
-    #wandb.login(key="ab476069b53a15ad74ff1845e8dee5091d241297")
-    #wandb.init(
-    #    project="me-mcpg",
-    #    name=config.algo.name,
-    #    config=OmegaConf.to_container(config, resolve=True),
-    #)
+    wandb.login(key="ab476069b53a15ad74ff1845e8dee5091d241297")
+    wandb.init(
+        project="me-mcpg",
+        name=config.algo.name,
+        config=OmegaConf.to_container(config, resolve=True),
+    )
     # Init a random key
     random_key = jax.random.PRNGKey(config.seed)
 
@@ -74,7 +74,7 @@ def main(config: Config) -> None:
 
     
     if config.init == "uniform":
-        policy_network = MLPMCPG(
+        policy_network = MLPMCPG_(
             action_dim=env.action_size,
             activation=config.algo.activation,
             no_neurons=config.algo.no_neurons,
@@ -83,7 +83,7 @@ def main(config: Config) -> None:
         )
         
     else:
-        policy_network = MLPMCPG(
+        policy_network = MLPMCPG_(
             action_dim=env.action_size,
             activation=config.algo.activation,
             no_neurons=config.algo.no_neurons,
@@ -127,6 +127,26 @@ def main(config: Config) -> None:
         return (next_state, policy_params, random_key), transition
 
 
+    
+    def get_av_upd_magn(metrics):
+        split = jnp.cumsum(jnp.array([emitter.batch_size for emitter in map_elites._emitter.emitters]))
+        is_offspring_split = jnp.split(metrics["is_offspring_added"], split, axis=-1)[:-1]
+        upd_magns_split = jnp.split(metrics["update_magns"], split, axis=-1)[:-1]
+        if config.algo.proportion_mutation_ga == 0:
+            filtered_upd_magns = upd_magns_split[0][is_offspring_split[0]]
+            return (jnp.array([0]), jnp.mean(filtered_upd_magns))
+        
+        elif config.algo.proportion_mutation_ga == 1:
+            filtered_upd_magns = upd_magns_split[0][is_offspring_split[0]]
+            return (jnp.mean(filtered_upd_magns), jnp.array([0]))
+        else:
+            filtered_upd_magns_pg = upd_magns_split[0][is_offspring_split[0]]
+            filtered_upd_magns_ga = upd_magns_split[1][is_offspring_split[1]]
+            return (jnp.mean(filtered_upd_magns_ga), jnp.mean(filtered_upd_magns_pg))
+            
+        
+        
+    
 
     def get_n_offspring_added(metrics):
         split = jnp.cumsum(jnp.array([emitter.batch_size for emitter in map_elites._emitter.emitters]))
@@ -303,6 +323,8 @@ def main(config: Config) -> None:
             "evaluation", 
             "ga_offspring_added", 
             "qpg_offspring_added"
+            #"upd_magn_pg",
+            #"upd_magn_ga"
             ], 
         jnp.array([])
         )
@@ -356,6 +378,9 @@ def main(config: Config) -> None:
         #current_metrics["qd_score_repertoire"] = jnp.repeat(qd_score_repertoire, log_period)
         #current_metrics["dem_repertoire"] = jnp.repeat(dem_repertoire, log_period)
         current_metrics["ga_offspring_added"], current_metrics["qpg_offspring_added"] = get_n_offspring_added(current_metrics)
+        #current_metrics["upd_magn_ga"], current_metrics["upd_magn_pg"] = get_av_upd_magn(current_metrics)
+        del current_metrics["update_magns"]
+        
         del current_metrics["is_offspring_added"]
         metrics = jax.tree_util.tree_map(lambda metric, current_metric: jnp.concatenate([metric, current_metric], axis=0), metrics, current_metrics)
 
@@ -363,8 +388,9 @@ def main(config: Config) -> None:
         log_metrics = jax.tree_util.tree_map(lambda metric: metric[-1], metrics)
         log_metrics["qpg_offspring_added"] = jnp.sum(current_metrics["qpg_offspring_added"])
         log_metrics["ga_offspring_added"] = jnp.sum(current_metrics["ga_offspring_added"])
+        log_metrics
         csv_logger.log(log_metrics)
-        #wandb.log(log_metrics)
+        wandb.log(log_metrics)
     #profiler.stop_trace()
     # Metrics
     with open("./metrics.pickle", "wb") as metrics_file:

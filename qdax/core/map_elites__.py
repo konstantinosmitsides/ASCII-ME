@@ -5,8 +5,9 @@ from functools import partial
 from typing import Any, Callable, Optional, Tuple
 
 import jax
+import jax.numpy as jnp
 
-from qdax.core.containers.mapelites_repertoire_advanced_baseline_time_step import MapElitesRepertoire
+from qdax.core.containers.mapelites_repertoire_ import MapElitesRepertoire
 from qdax.core.emitters.emitter import Emitter, EmitterState
 from qdax.types import (
     Centroid,
@@ -152,7 +153,7 @@ class MAPElites:
             repertoire, emitter_state, random_key
         )
         '''
-        genotypes, _, random_key = self._emitter.emit(
+        genotypes, upd_magns, random_key = self._emitter.emit(
             repertoire, emitter_state, random_key
         )
 
@@ -164,6 +165,7 @@ class MAPElites:
 
         # add genotypes in the repertoire
         repertoire, is_offspring_added = repertoire.add(genotypes, descriptors, fitnesses, extra_scores)
+        #jax.debug.breakpoint()
 
         # update emitter state after scoring is made
         emitter_state = self._emitter.state_update(
@@ -174,10 +176,13 @@ class MAPElites:
             descriptors=descriptors,
             extra_scores={**extra_scores}#, **extra_info},
         )
+        #upd_magns_array = jnp.concatenate([upd_magns["update_magns_pg"], upd_magns["update_magns_ga"]])
 
         # update the metrics
         metrics = self._metrics_function(repertoire)
         metrics["is_offspring_added"] = is_offspring_added
+        #metrics["update_magns"] = upd_magns_array
+        #jax.debug.breakpoint()
 
         return repertoire, emitter_state, metrics, random_key
 
