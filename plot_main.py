@@ -54,7 +54,7 @@ BATCH_LIST = [
 ALGO_LIST = [
     #"mcpg_me",
     #"mcpg_me__"
-    #"mcpg_me_"
+    "mcpg_me_",
     #"mcpg_me_no_normalizer",
     #"mcpg_me_no_baseline",
     #"mcpg_me_no_ppo_loss",
@@ -66,16 +66,17 @@ ALGO_LIST = [
     #"me_es",
     #"memes",
     #"me",
-    "me_2",
+    #"me_2",
+    "mcpg_me_fixed",
 ]
 
 NEW_ALGO_LIST = [
-    "me_0.05_0.05",
-    "me_0.5_0.05",
-    "me_0.005_0.5",
-    "me_0.005_1.0",
-    "me_0.05_0.5",
-    "me_0.5_1.0",
+    "mcpg_me_",
+    "mcpg_me_orth_0",
+    "mcpg_me_orth_05",
+    "mcpg_me_unif_0",
+    "mcpg_me_unif_05",
+    "mcpg_me_unif_1",
 ]
 
 ALGO_DICT = {
@@ -97,26 +98,34 @@ ALGO_DICT = {
     "mcpg_me_no_normalizer": "Ablation 1",
     "mcpg_me_no_baseline": "Ablation 2",
     "mcpg_me_no_ppo_loss": "Ablation 3",
-    #"mcpg_me_": "MCPG-ME new",
-    "mcpg_me_": "MCPG-ME orthogonal"
+    "mcpg_me_": "MCPG-ME old",
+    #"mcpg_me_": "MCPG-ME orthogonal",
+    "mcpg_me_fixed": "MCPG-ME fixed",
+    "mcpg_me_orth_0": "MCPG-ME orth 0",
+    "mcpg_me_orth_05": "MCPG-ME orth 0.5",
+    "mcpg_me_unif_0": "MCPG-ME unif 0",
+    "mcpg_me_unif_05": "MCPG-ME unif 0.5",
+    "mcpg_me_unif_1": "MCPG-ME unif 1",
 }
 
 XLABEL = "Evaluations"
 
-def filter_sigma_variants(df_row):
-    if df_row["algo"] == "me_2":
-        if df_row["iso_sigma_2"] == 0.05 and df_row["line_sigma_2"] == 0.05:
-            return "me_0.05_0.05"
-        elif df_row["iso_sigma_2"] == 0.5 and df_row["line_sigma_2"] == 0.05:
-            return "me_0.5_0.05"
-        elif df_row["iso_sigma_2"] == 0.005 and df_row["line_sigma_2"] == 0.5:
-            return "me_0.005_0.5"
-        elif df_row["iso_sigma_2"] == 0.005 and df_row["line_sigma_2"] == 1.0:
-            return "me_0.005_1.0"
-        elif df_row["iso_sigma_2"] == 0.05 and df_row["line_sigma_2"] == 0.5:
-            return "me_0.05_0.5"
-        elif df_row["iso_sigma_2"] == 0.5 and df_row["line_sigma_2"] == 1.0:
-            return "me_0.5_1.0"
+def filter(df_row):
+    if df_row["algo"] == "mcpg_me_fixed":
+        if df_row["init"] == "orthogonal" and df_row["greedy"] == 0:
+            return "mcpg_me_orth_0"
+        
+        if df_row["init"] == "orthogonal" and df_row["greedy"] == 0.5:
+            return "mcpg_me_orth_05"
+        
+        if df_row["init"] == "uniform" and df_row["greedy"] == 0:
+            return "mcpg_me_unif_0"
+        
+        if df_row["init"] == "uniform" and df_row["greedy"] == 0.5:
+            return "mcpg_me_unif_05"
+        
+        if df_row["init"] == "uniform" and df_row["greedy"] == 1:
+            return "mcpg_me_unif_1"
             
     return df_row["algo"]
 
@@ -241,7 +250,7 @@ def plot(df):
     fig.tight_layout()
 
     # Save plot
-    fig.savefig("me_variants/output/plot_main.png", bbox_inches="tight")
+    fig.savefig("fixed_nans/output/plot_main.png", bbox_inches="tight")
     #fig.savefig("ablation/output/plot_main.pdf", bbox_inches="tight")
     plt.close()
 
@@ -253,7 +262,7 @@ if __name__ == "__main__":
     plt.rc("font", size=16)
 
     # Create the DataFrame
-    results_dir = Path("me_variants/output/")
+    results_dir = Path("fixed_nans/output/")
     #results_dir = Path("ablation/output/")
     #print(results_dir)
     
@@ -265,7 +274,7 @@ if __name__ == "__main__":
     df = df[df["algo"].isin(ALGO_LIST)]
     df = df[df["num_evaluations"] <= 1_001_400]
     
-    df['algo_'] = df.apply(filter_sigma_variants, axis=1)
+    df['algo_'] = df.apply(filter, axis=1)
 
 
     # Plot

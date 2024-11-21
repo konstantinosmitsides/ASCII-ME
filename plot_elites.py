@@ -42,7 +42,7 @@ ENV_DICT = {
 }
 
 INIT_ALGO_LIST = [
-    "mcpg_me",
+    "mcpg_me_",
     #"mcpg_me_"
     #"mcpg_me_no_normalizer",
     #"mcpg_me_no_baseline",
@@ -55,14 +55,16 @@ INIT_ALGO_LIST = [
     #"me_es",
     #"memes",
     #"me",
+    "mcpg_me_fixed",
 ]
 
 ALGO_LIST = [
-    "mcpg_me_0",
-    "mcpg_me_0.25",
-    "mcpg_me_0.5",
-    "mcpg_me_0.75",
-    "mcpg_me_1",
+    "mcpg_me_",
+    "mcpg_me_orth_0",
+    "mcpg_me_orth_05",
+    "mcpg_me_unif_0",
+    "mcpg_me_unif_05",
+    "mcpg_me_unif_1",
 ]
 
 ALGO_DICT = {
@@ -83,16 +85,22 @@ ALGO_DICT = {
     "mcpg_me_no_normalizer": "Ablation 1",
     "mcpg_me_no_baseline": "Ablation 2",
     "mcpg_me_no_ppo_loss": "Ablation 3",
-    "mcpg_me_": "MCPG-ME new",
+    "mcpg_me_": "MCPG-ME old",
+    "mcpg_me_fixed": "MCPG-ME fixed",
+    "mcpg_me_orth_0": "MCPG-ME orth 0",
+    "mcpg_me_orth_05": "MCPG-ME orth 0.5",
+    "mcpg_me_unif_0": "MCPG-ME unif 0",
+    "mcpg_me_unif_05": "MCPG-ME unif 0.5",
+    "mcpg_me_unif_1": "MCPG-ME unif 1",
 }
 
 EMITTER_LIST = {
-    "mcpg_me": ["ga_offspring_added", "qpg_offspring_added"],
-    "mcpg_me_0": ["ga_offspring_added", "qpg_offspring_added"],
-    "mcpg_me_0.25": ["ga_offspring_added", "qpg_offspring_added"],
-    "mcpg_me_0.5": ["ga_offspring_added", "qpg_offspring_added"],
-    "mcpg_me_0.75": ["ga_offspring_added", "qpg_offspring_added"],
-    "mcpg_me_1": ["ga_offspring_added", "qpg_offspring_added"],
+    "mcpg_me_": ["ga_offspring_added", "qpg_offspring_added"],
+    "mcpg_me_orth_0": ["ga_offspring_added", "qpg_offspring_added"],
+    "mcpg_me_orth_05": ["ga_offspring_added", "qpg_offspring_added"],
+    "mcpg_me_unif_0": ["ga_offspring_added", "qpg_offspring_added"],
+    "mcpg_me_unif_05": ["ga_offspring_added", "qpg_offspring_added"],
+    "mcpg_me_unif_1": ["ga_offspring_added", "qpg_offspring_added"],
     "dcg_me": ["ga_offspring_added", "qpg_ai_offspring_added"],
     "pga_me": ["ga_offspring_added", "qpg_ai_offspring_added"],
     "qd_pg": ["ga_offspring_added", "qpg_ai_offspring_added"],
@@ -110,18 +118,24 @@ EMITTER_DICT = {
 
 XLABEL = "Evaluations"
 
-def filter_ga_variants(df_row):
-    if df_row["algo"] == "mcpg_me":
-        if df_row["proportion_mutation_ga"] == 0:
-            return 'mcpg_me_0'
-        elif df_row["proportion_mutation_ga"] == 0.25:
-            return 'mcpg_me_0.25'
-        elif df_row["proportion_mutation_ga"] == 0.5:
-            return 'mcpg_me_0.5'
-        elif df_row["proportion_mutation_ga"] == 0.75:
-            return 'mcpg_me_0.75'
-        else:
-            return 'mcpg_me_1'
+def filter(df_row):
+    if df_row["algo"] == "mcpg_me_fixed":
+        if df_row["init"] == "orthogonal" and df_row["greedy"] == 0:
+            return "mcpg_me_orth_0"
+        
+        if df_row["init"] == "orthogonal" and df_row["greedy"] == 0.5:
+            return "mcpg_me_orth_05"
+        
+        if df_row["init"] == "uniform" and df_row["greedy"] == 0:
+            return "mcpg_me_unif_0"
+        
+        if df_row["init"] == "uniform" and df_row["greedy"] == 0.5:
+            return "mcpg_me_unif_05"
+        
+        if df_row["init"] == "uniform" and df_row["greedy"] == 1:
+            return "mcpg_me_unif_1"
+            
+    return df_row["algo"]
 
 
 def customize_axis(ax):
@@ -190,7 +204,7 @@ def plot(df):
     fig.tight_layout()
 
     # Save plot
-    fig.savefig("GAvsMCPG/output/plot_main_emitters.png", bbox_inches="tight")
+    fig.savefig("fixed_nans/output/plot_main_emitters.png", bbox_inches="tight")
     plt.close()
 
 
@@ -201,7 +215,7 @@ if __name__ == "__main__":
     plt.rc("font", size=16)
 
     # Create the DataFrame
-    results_dir = Path("GAvsMCPG/output/")
+    results_dir = Path("fixed_nans/output/")
         
     EPISODE_LENGTH = 250
 
@@ -217,7 +231,7 @@ if __name__ == "__main__":
     # Filter
     df = df[df["algo"].isin(INIT_ALGO_LIST)]
     df = df[df["num_evaluations"] <= 1_001_400]
-    df['algo_'] = df.apply(filter_ga_variants, axis=1)
+    df['algo_'] = df.apply(filter, axis=1)
     # Plot
     plot(df)
     

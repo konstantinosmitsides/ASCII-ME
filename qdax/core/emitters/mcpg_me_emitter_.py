@@ -3,7 +3,7 @@ from typing import Callable, Tuple
 import flax.linen as nn
 
 from qdax.core.emitters.multi_emitter import MultiEmitter
-from qdax.core.emitters.mcpg_emitter_ import MCPGConfig, MCPGEmitter_0, MCPGEmitter_05, MCPGEmitter_1
+from qdax.core.emitters.mcpg_emitter_ import MCPGConfig, MCPGEmitter_0, MCPGEmitter_05, MCPGEmitter_1, MCPGEmitter_0_not, MCPGEmitter_1_not
 from qdax.core.emitters.standard_emitters_ import MixingEmitter
 from qdax.environments.base_wrappers import QDEnv
 from qdax.types import Params, RNGKey
@@ -21,6 +21,7 @@ class MEMCPGConfig:
     clip_param: float = 0.2
     discount_rate: float = 0.99
     greedy: float = 0.5
+    cosine_similarity: bool = True
     
     
 class MEMCPGEmitter(MultiEmitter):
@@ -63,12 +64,20 @@ class MEMCPGEmitter(MultiEmitter):
             )
             
             if config.greedy == 0.0:
+                if config.cosine_similarity:
 
-                mcpg_emitter = MCPGEmitter_0(
-                    config=mcpg_config, policy_net=policy_network, env=env
-                )
-            
-                super().__init__(emitters=(mcpg_emitter,))
+                    mcpg_emitter = MCPGEmitter_0(
+                        config=mcpg_config, policy_net=policy_network, env=env
+                    )
+                
+                    super().__init__(emitters=(mcpg_emitter,))
+                
+                else:
+                    mcpg_emitter = MCPGEmitter_0_not(
+                        config=mcpg_config, policy_net=policy_network, env=env
+                    )
+                
+                    super().__init__(emitters=(mcpg_emitter,))
             
             elif config.greedy == 0.5:
 
@@ -79,12 +88,21 @@ class MEMCPGEmitter(MultiEmitter):
                 super().__init__(emitters=(mcpg_emitter,))
                 
             else:
+                if config.cosine_similarity:
                     
                     mcpg_emitter = MCPGEmitter_1(
                         config=mcpg_config, policy_net=policy_network, env=env
                     )
                 
                     super().__init__(emitters=(mcpg_emitter,))
+                else:
+                        
+                        mcpg_emitter = MCPGEmitter_1_not(
+                            config=mcpg_config, policy_net=policy_network, env=env
+                        )
+                    
+                        super().__init__(emitters=(mcpg_emitter,))
+                
             
         else:
             
@@ -106,12 +124,20 @@ class MEMCPGEmitter(MultiEmitter):
             )
             
             if config.greedy == 0.0:
+                if config.cosine_similarity:
 
-                mcpg_emitter = MCPGEmitter_0(
-                    config=mcpg_config, policy_net=policy_network, env=env
-                )
-            
-                super().__init__(emitters=(mcpg_emitter, ga_emitter))
+                    mcpg_emitter = MCPGEmitter_0(
+                        config=mcpg_config, policy_net=policy_network, env=env
+                    )
+                
+                    super().__init__(emitters=(mcpg_emitter, ga_emitter))
+                else:
+                    mcpg_emitter = MCPGEmitter_0_not(
+                        config=mcpg_config, policy_net=policy_network, env=env
+                    )
+                
+                    super().__init__(emitters=(mcpg_emitter, ga_emitter))
+
             
             elif config.greedy == 0.5:
 
@@ -122,10 +148,19 @@ class MEMCPGEmitter(MultiEmitter):
                 super().__init__(emitters=(mcpg_emitter, ga_emitter))
                 
             else:
+                if config.cosine_similarity:
                     
                     mcpg_emitter = MCPGEmitter_1(
                         config=mcpg_config, policy_net=policy_network, env=env
                     )
                 
                     super().__init__(emitters=(mcpg_emitter, ga_emitter))
+                    
+                else:
+                        
+                        mcpg_emitter = MCPGEmitter_1_not(
+                            config=mcpg_config, policy_net=policy_network, env=env
+                        )
+                    
+                        super().__init__(emitters=(mcpg_emitter, ga_emitter))
             

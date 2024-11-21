@@ -34,7 +34,7 @@ import wandb
 from qdax.utils.metrics import CSVLogger, default_qd_metrics
 from qdax.utils.plotting import plot_2d_map_elites_repertoire
 import matplotlib.pyplot as plt
-jax.config.update("jax_debug_nans", True)
+#jax.config.update("jax_debug_nans", True)
 
 
 EPS = 1e-8
@@ -287,6 +287,7 @@ def main(config: Config) -> None:
         clip_param=config.algo.clip_param,
         discount_rate=config.algo.discount_rate,
         greedy=config.algo.greedy,
+        cosine_similarity=config.algo.cosine_similarity,
     )
     
     variation_fn = partial(

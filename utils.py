@@ -252,6 +252,9 @@ def get_df(results_dir, episode_length):
                     metrics["iso_sigma_2"] = config.algo.iso_sigma_2
                     metrics["line_sigma_2"] = config.algo.line_sigma_2
                     
+                if config.algo.name == "mcpg_me_fixed":
+                    metrics["init"] = config.init
+                    metrics["greedy"] = config.algo.greedy
                 metrics['gpu'] = config.HPC
 
                 # Run
