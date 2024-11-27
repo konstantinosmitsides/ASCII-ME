@@ -18,14 +18,14 @@ from utils import get_df
 # Define env and algo names
 ENV_LIST = [
     "ant_omni_250",
-    #"anttrap_omni_250",
+    "anttrap_omni_250",
     #"humanoid_omni",
     "walker2d_uni_250",
     #"walker2d_uni_1000",
     #"halfcheetah_uni",
     "ant_uni_250",
     #"ant_uni_1000",
-    #"hopper_uni_250",
+    "hopper_uni_250",
     #"hopper_uni_1000",
     #"humanoid_uni",
 ]
@@ -46,10 +46,13 @@ ENV_DICT = {
 }
 
 BATCH_LIST = [
+    #256,
+    #512,
     1024,
+    #2048,
     4096,
-    16384,
-    32768,
+    #16384,
+    #32768,
     #65536
     
 ]
@@ -59,18 +62,24 @@ ALGO_LIST = [
     #"dcg_me_gecco",
     #"pga_me",
     #"qd_pg",
-    "me",
+    #"me",
     #"me_es",
-    "mcpg_me",
+    #"mcpg_me",
     #"memes",
+    "mcpg_me_fixed"
 ]
 
 NEW_ALGO_LIST = [
-    "mcpg_me_1",
+    #"mcpg_me_",
+    #"mcpg_me_2",
     "mcpg_me_4",
     "mcpg_me_8",
     "mcpg_me_16",
     "mcpg_me_32",
+    #"mcpg_me_unif_0",
+    #"mcpg_me_unif_05",
+    #"mcpg_me_unif_1_cos_sim",
+    #"mcpg_me_unif_1_not_cos_sim",
 ]
 ALGO_DICT = {
     "dcg_me": "DCG-MAP-Elites-AI",
@@ -79,29 +88,60 @@ ALGO_DICT = {
     "qd_pg": "QD-PG",
     "me": "MAP-Elites",
     "me_es": "MAP-Elites-ES",
-    "mcpg_me_32": "32 epochs",
-    "mcpg_me_1": "1 epoch",
+    "mcpg_me_2": "2 epochs",
     "mcpg_me_4": "4 epochs",
     "mcpg_me_8": "8 epochs",
     "mcpg_me_16": "16 epochs",
+    "mcpg_me_32": "32 epoch",
     "memes": "MEMES",
+    "mcpg_me_orth_0_cos_sim": "MCPG-ME orth 0 cos_sim",
+    "mcpg_me_orth_0_not_cos_sim": "MCPG-ME orth 0 not_cos_sim",
+    "mcpg_me_orth_05": "MCPG-ME orth 0.5",
+    "mcpg_me_unif_0": "MCPG-ME unif 0",
+    "mcpg_me_unif_05": "MCPG-ME unif 0.5",
+    "mcpg_me_unif_1_cos_sim": "MCPG-ME unif 1 cos_sim",
+    "mcpg_me_unif_1_not_cos_sim": "MCPG-ME unif 1 not_cos_sim",
 }
 
 XLABEL = "Evaluations"
 
 
-def filter_epoch_variants(df_row):
-    if df_row["algo"] == "mcpg_me":
-        if df_row["no_epochs"] == 1:
-            return "mcpg_me_1"
-        elif df_row["no_epochs"] == 4:
+def filter(df_row):
+    if df_row["algo"] == "mcpg_me_fixed":
+        #if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"]:
+        #    return "mcpg_me_orth_0_cos_sim"
+        
+        #if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"] and df_row["no_epochs"] == 2:
+        #    return "mcpg_me_2"
+        
+        if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"] and df_row["no_epochs"] == 4:
             return "mcpg_me_4"
-        elif df_row["no_epochs"] == 8:
+        
+        if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"] and df_row["no_epochs"] == 8:
             return "mcpg_me_8"
-        elif df_row["no_epochs"] == 16:
+        
+        if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"] and df_row["no_epochs"] == 16:
             return "mcpg_me_16"
-        elif df_row["no_epochs"] == 32:
+        
+        if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"] and df_row["no_epochs"] == 32:
             return "mcpg_me_32"
+
+        
+        #if df_row["init"] == "orthogonal" and df_row["greedy"] == 0.5:
+        #    return "mcpg_me_orth_05"
+        
+        #if df_row["init"] == "uniform" and df_row["greedy"] == 0:
+        #    return "mcpg_me_unif_0"
+        
+        #if df_row["init"] == "uniform" and df_row["greedy"] == 0.5:
+        #    return "mcpg_me_unif_05"
+        
+        #if df_row["init"] == "uniform" and df_row["greedy"] == 1 and df_row["cos_sim"]:
+        #    return "mcpg_me_unif_1_cos_sim"
+        
+        #if df_row["init"] == "uniform" and df_row["greedy"] == 1 and not df_row["cos_sim"]:
+        #    return "mcpg_me_unif_1_not_cos_sim"
+            
     return df_row["algo"]
         
 
@@ -204,7 +244,7 @@ def plot__(summary_df):
         #fig.legend(ax_.get_lines(), [str(batch_size) for batch_size in BATCH_LIST], loc="lower center", bbox_to_anchor=(0.5, -0.03), ncols=len(BATCH_LIST), frameon=False)
         fig.align_ylabels(axes[:, 0])
         fig.tight_layout()
-        fig.savefig("testing_gpu_for_scalability/output/plot_main_.png", bbox_inches="tight")
+        fig.savefig("tuning/output/plot_main_epochs_scal.png", bbox_inches="tight")
         plt.close()
 
 
@@ -217,7 +257,7 @@ if __name__ == "__main__":
     plt.rc("font", size=16)
 
     # Create the DataFrame
-    results_dir = Path("testing_gpu_for_scalability/output/")
+    results_dir = Path("tuning/output/")
     #print(results_dir)
     
     EPISODE_LENGTH = 250
@@ -232,7 +272,7 @@ if __name__ == "__main__":
 #    (df['algo'] != "mcpg_me") | 
 #    ((df['algo'] == "mcpg_me") & (df['proportion_mutation_ga'] == 1))
 #]
-    df['algo_'] = df.apply(filter_epoch_variants, axis=1)
+    df['algo_'] = df.apply(filter, axis=1)
     
     
     idx = df.groupby(["env", "algo", "run"])["iteration"].idxmax()
@@ -241,6 +281,8 @@ if __name__ == "__main__":
 
     # Extract only the relevant columns for easier readability
     summary_df = df_last_iteration[['env', 'algo_', 'time', 'qd_score', 'batch_size']]
+    summary_df = summary_df[summary_df["algo_"].isin(NEW_ALGO_LIST)]
+    summary_df = summary_df[summary_df["batch_size"].isin(BATCH_LIST)]
     
     #df['env_'] = df.apply(filter_gpu_variants, axis=1)
 

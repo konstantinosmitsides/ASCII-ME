@@ -255,6 +255,9 @@ def get_df(results_dir, episode_length):
                 if config.algo.name == "mcpg_me_fixed":
                     metrics["init"] = config.init
                     metrics["greedy"] = config.algo.greedy
+                    metrics["cos_sim"] = config.algo.cosine_similarity
+                    metrics["no_epochs"] = config.algo.no_epochs
+                    metrics["proportion_mutation_ga"] = config.algo.proportion_mutation_ga
                 metrics['gpu'] = config.HPC
 
                 # Run

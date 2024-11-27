@@ -54,7 +54,7 @@ BATCH_LIST = [
 ALGO_LIST = [
     #"mcpg_me",
     #"mcpg_me__"
-    "mcpg_me_",
+    #"mcpg_me_",
     #"mcpg_me_no_normalizer",
     #"mcpg_me_no_baseline",
     #"mcpg_me_no_ppo_loss",
@@ -71,12 +71,15 @@ ALGO_LIST = [
 ]
 
 NEW_ALGO_LIST = [
-    "mcpg_me_",
-    "mcpg_me_orth_0",
-    "mcpg_me_orth_05",
-    "mcpg_me_unif_0",
-    "mcpg_me_unif_05",
-    "mcpg_me_unif_1",
+    #"mcpg_me_",
+    "mcpg_me_0",
+    "mcpg_me_25",
+    "mcpg_me_50",
+    "mcpg_me_75",
+    #"mcpg_me_unif_0",
+    #"mcpg_me_unif_05",
+    #"mcpg_me_unif_1_cos_sim",
+    #"mcpg_me_unif_1_not_cos_sim",
 ]
 
 ALGO_DICT = {
@@ -101,31 +104,51 @@ ALGO_DICT = {
     "mcpg_me_": "MCPG-ME old",
     #"mcpg_me_": "MCPG-ME orthogonal",
     "mcpg_me_fixed": "MCPG-ME fixed",
-    "mcpg_me_orth_0": "MCPG-ME orth 0",
+    "mcpg_me_orth_0_cos_sim": "MCPG-ME orth 0 cos_sim",
+    "mcpg_me_orth_0_not_cos_sim": "MCPG-ME orth 0 not_cos_sim",
     "mcpg_me_orth_05": "MCPG-ME orth 0.5",
     "mcpg_me_unif_0": "MCPG-ME unif 0",
     "mcpg_me_unif_05": "MCPG-ME unif 0.5",
-    "mcpg_me_unif_1": "MCPG-ME unif 1",
+    "mcpg_me_unif_1_cos_sim": "MCPG-ME unif 1 cos_sim",
+    "mcpg_me_unif_1_not_cos_sim": "MCPG-ME unif 1 not_cos_sim",
+    "mcpg_me_25": "MCPG-ME | 25% GA",
+    "mcpg_me_50": "MCPG-ME | 50% GA",
+    "mcpg_me_75": "MCPG-ME | 75% GA",
+    "mcpg_me_0": "MCPG-ME | 0% GA",
 }
 
 XLABEL = "Evaluations"
 
 def filter(df_row):
     if df_row["algo"] == "mcpg_me_fixed":
-        if df_row["init"] == "orthogonal" and df_row["greedy"] == 0:
-            return "mcpg_me_orth_0"
+        #if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"]:
+        #    return "mcpg_me_orth_0_cos_sim"
         
-        if df_row["init"] == "orthogonal" and df_row["greedy"] == 0.5:
-            return "mcpg_me_orth_05"
+        if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and not df_row["cos_sim"] and df_row["no_epochs"] == 32 and df_row["proportion_mutation_ga"] == 0.25:
+            return "mcpg_me_25"
         
-        if df_row["init"] == "uniform" and df_row["greedy"] == 0:
-            return "mcpg_me_unif_0"
+        if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and not df_row["cos_sim"] and df_row["no_epochs"] == 32 and df_row["proportion_mutation_ga"] == 0.50:
+            return "mcpg_me_50"
         
-        if df_row["init"] == "uniform" and df_row["greedy"] == 0.5:
-            return "mcpg_me_unif_05"
+        if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and not df_row["cos_sim"] and df_row["no_epochs"] == 32 and df_row["proportion_mutation_ga"] == 0.75:
+            return "mcpg_me_75"
         
-        if df_row["init"] == "uniform" and df_row["greedy"] == 1:
-            return "mcpg_me_unif_1"
+        if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and not df_row["cos_sim"] and df_row["no_epochs"] == 32 and df_row["proportion_mutation_ga"] == 0:
+            return "mcpg_me_0"
+        #if df_row["init"] == "orthogonal" and df_row["greedy"] == 0.5:
+        #    return "mcpg_me_orth_05"
+        
+        #if df_row["init"] == "uniform" and df_row["greedy"] == 0:
+        #    return "mcpg_me_unif_0"
+        
+        #if df_row["init"] == "uniform" and df_row["greedy"] == 0.5:
+        #    return "mcpg_me_unif_05"
+        
+        #if df_row["init"] == "uniform" and df_row["greedy"] == 1 and df_row["cos_sim"]:
+        #    return "mcpg_me_unif_1_cos_sim"
+        
+        #if df_row["init"] == "uniform" and df_row["greedy"] == 1 and not df_row["cos_sim"]:
+        #    return "mcpg_me_unif_1_not_cos_sim"
             
     return df_row["algo"]
 
@@ -250,7 +273,7 @@ def plot(df):
     fig.tight_layout()
 
     # Save plot
-    fig.savefig("fixed_nans/output/plot_main.png", bbox_inches="tight")
+    fig.savefig("tuning/output/plot_main.png", bbox_inches="tight")
     #fig.savefig("ablation/output/plot_main.pdf", bbox_inches="tight")
     plt.close()
 
@@ -262,7 +285,7 @@ if __name__ == "__main__":
     plt.rc("font", size=16)
 
     # Create the DataFrame
-    results_dir = Path("fixed_nans/output/")
+    results_dir = Path("tuning/output/")
     #results_dir = Path("ablation/output/")
     #print(results_dir)
     
