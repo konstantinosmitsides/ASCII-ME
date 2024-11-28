@@ -288,6 +288,7 @@ def main(config: Config) -> None:
         discount_rate=config.algo.discount_rate,
         greedy=config.algo.greedy,
         cosine_similarity=config.algo.cosine_similarity,
+        experimenting=config.algo.experimenting,
     )
     
     variation_fn = partial(
