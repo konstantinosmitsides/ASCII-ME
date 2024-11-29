@@ -23,6 +23,7 @@ class MEMCPGConfig:
     greedy: float = 0.5
     cosine_similarity: bool = True
     experimenting: bool = False
+    std: float = 0.5
     
     
 class MEMCPGEmitter(MultiEmitter):
@@ -114,7 +115,8 @@ class MEMCPGEmitter(MultiEmitter):
                 no_epochs=config.no_epochs,
                 learning_rate=config.learning_rate,
                 discount_rate=config.discount_rate,
-                clip_param=config.clip_param
+                clip_param=config.clip_param,
+                std=config.std,
             )
             
             ga_emitter = MixingEmitter(
@@ -127,7 +129,7 @@ class MEMCPGEmitter(MultiEmitter):
             if config.greedy == 0.0:
                 if config.cosine_similarity:
                     
-                    if not config.experimenting:
+                    if config.clip_param == 0.2:
 
                         mcpg_emitter = MCPGEmitter_0(
                             config=mcpg_config, policy_net=policy_network, env=env

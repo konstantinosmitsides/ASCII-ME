@@ -11,9 +11,10 @@ buffer_sample_batch_size: 1
 no_epochs: 32
 learning_rate: 3e-3
 discount_rate: 0.99
-clip_param: False
+clip_param: 0.2
 activation: tanh
 no_neurons: 64
 greedy: 0
 cosine_similarity: True
-experimenting: False
+std: 2
+experimenting: True

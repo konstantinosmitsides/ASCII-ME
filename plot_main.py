@@ -76,14 +76,16 @@ NEW_ALGO_LIST = [
     #"mcpg_me_25",
     #"mcpg_me_50",
     #"mcpg_me_75",
-    "mcpg_me_4",
-    "mcpg_me_8",
-    "mcpg_me_16",
-    "mcpg_me_32",
+    # "mcpg_me_4",
+    # "mcpg_me_8",
+    # "mcpg_me_16",
+    # "mcpg_me_32",
     #"mcpg_me_unif_0",
     #"mcpg_me_unif_05",
     #"mcpg_me_unif_1_cos_sim",
     #"mcpg_me_unif_1_not_cos_sim",
+    "mcpg_me_no_clipping",
+    "mcpg_me_normal",
 ]
 
 ALGO_DICT = {
@@ -123,6 +125,8 @@ ALGO_DICT = {
     "mcpg_me_8": "8 epochs",
     "mcpg_me_16": "16 epochs",
     "mcpg_me_32": "32 epoch",
+    "mcpg_me_no_clipping": "MCPG-ME no clip",
+    "mcpg_me_normal": "MCPG-ME with clip",
 }
 
 XLABEL = "Evaluations"
@@ -132,17 +136,20 @@ def filter(df_row):
         #if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"]:
         #    return "mcpg_me_orth_0_cos_sim"
         
-        if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"] and df_row["no_epochs"] == 4 and df_row["batch_size"] == 1024:
-            return "mcpg_me_4"
+        #if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"] and df_row["no_epochs"] == 4 and df_row["batch_size"] == 1024:
+        #    return "mcpg_me_4"
         
-        if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"] and df_row["no_epochs"] == 8 and df_row["batch_size"] == 1024:
-            return "mcpg_me_8"
+        #if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"] and df_row["no_epochs"] == 8 and df_row["batch_size"] == 1024:
+        #    return "mcpg_me_8"
         
-        if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"] and df_row["no_epochs"] == 16 and df_row["batch_size"] == 1024:
-            return "mcpg_me_16"
+        #if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"] and df_row["no_epochs"] == 16 and df_row["batch_size"] == 1024:
+        #    return "mcpg_me_16"
         
-        if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"] and df_row["no_epochs"] == 32 and df_row["batch_size"] == 1024:
-            return "mcpg_me_32"
+        if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"] and df_row["no_epochs"] == 32 and df_row["batch_size"] == 512 and df_row["proportion_mutation_ga"] == 0.5 and df_row["clipping"] != 0.2:
+            return "mcpg_me_no_clipping"
+
+        if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"] and df_row["no_epochs"] == 32 and df_row["batch_size"] == 512 and df_row["proportion_mutation_ga"] == 0.5 and df_row["clipping"] == 0.2:
+            return "mcpg_me_normal"
         #if df_row["init"] == "orthogonal" and df_row["greedy"] == 0.5:
         #    return "mcpg_me_orth_05"
         
@@ -303,7 +310,7 @@ if __name__ == "__main__":
 
     # Filter
     df = df[df["algo"].isin(ALGO_LIST)]
-    df = df[df["num_evaluations"] <= 5_001_400]
+    df = df[df["num_evaluations"] <= 1_001_400]
     
     df['algo_'] = df.apply(filter, axis=1)
 

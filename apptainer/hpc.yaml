@@ -1,4 +1,4 @@
-job_name: epochs_time_
+job_name: removing_stuff
  
 walltime: 07:59:00
  
@@ -9,18 +9,18 @@ ngpus: 1
 gpu_type: L40S
  
 queue: null  # -q express -P exp-00097
-njobs: 5
+njobs: 10
 
 
 args:
-  # no clipping mechanism
-   - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=10000 batch_size=512 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True algo.experimenting=True algo.clip_param=False"
-   - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=10000 batch_size=512 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True algo.experimenting=True algo.clip_param=False"
-   - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=10000 batch_size=512 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True algo.experimenting=True algo.clip_param=False"
-   - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=10000 batch_size=512 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True algo.experimenting=True algo.clip_param=False"
-   - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=10000 batch_size=512 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True algo.experimenting=True algo.clip_param=False"
+  # last tuning
+  - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=10000 batch_size=512 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True algo.clip_param=0.2 algo.std=0.5"
+  - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=10000 batch_size=512 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True algo.clip_param=False algo.std=0.5"
+  - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=10000 batch_size=512 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True algo.clip_param=False algo.std=0.5"
+  - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=10000 batch_size=512 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True algo.clip_param=False algo.std=0.5"
+  - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=10000 batch_size=512 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True algo.clip_param=False algo.std=0.5"
 
-
+  
 
 
   # fixed mcpg_me

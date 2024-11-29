@@ -524,6 +524,7 @@ class MLPMCPG_(nn.Module):
     no_neurons: int = 64
     kernel_init: Callable[..., Any] = jax.nn.initializers.orthogonal(scale=jnp.sqrt(2))
     final_init: Callable[..., Any] = jax.nn.initializers.orthogonal(scale=0.01)
+    std: float = 0.5
     
     @nn.compact
     def __call__(self, x):
@@ -547,8 +548,8 @@ class MLPMCPG_(nn.Module):
             #self.action_dim, kernel_init=lecun_uniform(), bias_init=constant(0.0)
         )(actor_mean)
         #actor_mean = nn.tanh(actor_mean)
-        actor_logstd = self.param("log_std", lambda _, shape: jnp.log(0.5)*jnp.ones(shape), (self.action_dim,))
-        pi = distrax.MultivariateNormalDiag(loc=actor_mean, scale_diag=jnp.exp(actor_logstd))
-        #pi = distrax.MultivariateNormalDiag(loc=actor_mean, scale_diag=jnp.array([2]*self.action_dim))
+        #actor_logstd = self.param("log_std", lambda _, shape: jnp.log(self.std)*jnp.ones(shape), (self.action_dim,))
+        #pi = distrax.MultivariateNormalDiag(loc=actor_mean, scale_diag=jnp.exp(actor_logstd))
+        pi = distrax.MultivariateNormalDiag(loc=actor_mean, scale_diag=jnp.array([self.std]*self.action_dim))
         
         return pi, actor_mean

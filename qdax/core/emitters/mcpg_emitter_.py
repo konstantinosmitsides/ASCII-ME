@@ -38,6 +38,7 @@ class MCPGConfig:
     learning_rate: float = 3e-4
     discount_rate: float = 0.99
     clip_param: float = 0.2
+    std: float = 0.5
     
 class MCPGEmitterState(EmitterState):
     """Contains the trajectory buffer.

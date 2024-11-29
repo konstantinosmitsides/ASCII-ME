@@ -91,6 +91,7 @@ def main(config: Config) -> None:
             action_dim=env.action_size,
             activation=config.algo.activation,
             no_neurons=config.algo.no_neurons,
+            std = config.algo.std,
         )
     
     # Init population of controllers
@@ -289,6 +290,7 @@ def main(config: Config) -> None:
         greedy=config.algo.greedy,
         cosine_similarity=config.algo.cosine_similarity,
         experimenting=config.algo.experimenting,
+        std=config.algo.std,
     )
     
     variation_fn = partial(
