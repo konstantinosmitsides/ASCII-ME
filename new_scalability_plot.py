@@ -46,10 +46,10 @@ ENV_DICT = {
 }
 
 BATCH_LIST = [
-    #256,
-    #512,
+    256,
+    512,
     1024,
-    #2048,
+    2048,
     4096,
     #16384,
     #32768,
@@ -66,16 +66,17 @@ ALGO_LIST = [
     #"me_es",
     #"mcpg_me",
     #"memes",
-    "mcpg_me_fixed"
+    #"mcpg_me_fixed",
+    "mcpg_me_32"
 ]
 
 NEW_ALGO_LIST = [
     #"mcpg_me_",
     #"mcpg_me_2",
-    "mcpg_me_4",
-    "mcpg_me_8",
-    "mcpg_me_16",
-    "mcpg_me_32",
+    #"mcpg_me_4",
+    #"mcpg_me_8",
+    #"mcpg_me_16",
+    #"mcpg_me_32",
     #"mcpg_me_unif_0",
     #"mcpg_me_unif_05",
     #"mcpg_me_unif_1_cos_sim",
@@ -92,7 +93,7 @@ ALGO_DICT = {
     "mcpg_me_4": "4 epochs",
     "mcpg_me_8": "8 epochs",
     "mcpg_me_16": "16 epochs",
-    "mcpg_me_32": "32 epoch",
+    "mcpg_me_32": "MCPG-ME",
     "memes": "MEMES",
     "mcpg_me_orth_0_cos_sim": "MCPG-ME orth 0 cos_sim",
     "mcpg_me_orth_0_not_cos_sim": "MCPG-ME orth 0 not_cos_sim",
@@ -114,16 +115,16 @@ def filter(df_row):
         #if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"] and df_row["no_epochs"] == 2:
         #    return "mcpg_me_2"
         
-        if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"] and df_row["no_epochs"] == 4:
-            return "mcpg_me_4"
+        #if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"] and df_row["no_epochs"] == 4:
+        #    return "mcpg_me_4"
         
-        if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"] and df_row["no_epochs"] == 8:
-            return "mcpg_me_8"
+        #if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"] and df_row["no_epochs"] == 8:
+        #    return "mcpg_me_8"
         
-        if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"] and df_row["no_epochs"] == 16:
-            return "mcpg_me_16"
+        #if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"] and df_row["no_epochs"] == 16:
+        #    return "mcpg_me_16"
         
-        if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"] and df_row["no_epochs"] == 32:
+        if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"] and df_row["no_epochs"] == 32 and df_row["proportion_mutation_ga"] == 0.5 and df_row["clip_param"] == 0.2:
             return "mcpg_me_32"
 
         
@@ -199,7 +200,7 @@ def plot__(summary_df):
             if col == 0:
                 sns.barplot(
                     data=df_plot,
-                    x="algo_",
+                    x="algo",
                     y="qd_score",
                     hue="batch_size",
                     ax=ax,
@@ -212,7 +213,7 @@ def plot__(summary_df):
             else:
                 sns.barplot(
                     data=df_plot,
-                    x="algo_",
+                    x="algo",
                     y="time",
                     hue="batch_size",
                     ax=ax,
@@ -226,7 +227,7 @@ def plot__(summary_df):
 
                 # Set the x-axis labels with rotation for better visibility
                 #ax.set_xticklabels([str(batch_size) for batch_size in BATCH_LIST], rotation=45, ha="right")
-            ax.set_xticklabels([ALGO_DICT.get(algo, algo) for algo in df_plot['algo_'].unique()], ha="center")
+            ax.set_xticklabels([ALGO_DICT.get(algo, algo) for algo in df_plot['algo'].unique()], ha="center")
             # Set y-axis label and limits
             #ax.set_ylim(0.0)
             #ax.set_ylabel(None)
@@ -265,14 +266,15 @@ if __name__ == "__main__":
     df = get_df(results_dir, EPISODE_LENGTH)
 
     # Filter
+    df['algo'] = df.apply(filter, axis=1)
     df = df[df["algo"].isin(ALGO_LIST)]
-    df = df[df["num_evaluations"] <= 5_000_000]
+    df = df[df["num_evaluations"] <= 1_000_000]
     #df['env_'] = df.apply(filter_gpu_variants, axis=1)
 #    df = df.loc[
 #    (df['algo'] != "mcpg_me") | 
 #    ((df['algo'] == "mcpg_me") & (df['proportion_mutation_ga'] == 1))
 #]
-    df['algo_'] = df.apply(filter, axis=1)
+    #df['algo_'] = df.apply(filter, axis=1)
     
     
     idx = df.groupby(["env", "algo", "run"])["iteration"].idxmax()
@@ -280,8 +282,7 @@ if __name__ == "__main__":
     df_last_iteration = df.loc[idx]
 
     # Extract only the relevant columns for easier readability
-    summary_df = df_last_iteration[['env', 'algo_', 'time', 'qd_score', 'batch_size']]
-    summary_df = summary_df[summary_df["algo_"].isin(NEW_ALGO_LIST)]
+    summary_df = df_last_iteration[['env', 'algo', 'time', 'qd_score', 'batch_size']]
     summary_df = summary_df[summary_df["batch_size"].isin(BATCH_LIST)]
     
     #df['env_'] = df.apply(filter_gpu_variants, axis=1)

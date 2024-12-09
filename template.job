@@ -5,57 +5,5 @@
 #PBS -l select={{ select }}
 {{ pbs_array }}
 
-# Transfer files from server to compute node
-stagein()
-{
-	# Create output/ directory on server
-	cmd="mkdir -p $HOME/{{ repository_name }}/{{ container_directory }}/output/"
-	echo $(date +"%Y-%m-%d %H:%M:%S") stagein: $cmd
-	eval $cmd
-
-	# Create symbolic link to container from server in compute node
-	cmd="ln -s $HOME/{{ repository_name }}/{{ container_directory }}/{{ container_name }}"
-	echo $(date +"%Y-%m-%d %H:%M:%S") stagein: $cmd
-	eval $cmd
-}
-
-# Run container
-runprogram()
-{
-	# Create symbolic link to outputs/ directory from server in compute node
-	cmd="ln -s $HOME/{{ repository_name }}/{{ container_directory }}/output/"
-	echo $(date +"%Y-%m-%d %H:%M:%S") runprogram: $cmd
-	eval $cmd
-
-	SINGULARITY_TMP_DIR=$(mktemp -d -p "$(pwd)")
-
-	# List files in current directory
-	cmd="ls --almost-all --color=auto --classify --group-directories-first --human-readable -l --literal --show-control-chars --tabsize=0"
-	echo $(date +"%Y-%m-%d %H:%M:%S") runprogram: $cmd
-	eval $cmd
-
-	# nvidia-smi
-	cmd="nvidia-smi"
-	echo $(date +"%Y-%m-%d %H:%M:%S") runprogram: $cmd
-	eval $cmd
-
-	# Run container
-	cmd="time SINGULARITYENV_PBS_JOB_INDEX=$PBS_JOB_INDEX SINGULARITYENV_PBS_ARRAY_INDEX=$PBS_ARRAY_INDEX singularity -d run --bind ./output/:/workspace/src/output/ --cleanenv --containall --home /tmp/ --no-home --nv --pwd /workspace/src/ --workdir $SINGULARITY_TMP_DIR {{ container_name }} +commit={{ commit }} {{ args }}"
-	echo $(date +"%Y-%m-%d %H:%M:%S") runprogram: $cmd
-	eval $cmd
-}
-
-# Transfer files from compute node to server and exit
-stageout()
-{
-	cmd="exit"
-	echo $(date +"%Y-%m-%d %H:%M:%S") stageout: $cmd
-	eval $cmd
-}
-
-stagein
-runprogram
-stageout 
-
-exit
+# The configs array and functions are appended by the hpc.sh script.
 

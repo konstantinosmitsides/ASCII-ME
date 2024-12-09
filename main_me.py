@@ -282,7 +282,9 @@ def main(config: Config) -> None:
     eval_num = config.batch_size
     #print(f"Number of evaluations per iteration: {eval_num}")
     cumulative_time = 0
-    for i in range(num_loops):
+    #for i in range(num_loops):
+    i = 0
+    while cumulative_time < 3000:
         start_time = time.time()
         (repertoire, emitter_state, random_key), current_metrics = jax.lax.scan(
             map_elites_scan_update,
@@ -309,6 +311,7 @@ def main(config: Config) -> None:
         log_metrics = jax.tree_util.tree_map(lambda metric: metric[-1], metrics)
         log_metrics["ga_offspring_added"] = jnp.sum(current_metrics["ga_offspring_added"])
         csv_logger.log(log_metrics)
+        i += 1
         #wandb.log(log_metrics)
 
     # Metrics

@@ -171,3 +171,5 @@ flashbax
 distrax
 gymnax
 navix
+attrdict==2.0.1
+ribs

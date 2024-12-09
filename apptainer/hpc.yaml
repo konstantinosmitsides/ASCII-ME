@@ -1,459 +1,55 @@
-job_name: removing_stuff
- 
+job_name: fig_1_pt1
+
 walltime: 07:59:00
- 
+
 nnodes: 1
 ncpus: 4
 mem: 24gb
 ngpus: 1
 gpu_type: L40S
- 
+
 queue: null  # -q express -P exp-00097
-njobs: 10
-
-
+njobs: 5
 args:
-  # last tuning
-  - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=10000 batch_size=512 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True algo.clip_param=0.2 algo.std=0.5"
-  - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=10000 batch_size=512 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True algo.clip_param=False algo.std=0.5"
-  - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=10000 batch_size=512 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True algo.clip_param=False algo.std=0.5"
-  - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=10000 batch_size=512 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True algo.clip_param=False algo.std=0.5"
-  - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=10000 batch_size=512 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True algo.clip_param=False algo.std=0.5"
-
-  
-
-
-  # fixed mcpg_me
-
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=20000 batch_size=256 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=20000 batch_size=256 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=20000 batch_size=256 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=20000 batch_size=256 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=20000 batch_size=256 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=10000 batch_size=512 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=10000 batch_size=512 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=10000 batch_size=512 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=10000 batch_size=512 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=10000 batch_size=512 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=5000 batch_size=1024 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=5000 batch_size=1024 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=5000 batch_size=1024 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=5000 batch_size=1024 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=5000 batch_size=1024 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-
-
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=2500 batch_size=2048 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=2500 batch_size=2048 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=2500 batch_size=2048 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=2500 batch_size=2048 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=2500 batch_size=2048 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=1250 batch_size=4096 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=1250 batch_size=4096 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=1250 batch_size=4096 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=1250 batch_size=4096 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=1250 batch_size=4096 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-
-
-
-
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=20000 batch_size=256 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=16 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=20000 batch_size=256 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=16 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=20000 batch_size=256 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=16 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=20000 batch_size=256 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=16 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=20000 batch_size=256 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=16 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=10000 batch_size=512 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=16 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=10000 batch_size=512 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=16 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=10000 batch_size=512 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=16 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=10000 batch_size=512 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=16 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=10000 batch_size=512 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=16 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=5000 batch_size=1024 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=16 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=5000 batch_size=1024 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=16 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=5000 batch_size=1024 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=16 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=5000 batch_size=1024 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=16 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=5000 batch_size=1024 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=16 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-
-
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=2500 batch_size=2048 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=16 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=2500 batch_size=2048 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=16 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=2500 batch_size=2048 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=16 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=2500 batch_size=2048 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=16 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=2500 batch_size=2048 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=16 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=1250 batch_size=4096 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=16 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=1250 batch_size=4096 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=16 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=1250 batch_size=4096 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=16 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=1250 batch_size=4096 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=16 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=1250 batch_size=4096 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=16 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-
-
-
-
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=20000 batch_size=256 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=8 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=20000 batch_size=256 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=8 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=20000 batch_size=256 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=8 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=20000 batch_size=256 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=8 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=20000 batch_size=256 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=8 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=10000 batch_size=512 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=8 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=10000 batch_size=512 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=8 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=10000 batch_size=512 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=8 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=10000 batch_size=512 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=8 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=10000 batch_size=512 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=8 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=5000 batch_size=1024 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=8 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=5000 batch_size=1024 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=8 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=5000 batch_size=1024 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=8 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=5000 batch_size=1024 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=8 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=5000 batch_size=1024 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=8 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-
-
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=2500 batch_size=2048 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=8 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=2500 batch_size=2048 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=8 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=2500 batch_size=2048 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=8 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=2500 batch_size=2048 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=8 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=2500 batch_size=2048 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=8 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=1250 batch_size=4096 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=8 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=1250 batch_size=4096 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=8 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=1250 batch_size=4096 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=8 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=1250 batch_size=4096 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=8 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=1250 batch_size=4096 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=8 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-
-
-
-
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=20000 batch_size=256 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=4 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=20000 batch_size=256 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=4 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=20000 batch_size=256 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=4 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=20000 batch_size=256 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=4 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=20000 batch_size=256 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=4 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=10000 batch_size=512 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=4 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=10000 batch_size=512 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=4 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=10000 batch_size=512 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=4 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=10000 batch_size=512 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=4 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=10000 batch_size=512 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=4 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=5000 batch_size=1024 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=4 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=5000 batch_size=1024 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=4 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=5000 batch_size=1024 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=4 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=5000 batch_size=1024 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=4 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=5000 batch_size=1024 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=4 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-
-
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=2500 batch_size=2048 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=4 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=2500 batch_size=2048 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=4 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=2500 batch_size=2048 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=4 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=2500 batch_size=2048 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=4 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=2500 batch_size=2048 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=4 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=1250 batch_size=4096 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=4 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=1250 batch_size=4096 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=4 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=1250 batch_size=4096 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=4 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=1250 batch_size=4096 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=4 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=1250 batch_size=4096 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=4 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=True"
-
-
-
-
- # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=10000 algo.proportion_mutation_ga=0.75 init=orthogonal algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=False"
- # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=10000 algo.proportion_mutation_ga=0.75 init=orthogonal algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=False"
- # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=10000 algo.proportion_mutation_ga=0.75 init=orthogonal algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=False"
- # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=10000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=False"
- # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=10000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=False"
-
-  #- "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_uni env.episode_length=1000 num_iterations=10000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=False"
-  #- "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=walker2d_uni env.episode_length=1000 num_iterations=10000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=False"
-  #- "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=hopper_uni env.episode_length=1000 num_iterations=10000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=False"
-  #- "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=10000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=False"
-  #- "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=10000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=0 algo.cosine_similarity=False"
-
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=10000 algo.proportion_mutation_ga=0.5 init=uniform algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=1 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=10000 algo.proportion_mutation_ga=0.5 init=uniform algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=1 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=10000 algo.proportion_mutation_ga=0.5 init=uniform algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=1 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=10000 algo.proportion_mutation_ga=0.5 init=uniform algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=1 algo.cosine_similarity=True"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=10000 algo.proportion_mutation_ga=0.5 init=uniform algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=1 algo.cosine_similarity=True"
-
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=10000 algo.proportion_mutation_ga=0.5 init=uniform algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=1 algo.cosine_similarity=False"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=10000 algo.proportion_mutation_ga=0.5 init=uniform algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=1 algo.cosine_similarity=False"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=10000 algo.proportion_mutation_ga=0.5 init=uniform algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=1 algo.cosine_similarity=False"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=10000 algo.proportion_mutation_ga=0.5 init=uniform algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=1 algo.cosine_similarity=False"
-  # - "HPC=L40S algo=mcpg_me_fixed seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=10000 algo.proportion_mutation_ga=0.5 init=uniform algo.no_epochs=32 algo.learning_rate=3e-3 algo.greedy=1 algo.cosine_similarity=False"
-
-
-
-
-
-  
-  
-  
-  # new me
-
-  # - "HPC=L40S algo=me_2 seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.05 algo.line_sigma_2=0.05"
-  # - "HPC=L40S algo=me_2 seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.5 algo.line_sigma_2=0.05"
-
-  # - "HPC=L40S algo=me_2 seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.005 algo.line_sigma_2=0.5"
-  # - "HPC=L40S algo=me_2 seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.005 algo.line_sigma_2=1.0"
-
-  # - "HPC=L40S algo=me_2 seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.05 algo.line_sigma_2=0.5"
-  # - "HPC=L40S algo=me_2 seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.5 algo.line_sigma_2=1.0"
-
-
-  # - "HPC=L40S algo=me_2 seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.05 algo.line_sigma_2=0.05"
-  # - "HPC=L40S algo=me_2 seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.5 algo.line_sigma_2=0.05"
-
-  # - "HPC=L40S algo=me_2 seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.005 algo.line_sigma_2=0.5"
-  # - "HPC=L40S algo=me_2 seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.005 algo.line_sigma_2=1.0"
-  
-  # - "HPC=L40S algo=me_2 seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.05 algo.line_sigma_2=0.5"
-  # - "HPC=L40S algo=me_2 seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.5 algo.line_sigma_2=1.0"
-
-
-  # - "HPC=L40S algo=me_2 seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.05 algo.line_sigma_2=0.05"
-  # - "HPC=L40S algo=me_2 seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.5 algo.line_sigma_2=0.05"
-
-  # - "HPC=L40S algo=me_2 seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.005 algo.line_sigma_2=0.5"
-  # - "HPC=L40S algo=me_2 seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.005 algo.line_sigma_2=1.0"
-  
-  # - "HPC=L40S algo=me_2 seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.05 algo.line_sigma_2=0.5"
-  # - "HPC=L40S algo=me_2 seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.5 algo.line_sigma_2=1.0"
-
-
-  # - "HPC=L40S algo=me_2 seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.05 algo.line_sigma_2=0.05"
-  # - "HPC=L40S algo=me_2 seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.5 algo.line_sigma_2=0.05"
-
-  # - "HPC=L40S algo=me_2 seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.005 algo.line_sigma_2=0.5"
-  # - "HPC=L40S algo=me_2 seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.005 algo.line_sigma_2=1.0"
-  
-  # - "HPC=L40S algo=me_2 seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.05 algo.line_sigma_2=0.5"
-  # - "HPC=L40S algo=me_2 seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.5 algo.line_sigma_2=1.0"
-
-
-  # - "HPC=L40S algo=me_2 seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.05 algo.line_sigma_2=0.05"
-  # - "HPC=L40S algo=me_2 seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.5 algo.line_sigma_2=0.05"
-
-  # - "HPC=L40S algo=me_2 seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.005 algo.line_sigma_2=0.5"
-  # - "HPC=L40S algo=me_2 seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.005 algo.line_sigma_2=1.0"
-  
-  # - "HPC=L40S algo=me_2 seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.05 algo.line_sigma_2=0.5"
-  # - "HPC=L40S algo=me_2 seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5 init=orthogonal algo.iso_sigma=0.005 algo.line_sigma=0.05 algo.iso_sigma_2=0.5 algo.line_sigma_2=1.0"
-
-
-
-
-
-
-
-  # GAvsMCPG
-  #- "HPC=L40S algo=mcpg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0"
-
-  #- "HPC=L40S algo=mcpg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.25"
-  #- "HPC=L40S algo=mcpg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5"
-  #- "HPC=L40S algo=mcpg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.75"
-  #- "HPC=L40S algo=mcpg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=1"
-  #- "HPC=L40S algo=mcpg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=4890 algo.proportion_mutation_ga=1 batch_size=1024"
-  #- "HPC=L40S algo=mcpg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=1224 algo.proportion_mutation_ga=1 batch_size=4096"
-  #- "HPC=L40S algo=mcpg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=306 algo.proportion_mutation_ga=1 batch_size=16384"
-  #- "HPC=L40S algo=mcpg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=77 algo.proportion_mutation_ga=1 batch_size=65536"
-
-  
-  #- "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0"
-  #- "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5"
-  #- "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.25"
-  #- "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.75"
-  #- "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=1"
-  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=4890 algo.proportion_mutation_ga=0.5 batch_size=1024 init=orthogonal algo.no_epochs=4"
-  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=1224 algo.proportion_mutation_ga=0.5 batch_size=4096 init=orthogonal algo.no_epochs=4"
-  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=306 algo.proportion_mutation_ga=0.5 batch_size=16384 init=orthogonal algo.no_epochs=4"
-  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=154 algo.proportion_mutation_ga=0.5 batch_size=32768 init=orthogonal algo.no_epochs=4"
-
-  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=4890 algo.proportion_mutation_ga=0.5 batch_size=1024 init=orthogonal algo.no_epochs=8"
-  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=1224 algo.proportion_mutation_ga=0.5 batch_size=4096 init=orthogonal algo.no_epochs=8"
-  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=306 algo.proportion_mutation_ga=0.5 batch_size=16384 init=orthogonal algo.no_epochs=8"
-  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=154 algo.proportion_mutation_ga=0.5 batch_size=32768 init=orthogonal algo.no_epochs=8"
-
-  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=4890 algo.proportion_mutation_ga=0.5 batch_size=1024 init=orthogonal algo.no_epochs=16"
-  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=1224 algo.proportion_mutation_ga=0.5 batch_size=4096 init=orthogonal algo.no_epochs=16"
-  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=306 algo.proportion_mutation_ga=0.5 batch_size=16384 init=orthogonal algo.no_epochs=16"
-  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=154 algo.proportion_mutation_ga=0.5 batch_size=32768 init=orthogonal algo.no_epochs=16"
-
-  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=4890 algo.proportion_mutation_ga=0.5 batch_size=1024 init=orthogonal algo.no_epochs=1"
-  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=1224 algo.proportion_mutation_ga=0.5 batch_size=4096 init=orthogonal algo.no_epochs=1"
-  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=306 algo.proportion_mutation_ga=0.5 batch_size=16384 init=orthogonal algo.no_epochs=1"
-  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=154 algo.proportion_mutation_ga=0.5 batch_size=32768 init=orthogonal algo.no_epochs=1"
-
-  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=4890 algo.proportion_mutation_ga=0.5 batch_size=1024 init=orthogonal algo.no_epochs=4"
-  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=1224 algo.proportion_mutation_ga=0.5 batch_size=4096 init=orthogonal algo.no_epochs=4"
-  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=306 algo.proportion_mutation_ga=0.5 batch_size=16384 init=orthogonal algo.no_epochs=4"
-  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=154 algo.proportion_mutation_ga=0.5 batch_size=32768 init=orthogonal algo.no_epochs=4"
-
-  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=4890 algo.proportion_mutation_ga=0.5 batch_size=1024 init=orthogonal algo.no_epochs=8"
-  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=1224 algo.proportion_mutation_ga=0.5 batch_size=4096 init=orthogonal algo.no_epochs=8"
-  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=306 algo.proportion_mutation_ga=0.5 batch_size=16384 init=orthogonal algo.no_epochs=8"
-  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=154 algo.proportion_mutation_ga=0.5 batch_size=32768 init=orthogonal algo.no_epochs=8"
-
-  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=4890 algo.proportion_mutation_ga=0.5 batch_size=1024 init=orthogonal algo.no_epochs=16"
-  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=1224 algo.proportion_mutation_ga=0.5 batch_size=4096 init=orthogonal algo.no_epochs=16"
-  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=306 algo.proportion_mutation_ga=0.5 batch_size=16384 init=orthogonal algo.no_epochs=16"
-  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=154 algo.proportion_mutation_ga=0.5 batch_size=32768 init=orthogonal algo.no_epochs=16"
-
-  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=4890 algo.proportion_mutation_ga=0.5 batch_size=1024 init=orthogonal algo.no_epochs=32"
-  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=1224 algo.proportion_mutation_ga=0.5 batch_size=4096 init=orthogonal algo.no_epochs=32"
-  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=306 algo.proportion_mutation_ga=0.5 batch_size=16384 init=orthogonal algo.no_epochs=32"
-  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=154 algo.proportion_mutation_ga=0.5 batch_size=32768 init=orthogonal algo.no_epochs=32"
-
-  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=4890 algo.proportion_mutation_ga=0.5 batch_size=1024 init=orthogonal algo.no_epochs=1"
-  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=1224 algo.proportion_mutation_ga=0.5 batch_size=4096 init=orthogonal algo.no_epochs=1"
-  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=306 algo.proportion_mutation_ga=0.5 batch_size=16384 init=orthogonal algo.no_epochs=1"
-  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=154 algo.proportion_mutation_ga=0.5 batch_size=32768 init=orthogonal algo.no_epochs=1"
-
-  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=4890 algo.proportion_mutation_ga=0.5 batch_size=1024 init=orthogonal algo.no_epochs=4"
-  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=1224 algo.proportion_mutation_ga=0.5 batch_size=4096 init=orthogonal algo.no_epochs=4"
-  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=306 algo.proportion_mutation_ga=0.5 batch_size=16384 init=orthogonal algo.no_epochs=4"
-  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=154 algo.proportion_mutation_ga=0.5 batch_size=32768 init=orthogonal algo.no_epochs=4"
-
-  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=4890 algo.proportion_mutation_ga=0.5 batch_size=1024 init=orthogonal algo.no_epochs=8"
-  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=1224 algo.proportion_mutation_ga=0.5 batch_size=4096 init=orthogonal algo.no_epochs=8"
-  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=306 algo.proportion_mutation_ga=0.5 batch_size=16384 init=orthogonal algo.no_epochs=8"
-  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=154 algo.proportion_mutation_ga=0.5 batch_size=32768 init=orthogonal algo.no_epochs=8"
-
-  #- "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=4890 algo.proportion_mutation_ga=0.5 batch_size=1024 init=orthogonal algo.no_epochs=16"
-  #- "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=1224 algo.proportion_mutation_ga=0.5 batch_size=4096 init=orthogonal algo.no_epochs=16"
-  #- "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=306 algo.proportion_mutation_ga=0.5 batch_size=16384 init=orthogonal algo.no_epochs=16"
-  #- "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=154 algo.proportion_mutation_ga=0.5 batch_size=32768 init=orthogonal algo.no_epochs=16"
-
-  #- "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=4890 algo.proportion_mutation_ga=0.5 batch_size=1024 init=orthogonal algo.no_epochs=32"
-  #- "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=1224 algo.proportion_mutation_ga=0.5 batch_size=4096 init=orthogonal algo.no_epochs=32"
-  #- "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=306 algo.proportion_mutation_ga=0.5 batch_size=16384 init=orthogonal algo.no_epochs=32"
-  #- "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=154 algo.proportion_mutation_ga=0.5 batch_size=32768 init=orthogonal algo.no_epochs=32"
-
-
-
-
-
-  #- "HPC=L40S algo=mcpg_me seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0"
-  #- "HPC=L40S algo=mcpg_me seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.25"
-  #- "HPC=L40S algo=mcpg_me seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5"
-  #- "HPC=L40S algo=mcpg_me seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.75"
-  #- "HPC=L40S algo=mcpg_me seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=1"
-
-  #- "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0"
-  #- "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.25"
-  #- "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5"
-  #- "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.75"
-  #- "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=1"
-
-  #- "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=4890 algo.proportion_mutation_ga=1 batch_size=1024"
-  #- "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=1224 algo.proportion_mutation_ga=1 batch_size=4096"
-  #- "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=306 algo.proportion_mutation_ga=1 batch_size=16384"
-  #- "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=77 algo.proportion_mutation_ga=1 batch_size=65536"
-
-  #- "HPC=L40S algo=mcpg_me seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0"
-  #- "HPC=L40S algo=mcpg_me seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.25"
-  #- "HPC=L40S algo=mcpg_me seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5"
-  #- "HPC=L40S algo=mcpg_me seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.75"
-  #- "HPC=L40S algo=mcpg_me seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=1"
-
-
-
-
-  # walker2d_uni
-  #- "HPC=True algo=mcpg_me seed=\$RANDOM env=walker2d_uni env.episode_length=1000 num_iterations=2000"
-  #- "HPC=True algo=mcpg_me seed=\$RANDOM env=walker2d_uni env.episode_length=1000 num_iterations=1000 batch_size=1024"
-  #- "HPC=True algo=mcpg_me seed=\$RANDOM env=walker2d_uni env.episode_length=1000 num_iterations=500 batch_size=2048"
-  #- "HPC=True algo=mcpg_me seed=\$RANDOM env=walker2d_uni env.episode_length=1000 num_iterations=250 batch_size=4096"
-  #- "HPC=True algo=pga_me seed=\$RANDOM env=walker2d_uni env.episode_length=1000 num_iterations=2000"
-  #- "HPC=True algo=dcg_me seed=\$RANDOM env=walker2d_uni env.episode_length=1000 num_iterations=2000 algo.ga_batch_size=128 algo.qpg_batch_size=2 algo.ai_batch_size=382"
-  #- "HPC=True algo=me seed=\$RANDOM env=walker2d_uni env.episode_length=1000 num_iterations=2000"
-  #- "HPC=L40S algo=mcpg_me seed=\$RANDOM env=walker2d_uni init=uniform env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5"
-  #- "HPC=True algo=pga_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=2000"
-  #- "HPC=True algo=dcg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=2000"
-  #- "HPC=True algo=me seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=2000"
-
-  # ant_uni
-  #- "HPC=True algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=1000 num_iterations=2000"
-  #- "HPC=True algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=1000 num_iterations=1000 batch_size=1024"
-  #- "HPC=True algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=1000 num_iterations=500 batch_size=2048"
-  #- "HPC=True algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=1000 num_iterations=250 batch_size=4096"
-  #- "HPC=True algo=pga_me seed=\$RANDOM env=ant_uni env.episode_length=1000 num_iterations=2000"
-  #- "HPC=True algo=dcg_me seed=\$RANDOM env=ant_uni env.episode_length=1000 num_iterations=2000 algo.ga_batch_size=128 algo.qpg_batch_size=2 algo.ai_batch_size=382"
-  #- "HPC=True algo=me seed=\$RANDOM env=ant_uni env.episode_length=1000 num_iterations=2000"
-  #- "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_uni init=uniform env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5"
-  #- "HPC=True algo=pga_me seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=2000"
-  #- "HPC=True algo=dcg_me seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=2000"
-  #- "HPC=True algo=me seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=2000"
-
-  # hopper_uni
-  #- "HPC=True algo=mcpg_me seed=\$RANDOM env=hopper_uni env.episode_length=1000 num_iterations=2000"
-  #- "HPC=True algo=pga_me seed=\$RANDOM env=hopper_uni env.episode_length=1000 num_iterations=2000"
-  #- "HPC=True algo=mcpg_me seed=\$RANDOM env=hopper_uni env.episode_length=1000 num_iterations=2000"
-  #- "HPC=True algo=me seed=\$RANDOM env=hopper_uni env.episode_length=1000 num_iterations=2000"
-  #- "HPC=True algo=dcg_me seed=\$RANDOM env=hopper_uni env.episode_length=1000 num_iterations=2000 algo.ga_batch_size=128 algo.qpg_batch_size=2 algo.ai_batch_size=382"
-  #- "HPC=L40S algo=mcpg_me seed=\$RANDOM env=hopper_uni init=uniform env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5"
-  #- "HPC=True algo=pga_me seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=2000"
-  #- "HPC=True algo=dcg_me seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=2000"
-  #- "HPC=True algo=me seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=2000"
-
-  # ant_omni
-  #- "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_omni init=uniform env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5"
-  #- "HPC=True algo=pga_me seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=2000"
-  #- "HPC=True algo=dcg_me seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=2000 algo.ga_batch_size=128 algo.qpg_batch_size=2 algo.ai_batch_size=382"
-  #- "HPC=True algo=me seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=2000"
-
-  # anttrap_omni
-  #- "HPC=L40S algo=mcpg_me seed=\$RANDOM env=anttrap_omni init=uniform env.episode_length=250 num_iterations=2000 algo.proportion_mutation_ga=0.5"
-  #- "HPC=True algo=pga_me seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=2000"
-  #- "HPC=True algo=dcg_me seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=2000 algo.ga_batch_size=128 algo.qpg_batch_size=2 algo.ai_batch_size=382"
-  #- "HPC=True algo=me seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=2000"
-
   # scalability
+  # - "HPC=L40S algo=pga_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=256 algo.replay_buffer_size=1_000_000 num_iterations=12000"
+  # - "HPC=L40S algo=pga_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=512 algo.replay_buffer_size=2_000_000 num_iterations=6000"
+  # - "HPC=L40S algo=pga_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=1024 algo.replay_buffer_size=4_000_000 num_iterations=3000"
+  # - "HPC=L40S algo=pga_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=2048 algo.replay_buffer_size=8_000_000 num_iterations=1500"
+  # - "HPC=L40S algo=pga_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=4096 algo.replay_buffer_size=16_000_000 num_iterations=750"
 
-  # me
-  #- "HPC=True algo=me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=1024 num_iterations=4890"
-  #- "HPC=True algo=me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=16384 num_iterations=306"
-  #- "HPC=True algo=me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=4096 num_iterations=1224"
-  #- "HPC=True algo=me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=65536 num_iterations=77"
-  #- "HPC=True algo=mcpg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=65536 num_iterations=77"
+  # - "HPC=L40S algo=pga_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=256 algo.replay_buffer_size=1_000_000 num_iterations=12000"
+  # - "HPC=L40S algo=pga_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=512 algo.replay_buffer_size=2_000_000 num_iterations=6000"
+  # - "HPC=L40S algo=pga_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=1024 algo.replay_buffer_size=4_000_000 num_iterations=3000"
+  # - "HPC=L40S algo=pga_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=2048 algo.replay_buffer_size=8_000_000 num_iterations=1500"
+  # - "HPC=L40S algo=pga_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=4096 algo.replay_buffer_size=16_000_000 num_iterations=750"
 
+  # - "HPC=L40S algo=me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=256 num_iterations=12000"
+  # - "HPC=L40S algo=me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=512 num_iterations=6000"
+  # - "HPC=L40S algo=me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=1024 num_iterations=3000"
+  # - "HPC=L40S algo=me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=2048 num_iterations=1500"
+  # - "HPC=L40S algo=me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=4096 num_iterations=750"
 
-  #- "HPC=True algo=me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=1024 num_iterations=4890"
-  #- "HPC=True algo=me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=16384 num_iterations=306"
-  #- "HPC=True algo=me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=4096 num_iterations=1224"
-  #- "HPC=True algo=me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=65536 num_iterations=77"
-  #- "HPC=True algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=65536 num_iterations=77"
+  # - "HPC=L40S algo=me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=256 num_iterations=12000"
+  # - "HPC=L40S algo=me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=512 num_iterations=6000"
+  # - "HPC=L40S algo=me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=1024 num_iterations=3000"
+  # - "HPC=L40S algo=me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=2048 num_iterations=1500"
+  # - "HPC=L40S algo=me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=4096 num_iterations=750"
 
-  #- "HPC=True algo=me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=1024 num_iterations=4890"
-  #- "HPC=True algo=me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=16384 num_iterations=306"
-  #- "HPC=True algo=me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=4096 num_iterations=1224"
-  #- "HPC=True algo=me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=65536 num_iterations=77"
-  #- "HPC=True algo=mcpg_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=65536 num_iterations=77"
+  # sample & time efficiency
 
-
-
-  # ant_uni
-  #- "HPC=L40S algo=pga_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=1024 num_iterations=4890 algo.replay_buffer_size=256_000 algo.num_critic_training_steps=1"
-  #- "HPC=L40S algo=pga_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=4096 num_iterations=1224 algo.replay_buffer_size=1_024_000 algo.num_critic_training_steps=1"
-  #- "HPC=L40S algo=pga_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=16384 num_iterations=306 algo.replay_buffer_size=4_096_000 algo.num_critic_training_steps=1"
-  #- "HPC=L40S algo=pga_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=32768 num_iterations=154 algo.replay_buffer_size=8_192_000 algo.num_critic_training_steps=1"
-
-
-  # walker_uni
-  #- "HPC=L40S algo=pga_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=1024 num_iterations=4890 algo.replay_buffer_size=256_000 algo.num_critic_training_steps=1"
-  #- "HPC=L40S algo=pga_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=4096 num_iterations=1224 algo.replay_buffer_size=1_024_000 algo.num_critic_training_steps=1"
-  #- "HPC=L40S algo=pga_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=16384 num_iterations=306 algo.replay_buffer_size=4_096_000 algo.num_critic_training_steps=1"
-  #- "HPC=L40S algo=pga_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=32768 num_iterations=154 algo.replay_buffer_size=8_192_000 algo.num_critic_training_steps=1"
+  - "HPC=L40S algo=dcg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=256 algo.replay_buffer_size=1_000_000 num_iterations=4000 algo.ga_batch_size=128 algo.qpg_batch_size=64 algo.ai_batch_size=64"
+  - "HPC=L40S algo=dcg_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=256 algo.replay_buffer_size=1_000_000 num_iterations=4000 algo.ga_batch_size=128 algo.qpg_batch_size=64 algo.ai_batch_size=64"
+  - "HPC=L40S algo=dcg_me seed=\$RANDOM env=hopper_uni env.episode_length=250 batch_size=256 algo.replay_buffer_size=1_000_000 num_iterations=4000 algo.ga_batch_size=128 algo.qpg_batch_size=64 algo.ai_batch_size=64"
+  - "HPC=L40S algo=dcg_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=256 algo.replay_buffer_size=1_000_000 num_iterations=4000 algo.ga_batch_size=128 algo.qpg_batch_size=64 algo.ai_batch_size=64"
+  - "HPC=L40S algo=dcg_me seed=\$RANDOM env=anttrap_omni env.episode_length=250 batch_size=256 algo.replay_buffer_size=1_000_000 num_iterations=4000 algo.ga_batch_size=128 algo.qpg_batch_size=64 algo.ai_batch_size=64"
 
 
-  # ant_omni
-  #- "HPC=True algo=pga_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=1024 num_iterations=4890 algo.replay_buffer_size=256_000"
-  #- "HPC=True algo=pga_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=4096 num_iterations=1224 algo.replay_buffer_size=1_024_000"
-  #- "HPC=True algo=pga_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=16384 num_iterations=306 algo.replay_buffer_size=4_096_000"
-  #- "HPC=True algo=pga_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=32768 num_iterations=154 algo.replay_buffer_size=8_192_000"
+  - "HPC=L40S algo=me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=256"
+  - "HPC=L40S algo=me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=256"
+  - "HPC=L40S algo=me seed=\$RANDOM env=hopper_uni env.episode_length=250 batch_size=256"
+  - "HPC=L40S algo=me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=256"
+  - "HPC=L40S algo=me seed=\$RANDOM env=anttrap_omni env.episode_length=250 batch_size=256"
 
 
 
@@ -464,32 +60,7 @@ args:
 
 
 
-  # MEMES
-  #- "HPC=True algo=memes seed=\$RANDOM env=walker2d_uni env.episode_length=1000 num_iterations=100 batch_size=32"
-  #- "HPC=True algo=memes seed=\$RANDOM env=walker2d_uni env.episode_length=250 num_iterations=100 batch_size=32"
-  #- "HPC=True algo=memes seed=\$RANDOM env=ant_uni env.episode_length=1000 num_iterations=100 batch_size=32"
-  #- "HPC=True algo=memes seed=\$RANDOM env=ant_uni env.episode_length=250 num_iterations=100 batch_size=32"
-  #- "HPC=True algo=memes seed=\$RANDOM env=hopper_uni env.episode_length=1000 num_iterations=100 batch_size=32"
-  #- "HPC=True algo=memes seed=\$RANDOM env=hopper_uni env.episode_length=250 num_iterations=100 batch_size=32"
-  #- "HPC=True algo=memes seed=\$RANDOM env=ant_omni env.episode_length=250 num_iterations=100 batch_size=32"
-  #- "HPC=True algo=memes seed=\$RANDOM env=anttrap_omni env.episode_length=250 num_iterations=100 batch_size=32"
 
-  # Ablation study
-
-  # walker2d_uni
-  #- "HPC=True algo=mcpg_me_no_normalizer seed=\$RANDOM env=walker2d_uni env.episode_length=1000 num_iterations=2000"
-  #- "HPC=True algo=mcpg_me_no_baseline seed=\$RANDOM env=walker2d_uni env.episode_length=1000 num_iterations=2000"
-  #- "HPC=True algo=mcpg_me_no_ppo_loss seed=\$RANDOM env=walker2d_uni env.episode_length=1000 num_iterations=2000"
-
-  # ant_uni
-  #- "HPC=True algo=mcpg_me_no_normalizer seed=\$RANDOM env=ant_uni env.episode_length=1000 num_iterations=2000"
-  #- "HPC=True algo=mcpg_me_no_baseline seed=\$RANDOM env=ant_uni env.episode_length=1000 num_iterations=2000"
-  #- "HPC=True algo=mcpg_me_no_ppo_loss seed=\$RANDOM env=ant_uni env.episode_length=1000 num_iterations=2000"
-
-  # hopper_uni
-  #- "HPC=True algo=mcpg_me_no_normalizer seed=\$RANDOM env=hopper_uni env.episode_length=1000 num_iterations=2000"
-  #- "HPC=True algo=mcpg_me_no_baseline seed=\$RANDOM env=hopper_uni env.episode_length=1000 num_iterations=2000"
-  #- "HPC=True algo=mcpg_me_no_ppo_loss seed=\$RANDOM env=hopper_uni env.episode_length=1000 num_iterations=2000"
 
 
 

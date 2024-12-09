@@ -258,7 +258,11 @@ def get_df(results_dir, episode_length):
                     metrics["cos_sim"] = config.algo.cosine_similarity
                     metrics["no_epochs"] = config.algo.no_epochs
                     metrics["proportion_mutation_ga"] = config.algo.proportion_mutation_ga
-                    metrics["clipping"] = config.algo.clip_param
+                    metrics["clip_param"] = config.algo.clip_param
+                    metrics["learning_rate"] = config.algo.learning_rate
+                    #metrics["std"] = config.algo.std
+                    #metrics["iterations"] = config.batch_size
+                    
                 metrics['gpu'] = config.HPC
 
                 # Run

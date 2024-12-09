@@ -59,14 +59,22 @@ INIT_ALGO_LIST = [
 ]
 
 ALGO_LIST = [
+    #"mcpg_me_epoch_32_batch_512",
+    #"pga_me",
+    #"dcg_me",
+    #"me",
+    #"memes",
     #"mcpg_me_",
-    "mcpg_me_no_clipping",
-    "mcpg_me_normal",
+    #"mcpg_me_no_clipping",
+    #"mcpg_me_normal",
     #"mcpg_me_unif_0",
-    #"mcpg_me_unif_05",
-    #"mcpg_me_unif_1_cos_sim",
-    #"mcpg_me_unif_1_not_cos_sim",
+    "mcpg_me_clip_1",
+    "mcpg_me_clip_2",
+    "mcpg_me_clip_3",
+    "mcpg_me_no_clip_05",
+    "mcpg_me_no_clip_1",
 ]
+
 
 ALGO_DICT = {
     "mcpg_me_0": "MCPG-ME 0% GA",
@@ -74,8 +82,8 @@ ALGO_DICT = {
     "mcpg_me_0.5": "MCPG-ME 50% GA",
     "mcpg_me_0.75": "MCPG-ME 75% GA",
     "mcpg_me_1": "MCPG-ME 100% GA",
-    "dcg_me": "DCRL-AI-only",
-    "dcg_me_": "DCRL",
+    #"dcg_me": "DCRL-AI-only",
+    "dcg_me": "DCRL",
     "dcg_me_gecco": "DCG-MAP-Elites GECCO",
     "pga_me": "PGA-MAP-Elites",
     "qd_pg": "QD-PG",
@@ -101,9 +109,18 @@ ALGO_DICT = {
     "mcpg_me_0": "MCPG-ME | 0% GA",
     "mcpg_me_no_clipping": "MCPG-ME no clip",
     "mcpg_me_normal": "MCPG-ME with clip",
+    "mcpg_me_epoch_32_batch_512" : "MCPG-ME",
+    "mcpg_me_clip_1": "clip 1",
+    "mcpg_me_clip_2": "clip 2",
+    "mcpg_me_clip_3": "clip 3",
+    "mcpg_me_no_clip_05": "no clip 0.5",
+    "mcpg_me_no_clip_1": "no clip 1",
 }
 
 EMITTER_LIST = {
+    "mcpg_me_epoch_32_batch_512" : ["ga_offspring_added", "qpg_offspring_added"],
+    #"dcg_me" : ["ga_offspring_added", "qpg_offspring_added", "ai_offspring_added"],
+    #"pga_me" : ["ga_offspring_added", "qpg_offspring_added", "ai_offspring_added"],
     "mcpg_me_": ["ga_offspring_added", "qpg_offspring_added"],
     "mcpg_me_no_clipping": ["ga_offspring_added", "qpg_offspring_added"],
     "mcpg_me_normal": ["ga_offspring_added", "qpg_offspring_added"],
@@ -112,9 +129,15 @@ EMITTER_LIST = {
     "mcpg_me_unif_1": ["ga_offspring_added", "qpg_offspring_added"],
     "dcg_me": ["ga_offspring_added", "qpg_ai_offspring_added"],
     "pga_me": ["ga_offspring_added", "qpg_ai_offspring_added"],
-    "qd_pg": ["ga_offspring_added", "qpg_ai_offspring_added"],
+    #"qd_pg": ["ga_offspring_added", "qpg_ai_offspring_added"],
     "me": ["ga_offspring_added"],
     "me_es": ["es_offspring_added"],
+    "mcpg_me_clip_1": ["ga_offspring_added", "qpg_offspring_added"],
+    "mcpg_me_clip_2": ["ga_offspring_added", "qpg_offspring_added"],
+    "mcpg_me_clip_3": ["ga_offspring_added", "qpg_offspring_added"],
+    "mcpg_me_no_clip_05": ["ga_offspring_added", "qpg_offspring_added"],
+    "mcpg_me_no_clip_1": ["ga_offspring_added", "qpg_offspring_added"],
+    
 }
 EMITTER_DICT = {
     "ga_offspring_added": "GA",
@@ -132,11 +155,31 @@ def filter(df_row):
         #if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"]:
         #    return "mcpg_me_orth_0_cos_sim"
         
-        if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"] and df_row["no_epochs"] == 32 and df_row["batch_size"] == 512 and df_row["proportion_mutation_ga"] == 0.5 and df_row["clipping"] != 0.2:
-            return "mcpg_me_no_clipping"
+        #if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"] and df_row["no_epochs"] == 4 and df_row["batch_size"] == 1024:
+        #    return "mcpg_me_4"
+        
+        #if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"] and df_row["no_epochs"] == 8 and df_row["batch_size"] == 1024:
+        #    return "mcpg_me_8"
+        
+        #if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"] and df_row["no_epochs"] == 16 and df_row["batch_size"] == 1024:
+        #    return "mcpg_me_16"
+        
+        if df_row["clip_param"] == 0.2 and df_row["std"] == 1:
+            return "mcpg_me_clip_1"
 
-        if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"] and df_row["no_epochs"] == 32 and df_row["batch_size"] == 512 and df_row["proportion_mutation_ga"] == 0.5 and df_row["clipping"] == 0.2:
-            return "mcpg_me_normal"
+        if df_row["clip_param"] == 0.2 and df_row["std"] == 2:
+            return "mcpg_me_clip_2"
+        
+        if df_row["clip_param"] == 0.2 and df_row["std"] == 3:
+            return "mcpg_me_clip_3"
+        
+        
+        if df_row["clip_param"] != 0.2 and df_row["std"] == 0.5:
+            return "mcpg_me_no_clip_05"
+        
+        if df_row["clip_param"] != 0.2 and df_row["std"] == 1:
+            return "mcpg_me_no_clip_1"
+        
         #if df_row["init"] == "orthogonal" and df_row["greedy"] == 0.5:
         #    return "mcpg_me_orth_05"
         
@@ -197,7 +240,7 @@ def plot(df):
                 df_plot,
                 x="num_evaluations",
                 y=emitter,
-                hue="algo_",
+                hue="algo",
                 hue_order=ALGO_LIST,
                 estimator=np.median,
                 errorbar=lambda x: (np.quantile(x, 0.25), np.quantile(x, 0.75)),
@@ -221,7 +264,7 @@ def plot(df):
     fig.tight_layout()
 
     # Save plot
-    fig.savefig("tuning/output/plot_main_emitters.png", bbox_inches="tight")
+    fig.savefig("final_tuning_pt2/output/plot_main_emitters.png", bbox_inches="tight")
     plt.close()
 
 
@@ -232,7 +275,7 @@ if __name__ == "__main__":
     plt.rc("font", size=16)
 
     # Create the DataFrame
-    results_dir = Path("tuning/output/")
+    results_dir = Path("final_tuning_pt2/output/")
         
     EPISODE_LENGTH = 250
 
@@ -246,9 +289,10 @@ if __name__ == "__main__":
         df[emitter] = df.groupby(['env', 'algo', 'run'])[emitter].cumsum()
 
     # Filter
-    df = df[df["algo"].isin(INIT_ALGO_LIST)]
-    df = df[df["num_evaluations"] <= 5_001_400]
-    df['algo_'] = df.apply(filter, axis=1)
+    df['algo'] = df.apply(filter, axis=1)
+    df = df[df["algo"].isin(ALGO_LIST)]
+    df = df[df["num_evaluations"] <= 1_001_400]
+    #df['algo_'] = df.apply(filter, axis=1)
     # Plot
     plot(df)
     
