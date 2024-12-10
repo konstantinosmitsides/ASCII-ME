@@ -7,6 +7,7 @@ import pickle
 
 import jax
 import jax.numpy as jnp
+import numpy as np
 
 from qdax.core.containers.mapelites_repertoire import compute_cvt_centroids, MapElitesRepertoire
 from qdax.tasks.brax_envs import reset_based_scoring_function_brax_envs as scoring_function
@@ -281,10 +282,50 @@ def main(config: Config) -> None:
     map_elites_scan_update = map_elites.scan_update
     eval_num = config.batch_size
     #print(f"Number of evaluations per iteration: {eval_num}")
+
+    # cumulative_time = 0
+    # #for i in range(num_loops):
+    # i = 0
+    # while cumulative_time < 3000:
+    #     start_time = time.time()
+    #     (repertoire, emitter_state, random_key), current_metrics = jax.lax.scan(
+    #         map_elites_scan_update,
+    #         (repertoire, emitter_state, random_key),
+    #         (),
+    #         length=log_period,
+    #     )
+    #     timelapse = time.time() - start_time
+    #     cumulative_time += timelapse
+
+    #     # Metrics
+    #     #random_key, qd_score_repertoire, dem_repertoire = evaluate_repertoire(random_key, repertoire)
+
+    #     current_metrics["iteration"] = jnp.arange(1+log_period*i, 1+log_period*(i+1), dtype=jnp.int32)
+    #     current_metrics["evaluation"] = jnp.arange(1+log_period*eval_num*i, 1+log_period*eval_num*(i+1), dtype=jnp.int32)
+    #     current_metrics["time"] = jnp.repeat(cumulative_time, log_period)
+    #     #current_metrics["qd_score_repertoire"] = jnp.repeat(qd_score_repertoire, log_period)
+    #     #current_metrics["dem_repertoire"] = jnp.repeat(dem_repertoire, log_period)
+    #     current_metrics["ga_offspring_added"] = get_n_offspring_added(current_metrics)
+    #     del current_metrics["is_offspring_added"]
+    #     metrics = jax.tree_util.tree_map(lambda metric, current_metric: jnp.concatenate([metric, current_metric], axis=0), metrics, current_metrics)
+
+    #     # Log
+    #     log_metrics = jax.tree_util.tree_map(lambda metric: metric[-1], metrics)
+    #     log_metrics["ga_offspring_added"] = jnp.sum(current_metrics["ga_offspring_added"])
+    #     csv_logger.log(log_metrics)
+    #     i += 1
+    #     #wandb.log(log_metrics)
+
+    # # Metrics
+    # with open("./metrics.pickle", "wb") as metrics_file:
+    #     pickle.dump(metrics, metrics_file)
+
+
+    metrics_file_path = "./metrics_incremental.pickle"
+
     cumulative_time = 0
-    #for i in range(num_loops):
     i = 0
-    while cumulative_time < 3000:
+    while cumulative_time < 100:
         start_time = time.time()
         (repertoire, emitter_state, random_key), current_metrics = jax.lax.scan(
             map_elites_scan_update,
@@ -295,28 +336,48 @@ def main(config: Config) -> None:
         timelapse = time.time() - start_time
         cumulative_time += timelapse
 
-        # Metrics
-        #random_key, qd_score_repertoire, dem_repertoire = evaluate_repertoire(random_key, repertoire)
-
+        # Update current_metrics with iteration info
         current_metrics["iteration"] = jnp.arange(1+log_period*i, 1+log_period*(i+1), dtype=jnp.int32)
         current_metrics["evaluation"] = jnp.arange(1+log_period*eval_num*i, 1+log_period*eval_num*(i+1), dtype=jnp.int32)
         current_metrics["time"] = jnp.repeat(cumulative_time, log_period)
-        #current_metrics["qd_score_repertoire"] = jnp.repeat(qd_score_repertoire, log_period)
-        #current_metrics["dem_repertoire"] = jnp.repeat(dem_repertoire, log_period)
         current_metrics["ga_offspring_added"] = get_n_offspring_added(current_metrics)
         del current_metrics["is_offspring_added"]
-        metrics = jax.tree_util.tree_map(lambda metric, current_metric: jnp.concatenate([metric, current_metric], axis=0), metrics, current_metrics)
 
-        # Log
-        log_metrics = jax.tree_util.tree_map(lambda metric: metric[-1], metrics)
-        log_metrics["ga_offspring_added"] = jnp.sum(current_metrics["ga_offspring_added"])
+        # Directly append current_metrics to the file to avoid growing arrays in memory
+        # Convert to CPU (if needed) before pickling
+        current_metrics_cpu = jax.tree_util.tree_map(lambda x: np.array(x), current_metrics)
+
+        with open(metrics_file_path, "ab") as f:
+            pickle.dump(current_metrics_cpu, f)
+
+        # If you still need log_metrics for immediate logging, just get the last entry
+        log_metrics = jax.tree_util.tree_map(lambda metric: metric[-1], current_metrics_cpu)
+        log_metrics["ga_offspring_added"] = np.sum(current_metrics_cpu["ga_offspring_added"])
         csv_logger.log(log_metrics)
-        i += 1
-        #wandb.log(log_metrics)
 
-    # Metrics
+        i += 1
+
+    # At the end, if you need one single combined structure, 
+    # you can reload all increments and combine them:
+    all_metrics = {}
+    with open(metrics_file_path, "rb") as f:
+        # Since we appended multiple chunks, read them all back
+        metrics_list = []
+        try:
+            while True:
+                m = pickle.load(f)
+                metrics_list.append(m)
+        except EOFError:
+            pass
+
+    # Combine all metrics arrays across the loaded chunks
+    # This assumes all chunks have the same keys and shapes along axis=0
+    for key in metrics_list[0].keys():
+        all_metrics[key] = np.concatenate([m[key] for m in metrics_list], axis=0)
+
+    # Now `all_metrics` contains all combined metrics
     with open("./metrics.pickle", "wb") as metrics_file:
-        pickle.dump(metrics, metrics_file)
+        pickle.dump(all_metrics, metrics_file)
 
     # Repertoire
     os.mkdir("./repertoire/")
