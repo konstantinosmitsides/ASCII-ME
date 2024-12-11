@@ -381,7 +381,7 @@ def main(config: Config) -> None:
     cumulative_time = 0
     #for i in range(num_loops):
     i = 0
-    while cumulative_time < 200:
+    while cumulative_time < 3000:
         start_time = time.time()
         (repertoire, emitter_state, random_key,), current_metrics = jax.lax.scan(
             map_elites_scan_update,
