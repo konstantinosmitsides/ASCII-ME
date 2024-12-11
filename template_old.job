@@ -6,55 +6,67 @@
 {{ pbs_array }}
 
 # Transfer files from server to compute node
-stagein()
-{
-	# Create output/ directory on server
-	cmd="mkdir -p $HOME/{{ repository_name }}/{{ container_directory }}/output/"
-	echo $(date +"%Y-%m-%d %H:%M:%S") stagein: $cmd
-	eval $cmd
+stagein() {
+    # Create output/ directory on server
+    cmd="mkdir -p $HOME/{{ repository_name }}/{{ container_directory }}/output/"
+    echo "$(date +"%Y-%m-%d %H:%M:%S") stagein: $cmd"
+    eval "$cmd"
 
-	# Create symbolic link to container from server in compute node
-	cmd="ln -s $HOME/{{ repository_name }}/{{ container_directory }}/{{ container_name }}"
-	echo $(date +"%Y-%m-%d %H:%M:%S") stagein: $cmd
-	eval $cmd
+    # Create symbolic link to container from server in compute node
+    cmd="ln -s $HOME/{{ repository_name }}/{{ container_directory }}/{{ container_name }}"
+    echo "$(date +"%Y-%m-%d %H:%M:%S") stagein: $cmd"
+    eval "$cmd"
 }
 
 # Run container
-runprogram()
-{
-	# Create symbolic link to outputs/ directory from server in compute node
-	cmd="ln -s $HOME/{{ repository_name }}/{{ container_directory }}/output/"
-	echo $(date +"%Y-%m-%d %H:%M:%S") runprogram: $cmd
-	eval $cmd
+runprogram() {
+    # Check if the symbolic link exists
+    if [ -L "./output" ]; then
+        # Check if it points to the correct target
+        TARGET_LINK="$(readlink ./output)"
+        EXPECTED_TARGET="$HOME/{{ repository_name }}/{{ container_directory }}/output/"
+        if [ "$TARGET_LINK" != "$EXPECTED_TARGET" ]; then
+            # Update the symbolic link to point to the correct target
+            cmd="ln -sf $EXPECTED_TARGET ./output"
+            echo "$(date +"%Y-%m-%d %H:%M:%S") runprogram: Updating symbolic link './output' to point to '$EXPECTED_TARGET'"
+            eval "$cmd"
+        else
+            echo "$(date +"%Y-%m-%d %H:%M:%S") runprogram: Symbolic link './output' already points to the correct target."
+        fi
+    else
+        # Create the symbolic link
+        cmd="ln -s $HOME/{{ repository_name }}/{{ container_directory }}/output/ ./output"
+        echo "$(date +"%Y-%m-%d %H:%M:%S") runprogram: Creating symbolic link './output' pointing to '$HOME/{{ repository_name }}/{{ container_directory }}/output/'"
+        eval "$cmd"
+    fi
 
-	SINGULARITY_TMP_DIR=$(mktemp -d -p "$(pwd)")
+    SINGULARITY_TMP_DIR="$(mktemp -d -p "$(pwd)")"
 
-	# List files in current directory
-	cmd="ls --almost-all --color=auto --classify --group-directories-first --human-readable -l --literal --show-control-chars --tabsize=0"
-	echo $(date +"%Y-%m-%d %H:%M:%S") runprogram: $cmd
-	eval $cmd
+    # List files in current directory
+    cmd="ls --almost-all --color=auto --classify --group-directories-first --human-readable -l --literal --show-control-chars --tabsize=0"
+    echo "$(date +"%Y-%m-%d %H:%M:%S") runprogram: $cmd"
+    eval "$cmd"
 
-	# nvidia-smi
-	cmd="nvidia-smi"
-	echo $(date +"%Y-%m-%d %H:%M:%S") runprogram: $cmd
-	eval $cmd
+    # nvidia-smi
+    cmd="nvidia-smi"
+    echo "$(date +"%Y-%m-%d %H:%M:%S") runprogram: $cmd"
+    eval "$cmd"
 
-	# Run container
-	cmd="time SINGULARITYENV_PBS_JOB_INDEX=$PBS_JOB_INDEX SINGULARITYENV_PBS_ARRAY_INDEX=$PBS_ARRAY_INDEX singularity -d run --bind ./output/:/workspace/src/output/ --cleanenv --containall --home /tmp/ --no-home --nv --pwd /workspace/src/ --workdir $SINGULARITY_TMP_DIR {{ container_name }} +commit={{ commit }} {{ args }}"
-	echo $(date +"%Y-%m-%d %H:%M:%S") runprogram: $cmd
-	eval $cmd
+    # Run container
+    cmd="time SINGULARITYENV_PBS_JOB_INDEX=$PBS_JOB_INDEX SINGULARITYENV_PBS_ARRAY_INDEX=$PBS_ARRAY_INDEX singularity -d run --bind ./output/:/workspace/src/output/ --cleanenv --containall --home /tmp/ --no-home --nv --pwd /workspace/src/ --workdir $SINGULARITY_TMP_DIR {{ container_name }} +commit={{ commit }} {{ args }}"
+    echo "$(date +"%Y-%m-%d %H:%M:%S") runprogram: $cmd"
+    eval "$cmd"
 }
 
 # Transfer files from compute node to server and exit
-stageout()
-{
-	cmd="exit"
-	echo $(date +"%Y-%m-%d %H:%M:%S") stageout: $cmd
-	eval $cmd
+stageout() {
+    cmd="exit"
+    echo "$(date +"%Y-%m-%d %H:%M:%S") stageout: $cmd"
+    eval "$cmd"
 }
 
 stagein
 runprogram
-stageout 
+stageout
 
 exit
