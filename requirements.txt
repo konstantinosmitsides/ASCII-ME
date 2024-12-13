@@ -173,3 +173,5 @@ gymnax
 navix
 attrdict==2.0.1
 ribs
+colorlog
+shapely

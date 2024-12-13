@@ -202,7 +202,7 @@ def get_repertoire(run_dir):
 def get_df(results_dir, episode_length):
     metrics_list = []
     for env_dir in results_dir.iterdir():
-        if env_dir.is_file() or env_dir.name not in ["ant_omni_250", "anttrap_omni_250", "humanoid_omni", "walker2d_uni_250","walker2d_uni_1000", "halfcheetah_uni", "ant_uni_250", "ant_uni_1000", "humanoid_uni"]: #"hopper_uni_250", "hopper_uni_1000"]:
+        if env_dir.is_file() or env_dir.name not in ["ant_omni_250", "anttrap_omni_250", "humanoid_omni", "walker2d_uni_250","walker2d_uni_1000", "halfcheetah_uni", "ant_uni_250", "ant_uni_1000", "hopper_uni_250"]: #, "hopper_uni_1000"]:
             continue        
             
         if env_dir.name[-3:] != str(episode_length)[-3:]:
@@ -260,7 +260,7 @@ def get_df(results_dir, episode_length):
                     metrics["proportion_mutation_ga"] = config.algo.proportion_mutation_ga
                     metrics["clip_param"] = config.algo.clip_param
                     metrics["learning_rate"] = config.algo.learning_rate
-                    #metrics["std"] = config.algo.std
+                    metrics["std"] = config.algo.std
                     #metrics["iterations"] = config.batch_size
                     
                 metrics['gpu'] = config.HPC

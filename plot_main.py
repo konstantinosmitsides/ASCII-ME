@@ -156,21 +156,21 @@ def filter(df_row):
         #if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"] and df_row["no_epochs"] == 16 and df_row["batch_size"] == 1024:
         #    return "mcpg_me_16"
         
-        #if df_row["clip_param"] == 0.2 and df_row["std"] == 1:
-        #    return "mcpg_me_clip_1"
+        # if df_row["clip_param"] == 0.2 and df_row["std"] == 1:
+        #     return "mcpg_me_clip_1"
 
         if df_row["clip_param"] == 0.2 and df_row["std"] == 2:
             return "mcpg_me_clip_2"
         
-        #if df_row["clip_param"] == 0.2 and df_row["std"] == 3:
-        #    return "mcpg_me_clip_3"
+        # if df_row["clip_param"] == 0.2 and df_row["std"] == 3:
+        #     return "mcpg_me_clip_3"
         
         
-        #if df_row["clip_param"] != 0.2 and df_row["std"] == 0.5:
-        #    return "mcpg_me_no_clip_05"
+        if df_row["clip_param"] != 0.2 and df_row["std"] == 0.5:
+            return "mcpg_me_no_clip_05"
         
-        #if df_row["clip_param"] != 0.2 and df_row["std"] == 1:
-        #    return "mcpg_me_no_clip_1"
+        if df_row["clip_param"] != 0.2 and df_row["std"] == 1:
+            return "mcpg_me_no_clip_1"
         
         #if df_row["init"] == "orthogonal" and df_row["greedy"] == 0.5:
         #    return "mcpg_me_orth_05"
