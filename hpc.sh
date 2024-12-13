@@ -91,7 +91,7 @@ configurations=()
 
 for epochs in "${no_epochs[@]}"; do
     for env in "${envs[@]}"; do
-        config="$common_params env=$env algo.clip_param=$clip_param algo.std=$std algo.learning_rate=$lr algo.no_epochs=$epochs"
+        config="$common_params env=$env algo.no_epochs=$epochs"
         configurations+=("$config")
     done
 done

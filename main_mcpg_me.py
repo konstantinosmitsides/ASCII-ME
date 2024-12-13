@@ -35,7 +35,7 @@ from qdax.core.emitters.mutation_operators import isoline_variation
 from qdax.utils.metrics import CSVLogger, default_qd_metrics
 #from qdax.utils.plotting import plot_2d_map_elites_repertoire
 import matplotlib.pyplot as plt
-jax.config.update("jax_debug_nans", True)
+#jax.config.update("jax_debug_nans", True)
 
 
 EPS = 1e-8
