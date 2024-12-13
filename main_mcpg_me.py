@@ -1,31 +1,32 @@
 import os
 
-os.environ['MPLCONFIGDIR'] = '/tmp/matplotlib'
-os.environ['WANDB_CACHE_DIR'] = '/tmp/wandb_cache'
-os.environ['JAX_LOG_COMPILATION'] = '1'
+#os.environ['MPLCONFIGDIR'] = '/tmp/matplotlib'
+#os.environ['WANDB_CACHE_DIR'] = '/tmp/wandb_cache'
+#os.environ['JAX_LOG_COMPILATION'] = '1'
 
-import logging
+#import logging
 import time
 from dataclasses import dataclass
 from functools import partial
 from math import floor
-from typing import Any, Dict, Tuple, List, Callable
+from typing import Callable
 import pickle
-from flax import serialization
+#from flax import serialization
 #logging.basicConfig(level=logging.DEBUG)
 import hydra
 from omegaconf import OmegaConf
 import jax
 import jax.numpy as jnp
+import numpy as np
+
 from hydra.core.config_store import ConfigStore
-from qdax.core.map_elites_advanced_baseline_time_step import MAPElites
-from qdax.types import RNGKey, Genotype
+from qdax.core.map_elites__ import MAPElites
+from qdax.types import RNGKey
 from qdax.utils.sampling import sampling 
-from qdax.core.containers.mapelites_repertoire_advanced_baseline_time_step import compute_cvt_centroids, MapElitesRepertoire
+from qdax.core.containers.mapelites_repertoire_ import compute_cvt_centroids, MapElitesRepertoire
 from qdax.core.neuroevolution.networks.networks import MLPMCPG
-from qdax.core.emitters.me_mcpg_emitter_advanced_baseline_time_step import MEMCPGConfig, MEMCPGEmitter
-#from qdax.core.emitters.rein_emitter_advanced import REINaiveConfig, REINaiveEmitter
-from qdax.core.neuroevolution.buffers.buffer import QDTransition, QDMCTransition
+from qdax.core.emitters.mcpg_me_emitter_ import MEMCPGConfig, MEMCPGEmitter
+from qdax.core.neuroevolution.buffers.buffer import QDTransition  #, QDMCTransition
 from qdax.environments_v1 import behavior_descriptor_extractor
 from qdax.tasks.brax_envs_advanced_baseline_time_step import reset_based_scoring_function_brax_envs as scoring_function
 from utils import Config, get_env
@@ -34,6 +35,10 @@ import wandb
 from qdax.utils.metrics import CSVLogger, default_qd_metrics
 from qdax.utils.plotting import plot_2d_map_elites_repertoire
 import matplotlib.pyplot as plt
+jax.config.update("jax_debug_nans", True)
+
+
+EPS = 1e-8
 
 
 
@@ -46,12 +51,12 @@ import matplotlib.pyplot as plt
 def main(config: Config) -> None:
     #profiler_dir = "Memory_Investigation"
     #os.makedirs(profiler_dir, exist_ok=True)
-    #wandb.login(key="ab476069b53a15ad74ff1845e8dee5091d241297")
-    #wandb.init(
-    #    project="me-mcpg",
-    #    name=config.algo.name,
-    #    config=OmegaConf.to_container(config, resolve=True),
-    #)
+    wandb.login(key="ab476069b53a15ad74ff1845e8dee5091d241297")
+    wandb.init(
+       project="me-mcpg",
+       name=config.algo.name,
+       config=OmegaConf.to_container(config, resolve=True),
+    )
     # Init a random key
     random_key = jax.random.PRNGKey(config.seed)
 
@@ -87,6 +92,7 @@ def main(config: Config) -> None:
             action_dim=env.action_size,
             activation=config.algo.activation,
             no_neurons=config.algo.no_neurons,
+            std = config.algo.std,
         )
     
     # Init population of controllers
@@ -94,8 +100,6 @@ def main(config: Config) -> None:
     # maybe consider adding two random keys for each policy
     random_key, subkey = jax.random.split(random_key)
     keys = jax.random.split(subkey, num=config.batch_size)
-    #split_keys = jax.vmap(lambda k: jax.random.split(k, 2))(keys)
-    #keys1, keys2 = split_keys[:, 0], split_keys[:, 1]
     fake_batch_obs = jnp.zeros(shape=(config.batch_size, env.observation_size))
     init_params = jax.vmap(policy_network.init)(keys, fake_batch_obs)
 
@@ -106,13 +110,13 @@ def main(config: Config) -> None:
     @jax.jit
     def play_step_fn(env_state, policy_params, random_key):
         #random_key, subkey = jax.random.split(random_key)
-        pi, action = policy_network.apply(policy_params, env_state.obs)
-        logp = pi.log_prob(action)
+        _, action = policy_network.apply(policy_params, env_state.obs)
+        #logp = pi.log_prob(action) 
         #logp = policy_network.apply(policy_params, env_state.obs, actions, method=policy_network.logp)
         state_desc = env_state.info["state_descriptor"]
         next_state = env.step(env_state, action)
 
-        transition = QDMCTransition(
+        transition = QDTransition(
             obs=env_state.obs,
             next_obs=next_state.obs,
             rewards=next_state.reward,
@@ -121,12 +125,32 @@ def main(config: Config) -> None:
             actions=action,
             state_desc=state_desc,
             next_state_desc=next_state.info["state_descriptor"],
-            logp=logp,
+            #logp=logp,
         )
 
         return (next_state, policy_params, random_key), transition
 
 
+    
+    # def get_av_upd_magn(metrics):
+    #     split = jnp.cumsum(jnp.array([emitter.batch_size for emitter in map_elites._emitter.emitters]))
+    #     is_offspring_split = jnp.split(metrics["is_offspring_added"], split, axis=-1)[:-1]
+    #     upd_magns_split = jnp.split(metrics["update_magns"], split, axis=-1)[:-1]
+    #     if config.algo.proportion_mutation_ga == 0:
+    #         filtered_upd_magns = upd_magns_split[0][is_offspring_split[0]]
+    #         return (jnp.array([0]), jnp.mean(filtered_upd_magns))
+        
+    #     elif config.algo.proportion_mutation_ga == 1:
+    #         filtered_upd_magns = upd_magns_split[0][is_offspring_split[0]]
+    #         return (jnp.mean(filtered_upd_magns), jnp.array([0]))
+    #     else:
+    #         filtered_upd_magns_pg = upd_magns_split[0][is_offspring_split[0]]
+    #         filtered_upd_magns_ga = upd_magns_split[1][is_offspring_split[1]]
+    #         return (jnp.mean(filtered_upd_magns_ga), jnp.mean(filtered_upd_magns_pg))
+            
+        
+        
+    
 
     def get_n_offspring_added(metrics):
         split = jnp.cumsum(jnp.array([emitter.batch_size for emitter in map_elites._emitter.emitters]))
@@ -152,99 +176,100 @@ def main(config: Config) -> None:
     )
 
     
-    me_scoring_fn = partial(
-    sampling,
-    scoring_fn=scoring_fn,
-    num_samples=config.num_samples,
-)
+#     me_scoring_fn = partial(
+#     sampling,
+#     scoring_fn=scoring_fn,
+#     num_samples=config.num_samples,
+# )
 
-    @jax.jit
-    def evaluate_repertoire(random_key, repertoire):
-        repertoire_empty = repertoire.fitnesses == -jnp.inf
+    # @jax.jit
+    # def evaluate_repertoire(random_key, repertoire):
+    #     repertoire_empty = repertoire.fitnesses == -jnp.inf
 
-        fitnesses, descriptors, extra_scores, random_key = scoring_fn(
-            repertoire.genotypes, random_key
-        )
+    #     fitnesses, descriptors, extra_scores, random_key = scoring_fn(
+    #         repertoire.genotypes, random_key
+    #     )
 
-        # Compute repertoire QD score
-        qd_score = jnp.sum((1.0 - repertoire_empty) * fitnesses).astype(float)
-        #qd_score += reward_offset * config.env.episode_length * jnp.sum(1.0 - repertoire_empty)
+    #     # Compute repertoire QD score
+    #     qd_score = jnp.sum((1.0 - repertoire_empty) * fitnesses).astype(float)
+    #     #qd_score += reward_offset * config.env.episode_length * jnp.sum(1.0 - repertoire_empty)
 
-        # Compute repertoire desc error mean
-        error = jnp.linalg.norm(repertoire.descriptors - descriptors, axis=1)
-        dem = (jnp.sum((1.0 - repertoire_empty) * error) / jnp.sum(1.0 - repertoire_empty)).astype(float)
+    #     # Compute repertoire desc error mean
+    #     error = jnp.linalg.norm(repertoire.descriptors - descriptors, axis=1)
+    #     dem = (jnp.sum((1.0 - repertoire_empty) * error) / jnp.sum(1.0 - repertoire_empty)).astype(float)
 
-        return random_key, qd_score, dem
-    
-    reward_offset = 0
+    #     return random_key, qd_score, dem
     
     
     
-    def recreate_repertoire(
-        repertoire: MapElitesRepertoire,
-        centroids: jnp.ndarray,
-        metrics_fn: Callable,
-        random_key: RNGKey,
-    ) -> MapElitesRepertoire:
+    
+    # def recreate_repertoire(
+    #     repertoire: MapElitesRepertoire,
+    #     centroids: jnp.ndarray,
+    #     metrics_fn: Callable,
+    #     random_key: RNGKey,
+    # ) -> MapElitesRepertoire:
         
-        (
-            old_qd_score,
-            old_max_fitness,
-            old_coverage
-        ) = metrics_fn(repertoire).values()
-        fitnesses, descriptors, extra_scores, random_key = me_scoring_fn(
-            repertoire.genotypes, random_key
-        )
-        new_repertoire = MapElitesRepertoire.init(
-            genotypes=repertoire.genotypes,
-            fitnesses=fitnesses,
-            descriptors=descriptors,
-            centroids=centroids,
-            extra_scores=extra_scores,
-        )
+    #     (
+    #         old_qd_score,
+    #         old_max_fitness,
+    #         old_coverage
+    #     ) = metrics_fn(repertoire).values()
+    #     fitnesses, descriptors, extra_scores, random_key = me_scoring_fn(
+    #         repertoire.genotypes, random_key
+    #     )
+    #     new_repertoire = MapElitesRepertoire.init(
+    #         genotypes=repertoire.genotypes,
+    #         fitnesses=fitnesses,
+    #         descriptors=descriptors,
+    #         centroids=centroids,
+    #         extra_scores=extra_scores,
+    #     )
         
-        (
-            new_qd_score,
-            new_max_fitness,
-            new_coverage,
-        ) = metrics_fn(new_repertoire).values()
+    #     (
+    #         new_qd_score,
+    #         new_max_fitness,
+    #         new_coverage,
+    #     ) = metrics_fn(new_repertoire).values()
         
         
-        def calculate_percentage_difference(old, new):
-            return (abs(new - old) / ((new + old) / 2)) * 100
+    #     def calculate_percentage_difference(old, new):
+    #         return (abs(new - old) / ((new + old) / 2)) * 100
 
-        qd_score_difference = calculate_percentage_difference(old_qd_score, new_qd_score)
-        max_fitness_difference = calculate_percentage_difference(old_max_fitness, new_max_fitness)
-        coverage_difference = calculate_percentage_difference(old_coverage, new_coverage)
+    #     qd_score_difference = calculate_percentage_difference(old_qd_score, new_qd_score)
+    #     max_fitness_difference = calculate_percentage_difference(old_max_fitness, new_max_fitness)
+    #     coverage_difference = calculate_percentage_difference(old_coverage, new_coverage)
         
-        # Save scores and percentage differences to a file
-        with open("./recreated_scores.txt", "w") as file:
-            file.write(f"Old QD Score: {old_qd_score}\n")
-            file.write(f"New QD Score: {new_qd_score}\n")
-            file.write(f"QD Score Percentage Difference: {qd_score_difference}%\n")
-            file.write(f"Old Max Fitness: {old_max_fitness}\n")
-            file.write(f"New Max Fitness: {new_max_fitness}\n")
-            file.write(f"Max Fitness Percentage Difference: {max_fitness_difference}%\n")
-            file.write(f"Old Coverage: {old_coverage}\n")
-            file.write(f"New Coverage: {new_coverage}\n")
-            file.write(f"Coverage Percentage Difference: {coverage_difference}%\n")
+    #     # Save scores and percentage differences to a file
+    #     with open("./recreated_scores.txt", "w") as file:
+    #         file.write(f"Old QD Score: {old_qd_score}\n")
+    #         file.write(f"New QD Score: {new_qd_score}\n")
+    #         file.write(f"QD Score Percentage Difference: {qd_score_difference}%\n")
+    #         file.write(f"Old Max Fitness: {old_max_fitness}\n")
+    #         file.write(f"New Max Fitness: {new_max_fitness}\n")
+    #         file.write(f"Max Fitness Percentage Difference: {max_fitness_difference}%\n")
+    #         file.write(f"Old Coverage: {old_coverage}\n")
+    #         file.write(f"New Coverage: {new_coverage}\n")
+    #         file.write(f"Coverage Percentage Difference: {coverage_difference}%\n")
             
-        if env.behavior_descriptor_length == 2:
+    #     if env.behavior_descriptor_length == 2:
             
-            fig, _ = plot_2d_map_elites_repertoire(
-                centroids=new_repertoire.centroids,
-                repertoire_fitnesses=new_repertoire.fitnesses,
-                minval=config.env.min_bd,
-                maxval=config.env.max_bd,
-                repertoire_descriptors=new_repertoire.descriptors,
-            )
+    #         fig, _ = plot_2d_map_elites_repertoire(
+    #             centroids=new_repertoire.centroids,
+    #             repertoire_fitnesses=new_repertoire.fitnesses,
+    #             minval=config.env.min_bd,
+    #             maxval=config.env.max_bd,
+    #             repertoire_descriptors=new_repertoire.descriptors,
+    #         )
             
-            fig.savefig("./recreated_repertoire_plot.png")
+    #         fig.savefig("./recreated_repertoire_plot.png")
         
          
 
     # Get minimum reward value to make sure qd_score are positive
     
+    reward_offset = 0
+
 
     # Define a metrics function
     metrics_function = partial(
@@ -258,11 +283,13 @@ def main(config: Config) -> None:
         proportion_mutation_ga=config.algo.proportion_mutation_ga,
         no_agents=config.batch_size,
         buffer_sample_batch_size=config.algo.buffer_sample_batch_size,
-        buffer_add_batch_size=config.batch_size,
         no_epochs=config.algo.no_epochs,
         learning_rate=config.algo.learning_rate,
         clip_param=config.algo.clip_param,
         discount_rate=config.algo.discount_rate,
+        greedy=config.algo.greedy,
+        cosine_similarity=config.algo.cosine_similarity,
+        std=config.algo.std,
     )
     
     variation_fn = partial(
@@ -303,6 +330,8 @@ def main(config: Config) -> None:
             "evaluation", 
             "ga_offspring_added", 
             "qpg_offspring_added"
+            #"upd_magn_pg",
+            #"upd_magn_ga"
             ], 
         jnp.array([])
         )
@@ -333,7 +362,12 @@ def main(config: Config) -> None:
     map_elites_scan_update = map_elites.scan_update
     eval_num = config.batch_size 
     #print(f"Number of evaluations per iteration: {eval_num}")
+
+    metrics_file_path = "./metrics_incremental.pickle"
+
     cumulative_time = 0
+    i = 0
+    #while cumulative_time < 3000:
     for i in range(num_loops):
         #print(f"Loop {i+1}/{num_loops}")
         start_time = time.time()
@@ -356,19 +390,47 @@ def main(config: Config) -> None:
         #current_metrics["qd_score_repertoire"] = jnp.repeat(qd_score_repertoire, log_period)
         #current_metrics["dem_repertoire"] = jnp.repeat(dem_repertoire, log_period)
         current_metrics["ga_offspring_added"], current_metrics["qpg_offspring_added"] = get_n_offspring_added(current_metrics)
+        #current_metrics["upd_magn_ga"], current_metrics["upd_magn_pg"] = get_av_upd_magn(current_metrics)
+        #del current_metrics["update_magns"]
+        
         del current_metrics["is_offspring_added"]
-        metrics = jax.tree_util.tree_map(lambda metric, current_metric: jnp.concatenate([metric, current_metric], axis=0), metrics, current_metrics)
+        current_metrics_cpu = jax.tree_util.tree_map(lambda x: np.array(x), current_metrics)
+
+        with open(metrics_file_path, "ab") as f:
+            pickle.dump(current_metrics_cpu, f)
+
 
         # Log
-        log_metrics = jax.tree_util.tree_map(lambda metric: metric[-1], metrics)
-        log_metrics["qpg_offspring_added"] = jnp.sum(current_metrics["qpg_offspring_added"])
-        log_metrics["ga_offspring_added"] = jnp.sum(current_metrics["ga_offspring_added"])
+        log_metrics = jax.tree_util.tree_map(lambda metric: metric[-1], current_metrics_cpu)
+        log_metrics["qpg_offspring_added"] = np.sum(current_metrics["qpg_offspring_added"])
+        log_metrics["ga_offspring_added"] = np.sum(current_metrics["ga_offspring_added"])
         csv_logger.log(log_metrics)
-        #wandb.log(log_metrics)
-    #profiler.stop_trace()
-    # Metrics
+
+        #i += 1
+        wandb.log(log_metrics)
+
+
+    # At the end, if you need one single combined structure, 
+    # you can reload all increments and combine them:
+    all_metrics = {}
+    with open(metrics_file_path, "rb") as f:
+        # Since we appended multiple chunks, read them all back
+        metrics_list = []
+        try:
+            while True:
+                m = pickle.load(f)
+                metrics_list.append(m)
+        except EOFError:
+            pass
+
+    # Combine all metrics arrays across the loaded chunks
+    # This assumes all chunks have the same keys and shapes along axis=0
+    for key in metrics_list[0].keys():
+        all_metrics[key] = np.concatenate([m[key] for m in metrics_list], axis=0)
+
+    # Now `all_metrics` contains all combined metrics
     with open("./metrics.pickle", "wb") as metrics_file:
-        pickle.dump(metrics, metrics_file)
+        pickle.dump(all_metrics, metrics_file)
 
     # Repertoire
     os.mkdir("./repertoire/")
