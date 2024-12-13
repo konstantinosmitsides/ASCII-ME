@@ -31,9 +31,9 @@ from qdax.environments_v1 import behavior_descriptor_extractor
 from qdax.tasks.brax_envs_advanced_baseline_time_step import reset_based_scoring_function_brax_envs as scoring_function
 from utils import Config, get_env
 from qdax.core.emitters.mutation_operators import isoline_variation
-import wandb
+#import wandb
 from qdax.utils.metrics import CSVLogger, default_qd_metrics
-from qdax.utils.plotting import plot_2d_map_elites_repertoire
+#from qdax.utils.plotting import plot_2d_map_elites_repertoire
 import matplotlib.pyplot as plt
 jax.config.update("jax_debug_nans", True)
 
@@ -51,12 +51,12 @@ EPS = 1e-8
 def main(config: Config) -> None:
     #profiler_dir = "Memory_Investigation"
     #os.makedirs(profiler_dir, exist_ok=True)
-    wandb.login(key="ab476069b53a15ad74ff1845e8dee5091d241297")
-    wandb.init(
-       project="me-mcpg",
-       name=config.algo.name,
-       config=OmegaConf.to_container(config, resolve=True),
-    )
+    # wandb.login(key="ab476069b53a15ad74ff1845e8dee5091d241297")
+    # wandb.init(
+    #    project="me-mcpg",
+    #    name=config.algo.name,
+    #    config=OmegaConf.to_container(config, resolve=True),
+    # )
     # Init a random key
     random_key = jax.random.PRNGKey(config.seed)
 
@@ -407,7 +407,7 @@ def main(config: Config) -> None:
         csv_logger.log(log_metrics)
 
         #i += 1
-        wandb.log(log_metrics)
+        #wandb.log(log_metrics)
 
 
     # At the end, if you need one single combined structure, 

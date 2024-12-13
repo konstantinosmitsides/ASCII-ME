@@ -78,34 +78,29 @@ ssh km2120@login.cx3.hpc.imperial.ac.uk "mkdir -p ~/$repository_name/$container_
 rsync --verbose --ignore-existing --progress -e ssh "$container_path" "$tmp_dir/git-log.txt" km2120@login.cx3.hpc.imperial.ac.uk:~/"$repository_name"/"$container_directory"/
 
 # Define hyperparameters
-clip_params=(0.2)
-stds=(2)
-learning_rates=(0.003)
-no_epochs=(32)
-envs=(ant_uni walker2d_uni hopper_uni) # ant_omni anttrap_omni)
+# clip_params=(0.2)
+# stds=(2)
+# learning_rates=(0.003)
+no_epochs=(4 8 16 32)
+envs=(ant_uni walker2d_uni hopper_uni ant_omni anttrap_omni)
 
-common_params="HPC=L40S algo=mcpg_me_fixed env.episode_length=250 num_iterations=6000 batch_size=512 algo.proportion_mutation_ga=0.5 init=orthogonal algo.cosine_similarity=Trueclee"
+common_params="HPC=L40S algo=mcpg_me env.episode_length=250 num_iterations=4000 batch_size=256 algo.proportion_mutation_ga=0.5 init=orthogonal algo.cosine_similarity=True algo.learning_rate=3e-3 algo.std=2 algo.clip_param=0.2"
 
 # Generate all configurations
 configurations=()
 
-for clip_param in "${clip_params[@]}"; do
-    for std in "${stds[@]}"; do
-        for lr in "${learning_rates[@]}"; do
-            for epochs in "${no_epochs[@]}"; do
-                for env in "${envs[@]}"; do
-                    config="$common_params env=$env algo.clip_param=$clip_param algo.std=$std algo.learning_rate=$lr algo.no_epochs=$epochs"
-                    configurations+=("$config")
-                done
-            done
-        done
+for epochs in "${no_epochs[@]}"; do
+    for env in "${envs[@]}"; do
+        config="$common_params env=$env algo.clip_param=$clip_param algo.std=$std algo.learning_rate=$lr algo.no_epochs=$epochs"
+        configurations+=("$config")
     done
 done
+
 
 # Multiply configurations by 3 to run each with a random seed 3 times
 expanded_configurations=()
 for cfg in "${configurations[@]}"; do
-    for i in {1..10}; do
+    for i in {1..5}; do
         expanded_configurations+=("$cfg seed=\$RANDOM")
     done
 done
