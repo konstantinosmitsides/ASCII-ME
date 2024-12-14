@@ -47,10 +47,10 @@ ENV_DICT = {
 
 BATCH_LIST = [
     256,
-    512,
-    1024,
-    2048,
-    4096,
+    #512,
+    #1024,
+    #2048,
+    #4096,
     #16384,
     #32768,
     #65536
@@ -67,7 +67,10 @@ ALGO_LIST = [
     #"mcpg_me",
     #"memes",
     #"mcpg_me_fixed",
-    "mcpg_me_32"
+    "mcpg_me_4",
+    "mcpg_me_8",
+    "mcpg_me_16",
+    "mcpg_me_32",
 ]
 
 NEW_ALGO_LIST = [
@@ -93,7 +96,7 @@ ALGO_DICT = {
     "mcpg_me_4": "4 epochs",
     "mcpg_me_8": "8 epochs",
     "mcpg_me_16": "16 epochs",
-    "mcpg_me_32": "MCPG-ME",
+    "mcpg_me_32": "32 epochs",
     "memes": "MEMES",
     "mcpg_me_orth_0_cos_sim": "MCPG-ME orth 0 cos_sim",
     "mcpg_me_orth_0_not_cos_sim": "MCPG-ME orth 0 not_cos_sim",
@@ -108,7 +111,7 @@ XLABEL = "Evaluations"
 
 
 def filter(df_row):
-    if df_row["algo"] == "mcpg_me_fixed":
+    if df_row["algo"] == "mcpg_me":
         #if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"]:
         #    return "mcpg_me_orth_0_cos_sim"
         
@@ -124,10 +127,17 @@ def filter(df_row):
         #if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"] and df_row["no_epochs"] == 16:
         #    return "mcpg_me_16"
         
-        if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"] and df_row["no_epochs"] == 32 and df_row["proportion_mutation_ga"] == 0.5 and df_row["clip_param"] == 0.2:
-            return "mcpg_me_32"
+        if df_row["no_epochs"] == 4:
+            return "mcpg_me_4"
 
+        if df_row["no_epochs"] == 8:
+            return "mcpg_me_8"
         
+        if df_row["no_epochs"] == 16:
+            return "mcpg_me_16"
+
+        if df_row["no_epochs"] == 32:
+            return "mcpg_me_32"
         #if df_row["init"] == "orthogonal" and df_row["greedy"] == 0.5:
         #    return "mcpg_me_orth_05"
         
@@ -206,7 +216,8 @@ def plot__(summary_df):
                     ax=ax,
                     palette=color_palette,
                     legend=False,
-                    dodge=True
+                    dodge=True,
+                    order=ALGO_LIST,
                 )
                 ax.set_ylabel(f"{ENV_DICT[env]}")
                 #sax.yaxis.set_major_formatter(formatter)  # Scientific notation
@@ -219,7 +230,8 @@ def plot__(summary_df):
                     ax=ax,
                     palette=color_palette,
                     legend=False,
-                    dodge=True
+                    dodge=True,
+                    order=ALGO_LIST,
                 )
                 #ax.set_ylabel("Runtime (s)")
                 ax.set_ylabel(None)
@@ -227,7 +239,8 @@ def plot__(summary_df):
 
                 # Set the x-axis labels with rotation for better visibility
                 #ax.set_xticklabels([str(batch_size) for batch_size in BATCH_LIST], rotation=45, ha="right")
-            ax.set_xticklabels([ALGO_DICT.get(algo, algo) for algo in df_plot['algo'].unique()], ha="center")
+            #ax.set_xticklabels([ALGO_DICT.get(algo, algo) for algo in df_plot['algo'].unique()], ha="center")
+            ax.set_xticklabels([ALGO_DICT.get(algo, algo) for algo in ALGO_LIST], ha="center")
             # Set y-axis label and limits
             #ax.set_ylim(0.0)
             #ax.set_ylabel(None)
@@ -245,7 +258,7 @@ def plot__(summary_df):
         #fig.legend(ax_.get_lines(), [str(batch_size) for batch_size in BATCH_LIST], loc="lower center", bbox_to_anchor=(0.5, -0.03), ncols=len(BATCH_LIST), frameon=False)
         fig.align_ylabels(axes[:, 0])
         fig.tight_layout()
-        fig.savefig("tuning/output/plot_main_epochs_scal.png", bbox_inches="tight")
+        fig.savefig("tune_epochs/output/plot_main_epochs_scal.png", bbox_inches="tight")
         plt.close()
 
 
@@ -258,7 +271,7 @@ if __name__ == "__main__":
     plt.rc("font", size=16)
 
     # Create the DataFrame
-    results_dir = Path("tuning/output/")
+    results_dir = Path("tune_epochs/output/")
     #print(results_dir)
     
     EPISODE_LENGTH = 250
@@ -268,7 +281,7 @@ if __name__ == "__main__":
     # Filter
     df['algo'] = df.apply(filter, axis=1)
     df = df[df["algo"].isin(ALGO_LIST)]
-    df = df[df["num_evaluations"] <= 1_000_000]
+    df = df[df["num_evaluations"] <= 1_001_000]
     #df['env_'] = df.apply(filter_gpu_variants, axis=1)
 #    df = df.loc[
 #    (df['algo'] != "mcpg_me") | 
