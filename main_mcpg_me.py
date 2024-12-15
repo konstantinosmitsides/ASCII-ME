@@ -366,9 +366,9 @@ def main(config: Config) -> None:
     metrics_file_path = "./metrics_incremental.pickle"
 
     cumulative_time = 0
-    i = 0
-    while cumulative_time < 3000:
-    #for i in range(num_loops):
+    #i = 0
+    #while cumulative_time < 3000:
+    for i in range(num_loops):
         #print(f"Loop {i+1}/{num_loops}")
         start_time = time.time()
         
@@ -406,7 +406,7 @@ def main(config: Config) -> None:
         log_metrics["ga_offspring_added"] = np.sum(current_metrics["ga_offspring_added"])
         csv_logger.log(log_metrics)
 
-        i += 1
+        #i += 1
         #wandb.log(log_metrics)
 
 

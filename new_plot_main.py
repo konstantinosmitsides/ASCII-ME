@@ -33,6 +33,7 @@ ENV_DICT = {
     "hopper_uni_1000": "Hopper Uni",
 }
 ALGO_LIST = [
+    'mcpg_me',
     "pga_me",
     "dcg_me",
     "me",
@@ -46,7 +47,7 @@ ALGO_DICT = {
     "qd_pg": "QD-PG",
     "me": "MAP-Elites",
     "me_es": "MAP-Elites-ES",
-    "mcpg_me_fixed": "MCPG-ME",
+    "mcpg_me": "MCPG-ME",
     "memes": "MEMES",
 }
 
@@ -266,7 +267,7 @@ def plot(final_df, raw_df):
     fig.tight_layout()
 
     # Save plot
-    fig.savefig("fig1_/output/plot_main_time.png", bbox_inches="tight")
+    fig.savefig("fig1/output/plot_main_time.png", bbox_inches="tight")
     plt.close()
 
 if __name__ == "__main__":
@@ -275,7 +276,7 @@ if __name__ == "__main__":
     matplotlib.rcParams['ps.fonttype'] = 42
     plt.rc("font", size=16)
 
-    results_dir = Path("fig1_/output/")
+    results_dir = Path("fig1/output/")
     EPISODE_LENGTH = 250
     df = get_df(results_dir, EPISODE_LENGTH)
 
