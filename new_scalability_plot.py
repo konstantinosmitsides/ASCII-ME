@@ -17,15 +17,15 @@ from utils import get_df
 
 # Define env and algo names
 ENV_LIST = [
-    "ant_omni_250",
-    "anttrap_omni_250",
+    #"ant_omni_250",
+    #"anttrap_omni_250",
     #"humanoid_omni",
     "walker2d_uni_250",
     #"walker2d_uni_1000",
     #"halfcheetah_uni",
     "ant_uni_250",
     #"ant_uni_1000",
-    "hopper_uni_250",
+    #"hopper_uni_250",
     #"hopper_uni_1000",
     #"humanoid_uni",
 ]
@@ -47,10 +47,10 @@ ENV_DICT = {
 
 BATCH_LIST = [
     256,
-    #512,
-    #1024,
-    #2048,
-    #4096,
+    512,
+    1024,
+    2048,
+    4096,
     #16384,
     #32768,
     #65536
@@ -58,19 +58,19 @@ BATCH_LIST = [
 ]
 
 ALGO_LIST = [
+    "mcpg_me",
     #"dcg_me",
     #"dcg_me_gecco",
-    #"pga_me",
+    "pga_me",
     #"qd_pg",
-    #"me",
+    "me",
     #"me_es",
-    #"mcpg_me",
     #"memes",
     #"mcpg_me_fixed",
-    "mcpg_me_4",
-    "mcpg_me_8",
-    "mcpg_me_16",
-    "mcpg_me_32",
+    #"mcpg_me_4",
+    #"mcpg_me_8",
+    #"mcpg_me_16",
+    #"mcpg_me_32",
 ]
 
 NEW_ALGO_LIST = [
@@ -86,6 +86,7 @@ NEW_ALGO_LIST = [
     #"mcpg_me_unif_1_not_cos_sim",
 ]
 ALGO_DICT = {
+    "mcpg_me" : "MCPG-ME",
     "dcg_me": "DCG-MAP-Elites-AI",
     "dcg_me_gecco": "DCG-MAP-Elites GECCO",
     "pga_me": "PGA-MAP-Elites",
@@ -258,7 +259,7 @@ def plot__(summary_df):
         #fig.legend(ax_.get_lines(), [str(batch_size) for batch_size in BATCH_LIST], loc="lower center", bbox_to_anchor=(0.5, -0.03), ncols=len(BATCH_LIST), frameon=False)
         fig.align_ylabels(axes[:, 0])
         fig.tight_layout()
-        fig.savefig("tune_epochs/output/plot_main_epochs_scal.png", bbox_inches="tight")
+        fig.savefig("fig2/output/plot_main_epochs_scal.png", bbox_inches="tight")
         plt.close()
 
 
@@ -271,7 +272,7 @@ if __name__ == "__main__":
     plt.rc("font", size=16)
 
     # Create the DataFrame
-    results_dir = Path("tune_epochs/output/")
+    results_dir = Path("fig2/output/")
     #print(results_dir)
     
     EPISODE_LENGTH = 250
@@ -279,7 +280,7 @@ if __name__ == "__main__":
     df = get_df(results_dir, EPISODE_LENGTH)
 
     # Filter
-    df['algo'] = df.apply(filter, axis=1)
+    #df['algo'] = df.apply(filter, axis=1)
     df = df[df["algo"].isin(ALGO_LIST)]
     df = df[df["num_evaluations"] <= 1_001_000]
     #df['env_'] = df.apply(filter_gpu_variants, axis=1)

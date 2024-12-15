@@ -1,8 +1,8 @@
 name: dcg_me
 
-ga_batch_size: 382
-qpg_batch_size: 2
-ai_batch_size: 128
+ga_batch_size: 128
+qpg_batch_size: 64
+ai_batch_size: 64
 actor_batch_size: 0
 lengthscale: 0.1
 dc_actor: True
