@@ -326,8 +326,9 @@ def main(config: Config) -> None:
     metrics_file_path = "./metrics_incremental.pickle"
 
     cumulative_time = 0
-    i = 0
-    while cumulative_time < 3000:
+    #i = 0
+    #while cumulative_time < 3000:
+    for i in range(num_loops):
         start_time = time.time()
         (repertoire, emitter_state, random_key), current_metrics = jax.lax.scan(
             map_elites_scan_update,
@@ -357,7 +358,7 @@ def main(config: Config) -> None:
         log_metrics["ga_offspring_added"] = np.sum(current_metrics_cpu["ga_offspring_added"])
         csv_logger.log(log_metrics)
 
-        i += 1
+        #i += 1
 
     # At the end, if you need one single combined structure, 
     # you can reload all increments and combine them:
