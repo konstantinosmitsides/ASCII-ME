@@ -15,6 +15,7 @@ import pickle
 import hydra
 import jax
 import jax.numpy as jnp
+import numpy as np
 from hydra.core.config_store import ConfigStore
 from qdax.core.map_elites_memes import MAPElites
 from qdax.types import RNGKey
@@ -218,6 +219,7 @@ def main(config: Config) -> None:
         header=list(metrics.keys())
     )
 
+    metrics_file_path = "./metrics_incremental.pickle"
 
     # Main QD loop
     map_elites_scan_update = map_elites.scan_update
@@ -245,18 +247,42 @@ def main(config: Config) -> None:
         #current_metrics["dem_repertoire"] = jnp.repeat(dem_repertoire, log_period)
         #current_metrics["ga_offspring_added"], current_metrics["qpg_offspring_added"] = get_n_offspring_added(current_metrics)
         #del current_metrics["is_offspring_added"]
-        metrics = jax.tree_util.tree_map(lambda metric, current_metric: jnp.concatenate([metric, current_metric], axis=0), metrics, current_metrics)
+
+        #metrics = jax.tree_util.tree_map(lambda metric, current_metric: jnp.concatenate([metric, current_metric], axis=0), metrics, current_metrics)
+        current_metrics_cpu = jax.tree_util.tree_map(lambda x: np.array(x), current_metrics)
+
+        with open(metrics_file_path, "ab") as f:
+            pickle.dump(current_metrics_cpu, f)
+
 
         # Log
-        log_metrics = jax.tree_util.tree_map(lambda metric: metric[-1], metrics)
+        log_metrics = jax.tree_util.tree_map(lambda metric: metric[-1], current_metrics_cpu)
         #log_metrics["qpg_offspring_added"] = jnp.sum(current_metrics["qpg_offspring_added"])
         #log_metrics["ga_offspring_added"] = jnp.sum(current_metrics["ga_offspring_added"])
         csv_logger.log(log_metrics)
         #wandb.log(log_metrics)
-    #profiler.stop_trace()
-    # Metrics
+        
+    # At the end, if you need one single combined structure, 
+    # you can reload all increments and combine them:
+    all_metrics = {}
+    with open(metrics_file_path, "rb") as f:
+        # Since we appended multiple chunks, read them all back
+        metrics_list = []
+        try:
+            while True:
+                m = pickle.load(f)
+                metrics_list.append(m)
+        except EOFError:
+            pass
+
+    # Combine all metrics arrays across the loaded chunks
+    # This assumes all chunks have the same keys and shapes along axis=0
+    for key in metrics_list[0].keys():
+        all_metrics[key] = np.concatenate([m[key] for m in metrics_list], axis=0)
+
+    # Now `all_metrics` contains all combined metrics
     with open("./metrics.pickle", "wb") as metrics_file:
-        pickle.dump(metrics, metrics_file)
+        pickle.dump(all_metrics, metrics_file)
 
     # Repertoire
     os.mkdir("./repertoire/")

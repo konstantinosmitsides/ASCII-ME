@@ -17,7 +17,7 @@ from utils import get_df
 
 # Define env and algo names
 ENV_LIST = [
-    #"ant_omni_250",
+    "ant_omni_250",
     #"anttrap_omni_250",
     #"humanoid_omni",
     "walker2d_uni_250",
@@ -59,7 +59,7 @@ BATCH_LIST = [
 
 ALGO_LIST = [
     "mcpg_me",
-    #"dcg_me",
+    "dcg_me",
     #"dcg_me_gecco",
     "pga_me",
     #"qd_pg",
@@ -214,6 +214,8 @@ def plot__(summary_df):
                     x="algo",
                     y="qd_score",
                     hue="batch_size",
+                    estimator=np.median,
+                    errorbar=lambda x: (np.quantile(x, 0.25), np.quantile(x, 0.75)),
                     ax=ax,
                     palette=color_palette,
                     legend=False,
@@ -228,6 +230,8 @@ def plot__(summary_df):
                     x="algo",
                     y="time",
                     hue="batch_size",
+                    estimator=np.median,
+                    errorbar=lambda x: (np.quantile(x, 0.25), np.quantile(x, 0.75)),
                     ax=ax,
                     palette=color_palette,
                     legend=False,
@@ -282,7 +286,7 @@ if __name__ == "__main__":
     # Filter
     #df['algo'] = df.apply(filter, axis=1)
     df = df[df["algo"].isin(ALGO_LIST)]
-    df = df[df["num_evaluations"] <= 1_001_000]
+    df = df[df["num_evaluations"] <= 1_005_000]
     #df['env_'] = df.apply(filter_gpu_variants, axis=1)
 #    df = df.loc[
 #    (df['algo'] != "mcpg_me") | 
