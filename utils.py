@@ -241,8 +241,11 @@ def get_df(results_dir, episode_length):
                 # Algo
                 metrics["algo"] = config.algo.name
                 metrics["batch_size"] = config.batch_size
-                if config.algo.name == "dcg_me":
-                    metrics["ga_batch_size"] = config.algo.ga_batch_size
+                if config.algo.name == "dcg_me" or config.algo.name == "pga_me":
+                    metrics["num_critic_training_steps"] = config.algo.num_critic_training_steps
+                    metrics["num_pg_training_steps"] = config.algo.num_pg_training_steps
+                    metrics["training_batch_size"] = config.algo.batch_size
+                    #metrics["ga_batch_size"] = config.algo.ga_batch_size
                     
                 if config.algo.name == "mcpg_me":
                     metrics["proportion_mutation_ga"] = config.algo.proportion_mutation_ga

@@ -18,14 +18,14 @@ from utils import get_df
 # Define env and algo names
 ENV_LIST = [
     "ant_omni_250",
-    #"anttrap_omni_250",
+    "anttrap_omni_250",
     #"humanoid_omni",
     "walker2d_uni_250",
     #"walker2d_uni_1000",
     #"halfcheetah_uni",
     "ant_uni_250",
     #"ant_uni_1000",
-    #"hopper_uni_250",
+    "hopper_uni_250",
     #"hopper_uni_1000",
     #"humanoid_uni",
 ]
@@ -46,7 +46,11 @@ ENV_DICT = {
 }
 
 BATCH_LIST = [
-    256,
+    # 16,
+    # 32,
+    # 64,
+    # 128,
+    #256,
     512,
     1024,
     2048,
@@ -60,8 +64,14 @@ BATCH_LIST = [
 ALGO_LIST = [
     "mcpg_me",
     "dcg_me",
+    # "dcg_me_pg_steps",
+    # "dcg_me_batch_size",
+    # "dcg_me_cr_steps",
     #"dcg_me_gecco",
     "pga_me",
+    # "pga_me_pg_steps",
+    # "pga_me_batch_size",
+    # "pga_me_cr_steps",
     #"qd_pg",
     "me",
     #"me_es",
@@ -87,9 +97,15 @@ NEW_ALGO_LIST = [
 ]
 ALGO_DICT = {
     "mcpg_me" : "MCPG-ME",
-    "dcg_me": "DCG-MAP-Elites-AI",
+    "dcg_me": "DCRL",
+    "dcg_me_pg_steps" : "DCRL 1",
+    "dcg_me_batch_size" : "DCRL 2",
+    "dcg_me_cr_steps" : "DCRL 3",
     "dcg_me_gecco": "DCG-MAP-Elites GECCO",
-    "pga_me": "PGA-MAP-Elites",
+    "pga_me": "PGA-ME",
+    "pga_me_pg_steps" : "PGA-ME 1",
+    "pga_me_batch_size" : "PGA-ME 2", 
+    "pga_me_cr_steps" : "PGA-ME 3",
     "qd_pg": "QD-PG",
     "me": "MAP-Elites",
     "me_es": "MAP-Elites-ES",
@@ -112,47 +128,26 @@ XLABEL = "Evaluations"
 
 
 def filter(df_row):
-    if df_row["algo"] == "mcpg_me":
-        #if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"]:
-        #    return "mcpg_me_orth_0_cos_sim"
+    if df_row["algo"] == "dcg_me":
+        if df_row["num_critic_training_steps"] != 3000:
+            return "dcg_me_cr_steps"
         
-        #if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"] and df_row["no_epochs"] == 2:
-        #    return "mcpg_me_2"
+        if df_row["num_pg_training_steps"] != 150:
+            return "dcg_me_pg_steps"
         
-        #if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"] and df_row["no_epochs"] == 4:
-        #    return "mcpg_me_4"
+        if df_row["training_batch_size"] != 100:
+            return "dcg_me_batch_size"
         
-        #if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"] and df_row["no_epochs"] == 8:
-        #    return "mcpg_me_8"
+    
+    if df_row["algo"] == "pga_me":
+        if df_row["num_critic_training_steps"] != 3000:
+            return "pga_me_cr_steps"
         
-        #if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"] and df_row["no_epochs"] == 16:
-        #    return "mcpg_me_16"
+        if df_row["num_pg_training_steps"] != 150:
+            return "pga_me_pg_steps"
         
-        if df_row["no_epochs"] == 4:
-            return "mcpg_me_4"
-
-        if df_row["no_epochs"] == 8:
-            return "mcpg_me_8"
-        
-        if df_row["no_epochs"] == 16:
-            return "mcpg_me_16"
-
-        if df_row["no_epochs"] == 32:
-            return "mcpg_me_32"
-        #if df_row["init"] == "orthogonal" and df_row["greedy"] == 0.5:
-        #    return "mcpg_me_orth_05"
-        
-        #if df_row["init"] == "uniform" and df_row["greedy"] == 0:
-        #    return "mcpg_me_unif_0"
-        
-        #if df_row["init"] == "uniform" and df_row["greedy"] == 0.5:
-        #    return "mcpg_me_unif_05"
-        
-        #if df_row["init"] == "uniform" and df_row["greedy"] == 1 and df_row["cos_sim"]:
-        #    return "mcpg_me_unif_1_cos_sim"
-        
-        #if df_row["init"] == "uniform" and df_row["greedy"] == 1 and not df_row["cos_sim"]:
-        #    return "mcpg_me_unif_1_not_cos_sim"
+        if df_row["training_batch_size"] != 100:
+            return "pga_me_batch_size"
             
     return df_row["algo"]
         
@@ -186,7 +181,7 @@ def plot__(summary_df):
 
     
     x_label = "Batch Size"
-    y_labels = ["QD Score after 5M evaluations", "Runtime (s) after 5M evaluations"]
+    y_labels = ["QD Score after 1M evaluations", "Runtime (s) after 1M evaluations"]
 
     for col in range(2):
         for row, env in enumerate(ENV_LIST):

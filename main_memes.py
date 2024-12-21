@@ -225,8 +225,11 @@ def main(config: Config) -> None:
     map_elites_scan_update = map_elites.scan_update
     eval_num = int((config.batch_size * config.algo.sample_number * config.algo.num_in_optimizer_steps) + config.batch_size)
     cumulative_time = 0
+
+    i = 0
     
-    for i in range(num_loops):
+    #for i in range(num_loops):
+    while cumulative_time < 1000:
         #print(f"Loop {i+1}/{num_loops}")
         start_time = time.time()
         
@@ -260,6 +263,8 @@ def main(config: Config) -> None:
         #log_metrics["qpg_offspring_added"] = jnp.sum(current_metrics["qpg_offspring_added"])
         #log_metrics["ga_offspring_added"] = jnp.sum(current_metrics["ga_offspring_added"])
         csv_logger.log(log_metrics)
+        i += 1
+
         #wandb.log(log_metrics)
         
     # At the end, if you need one single combined structure, 

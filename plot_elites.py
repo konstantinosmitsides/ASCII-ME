@@ -59,20 +59,11 @@ INIT_ALGO_LIST = [
 ]
 
 ALGO_LIST = [
-    #"mcpg_me_epoch_32_batch_512",
-    #"pga_me",
-    #"dcg_me",
+    "mcpg_me",
+    "pga_me",
+    "dcg_me",
     #"me",
     #"memes",
-    #"mcpg_me_",
-    #"mcpg_me_no_clipping",
-    #"mcpg_me_normal",
-    #"mcpg_me_unif_0",
-    "mcpg_me_clip_1",
-    "mcpg_me_clip_2",
-    "mcpg_me_clip_3",
-    "mcpg_me_no_clip_05",
-    "mcpg_me_no_clip_1",
 ]
 
 
@@ -118,33 +109,19 @@ ALGO_DICT = {
 }
 
 EMITTER_LIST = {
-    "mcpg_me_epoch_32_batch_512" : ["ga_offspring_added", "qpg_offspring_added"],
-    #"dcg_me" : ["ga_offspring_added", "qpg_offspring_added", "ai_offspring_added"],
-    #"pga_me" : ["ga_offspring_added", "qpg_offspring_added", "ai_offspring_added"],
-    "mcpg_me_": ["ga_offspring_added", "qpg_offspring_added"],
-    "mcpg_me_no_clipping": ["ga_offspring_added", "qpg_offspring_added"],
-    "mcpg_me_normal": ["ga_offspring_added", "qpg_offspring_added"],
-    "mcpg_me_50": ["ga_offspring_added", "qpg_offspring_added"],
-    "mcpg_me_75": ["ga_offspring_added", "qpg_offspring_added"],
-    "mcpg_me_unif_1": ["ga_offspring_added", "qpg_offspring_added"],
-    "dcg_me": ["ga_offspring_added", "qpg_ai_offspring_added"],
-    "pga_me": ["ga_offspring_added", "qpg_ai_offspring_added"],
-    #"qd_pg": ["ga_offspring_added", "qpg_ai_offspring_added"],
-    "me": ["ga_offspring_added"],
-    "me_es": ["es_offspring_added"],
-    "mcpg_me_clip_1": ["ga_offspring_added", "qpg_offspring_added"],
-    "mcpg_me_clip_2": ["ga_offspring_added", "qpg_offspring_added"],
-    "mcpg_me_clip_3": ["ga_offspring_added", "qpg_offspring_added"],
-    "mcpg_me_no_clip_05": ["ga_offspring_added", "qpg_offspring_added"],
-    "mcpg_me_no_clip_1": ["ga_offspring_added", "qpg_offspring_added"],
-    
+    "dcg_me" : ["ga_offspring_added", "qpg_offspring_added", "ai_offspring_added"],
+    "pga_me" : ["ga_offspring_added", "qpg_offspring_added", "ai_offspring_added"],
+    "mcpg_me": ["ga_offspring_added", "qpg_offspring_added"],
+    # "dcg_me": ["ga_offspring_added", "qpg_ai_offspring_added"],
+    # "pga_me": ["ga_offspring_added", "qpg_ai_offspring_added"],
+    "me": ["ga_offspring_added"],    
 }
 EMITTER_DICT = {
     "ga_offspring_added": "GA",
     "qpg_offspring_added": "PG",
     #"dpg_offspring_added": "DPG",
     #"es_offspring_added": "ES",
-    #"ai_offspring_added": "AI",
+    "ai_offspring_added": "AI",
     #"qpg_ai_offspring_added": "PG + AI",
 }
 
@@ -203,9 +180,6 @@ def customize_axis(ax):
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
 
-    # Remove ticks
-    # ax.tick_params(axis="y", length=0)
-
     # Add grid
     ax.grid(which="major", axis="y", color="0.9")
     return ax
@@ -213,7 +187,7 @@ def customize_axis(ax):
 
 def plot(df):
     # Create subplots
-    nrows = len(EMITTER_LIST[ALGO_LIST[0]])
+    nrows = len(EMITTER_LIST[ALGO_LIST[1]])
     fig, axes = plt.subplots(nrows=nrows, ncols=len(ENV_LIST), sharex=True, squeeze=False, figsize=(25, 7))
 
     # Create formatter
@@ -221,50 +195,73 @@ def plot(df):
     formatter.set_scientific(True)
     formatter.set_powerlimits((0, 0))
 
+    # Flag to handle legend retrieval only once
+    retrieved_legend = False
+    handles, labels = None, None
+
     for col, env in enumerate(ENV_LIST):
         print(env)
-
-        # Set title for the column
         axes[0, col].set_title(ENV_DICT[env])
-
-        # Set the x label and formatter for the column
         axes[nrows-1, col].set_xlabel(XLABEL)
         axes[nrows-1, col].xaxis.set_major_formatter(formatter)
 
-        # Get df for the current env
-        df_plot = df[(df["env"] == env)]  
+        # Filter df for the current env
+        df_plot = df[(df["env"] == env)]
 
-        # Plot
-        for i, emitter in enumerate(EMITTER_LIST[ALGO_LIST[0]]):
-            ax = sns.lineplot(
-                df_plot,
-                x="num_evaluations",
-                y=emitter,
-                hue="algo",
-                hue_order=ALGO_LIST,
-                estimator=np.median,
-                errorbar=lambda x: (np.quantile(x, 0.25), np.quantile(x, 0.75)),
-                legend=False,
-                ax=axes[i, col],
-            )
+        for i, emitter in enumerate(EMITTER_LIST[ALGO_LIST[1]]):
+            # Only let the very first subplot create a legend
+            if not retrieved_legend and i == 0 and col == 0:
+                ax = sns.lineplot(
+                    data=df_plot,
+                    x="num_evaluations",
+                    y=emitter,
+                    hue="algo",
+                    hue_order=ALGO_LIST,
+                    estimator=np.median,
+                    errorbar=lambda x: (np.quantile(x, 0.25), np.quantile(x, 0.75)),
+                    ax=axes[i, col],
+                )
+                handles, labels = axes[i, col].get_legend_handles_labels()
+                # Remove the local legend after retrieving handles and labels
+                axes[i, col].get_legend().remove()
+                retrieved_legend = True
+            else:
+                # For all other plots, disable the local legend
+                ax = sns.lineplot(
+                    data=df_plot,
+                    x="num_evaluations",
+                    y=emitter,
+                    hue="algo",
+                    hue_order=ALGO_LIST,
+                    estimator=np.median,
+                    errorbar=lambda x: (np.quantile(x, 0.25), np.quantile(x, 0.75)),
+                    legend=False,
+                    ax=axes[i, col],
+                )
 
             if col == 0:
-                axes[i, col].set_ylabel("Elites for {}".format(EMITTER_DICT[emitter]))
+                label = EMITTER_DICT.get(emitter, None)
+                if label is not None:
+                    axes[i, col].set_ylabel("Elites for {}".format(label))
             else:
                 axes[i, col].set_ylabel(None)
 
             # Customize axis
             customize_axis(axes[i, col])
 
-    # Legend
-    fig.legend(ax.get_lines(), [ALGO_DICT[algo] for algo in ALGO_LIST], loc="lower center", bbox_to_anchor=(0.5, -0.04), ncols=len(ALGO_LIST), frameon=False)
+    # Map the original labels (which are algo names) through ALGO_DICT
+    mapped_labels = [ALGO_DICT.get(l, l) for l in labels]
+
+    # Create a single global legend at the bottom
+    fig.legend(handles, mapped_labels, loc="lower center", bbox_to_anchor=(0.5, -0.04),
+               ncols=len(ALGO_LIST), frameon=False)
 
     # Aesthetic
     fig.align_ylabels(axes)
     fig.tight_layout()
 
     # Save plot
-    fig.savefig("final_tuning_pt2/output/plot_main_emitters.png", bbox_inches="tight")
+    fig.savefig("fig1/output/plot_main_emitters.png", bbox_inches="tight")
     plt.close()
 
 
@@ -275,7 +272,7 @@ if __name__ == "__main__":
     plt.rc("font", size=16)
 
     # Create the DataFrame
-    results_dir = Path("final_tuning_pt2/output/")
+    results_dir = Path("fig1/output/")
         
     EPISODE_LENGTH = 250
 
@@ -289,7 +286,7 @@ if __name__ == "__main__":
         df[emitter] = df.groupby(['env', 'algo', 'run'])[emitter].cumsum()
 
     # Filter
-    df['algo'] = df.apply(filter, axis=1)
+    #df['algo'] = df.apply(filter, axis=1)
     df = df[df["algo"].isin(ALGO_LIST)]
     df = df[df["num_evaluations"] <= 1_001_400]
     #df['algo_'] = df.apply(filter, axis=1)
