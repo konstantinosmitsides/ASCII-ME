@@ -17,8 +17,8 @@ from utils import get_df
 
 # Define env and algo names
 ENV_LIST = [
-    "ant_omni_250",
-    "anttrap_omni_250",
+    #"ant_omni_250",
+    #"anttrap_omni_250",
     #"humanoid_omni",
     "walker2d_uni_250",
     #"walker2d_uni_1000",
@@ -46,15 +46,19 @@ ENV_DICT = {
 }
 
 BATCH_LIST = [
-    # 16,
-    # 32,
-    # 64,
-    # 128,
-    #256,
-    512,
-    1024,
-    2048,
-    4096,
+    3000,
+    4000,
+    4800,
+    6000,
+    #16,
+    #32,
+    #64,
+    #128,
+    # 256,
+    # 512,
+    # 1024,
+    # 2048,
+    # 4096,
     #16384,
     #32768,
     #65536
@@ -62,18 +66,18 @@ BATCH_LIST = [
 ]
 
 ALGO_LIST = [
-    "mcpg_me",
-    "dcg_me",
+    #"mcpg_me",
+    #"dcg_me",
     # "dcg_me_pg_steps",
     # "dcg_me_batch_size",
     # "dcg_me_cr_steps",
     #"dcg_me_gecco",
-    "pga_me",
+    #"pga_me",
     # "pga_me_pg_steps",
     # "pga_me_batch_size",
     # "pga_me_cr_steps",
     #"qd_pg",
-    "me",
+    #"me",
     #"me_es",
     #"memes",
     #"mcpg_me_fixed",
@@ -81,6 +85,7 @@ ALGO_LIST = [
     #"mcpg_me_8",
     #"mcpg_me_16",
     #"mcpg_me_32",
+    'ppga',
 ]
 
 NEW_ALGO_LIST = [
@@ -122,6 +127,7 @@ ALGO_DICT = {
     "mcpg_me_unif_05": "MCPG-ME unif 0.5",
     "mcpg_me_unif_1_cos_sim": "MCPG-ME unif 1 cos_sim",
     "mcpg_me_unif_1_not_cos_sim": "MCPG-ME unif 1 not_cos_sim",
+    "ppga" : 'PPGA',
 }
 
 XLABEL = "Evaluations"
@@ -209,6 +215,7 @@ def plot__(summary_df):
                     x="algo",
                     y="qd_score",
                     hue="batch_size",
+                    hue_order=BATCH_LIST,
                     estimator=np.median,
                     errorbar=lambda x: (np.quantile(x, 0.25), np.quantile(x, 0.75)),
                     ax=ax,
@@ -225,6 +232,7 @@ def plot__(summary_df):
                     x="algo",
                     y="time",
                     hue="batch_size",
+                    hue_order=BATCH_LIST,
                     estimator=np.median,
                     errorbar=lambda x: (np.quantile(x, 0.25), np.quantile(x, 0.75)),
                     ax=ax,

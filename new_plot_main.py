@@ -13,11 +13,14 @@ from utils import get_df
 
 # Define env and algo names
 ENV_LIST = [
-    "ant_omni_250",
-    "anttrap_omni_250",
+    "hopper_uni_250",
     "walker2d_uni_250",
     "ant_uni_250",
-    "hopper_uni_250",
+    "ant_omni_250",
+    "anttrap_omni_250",
+    # "walker2d_uni_250",
+    # "ant_uni_250",
+    # "hopper_uni_250",
 ]
 ENV_DICT = {
     "ant_omni_250": " Ant Omni ",
@@ -33,10 +36,13 @@ ENV_DICT = {
     "hopper_uni_1000": "Hopper Uni",
 }
 ALGO_LIST = [
+    #"me",
     'mcpg_me',
     "pga_me",
     "dcg_me",
     "me",
+    "memes",
+    "ppga",
 ]
 
 ALGO_DICT = {
@@ -49,9 +55,17 @@ ALGO_DICT = {
     "me_es": "MAP-Elites-ES",
     "mcpg_me": "MCPG-ME",
     "memes": "MEMES",
+    "ppga" : "PPGA",
 }
 
 XLABEL = "Time (s)"
+
+def filter(df_row):
+    if df_row["algo"] == "pga_me":
+        if df_row["batch_size"] != 1024:
+            return 
+            
+    return df_row["algo"]
 
 def simple_moving_average(data, window_size):
     """Calculates the simple moving average over a specified window size."""
@@ -103,10 +117,10 @@ def plot(final_df, raw_df):
 
     # Define checkpoints: (evaluation_count, marker, label)
     checkpoints = [
-        (1_000_000, 'o', '1M'),
-        (2_000_000, 's', '2M'),
-        (3_000_000, '^', '3M'),
-        (4_000_000, 'X', '4M')
+        (1_000_000, 'X', '1M'),
+        (4_000_000, '^', '4M'),
+        (7_000_000, 'o', '7M'),
+        (10_000_000, 's', '10M')
     ]
     
     for col, env in enumerate(ENV_LIST):
@@ -180,27 +194,91 @@ def plot(final_df, raw_df):
         customize_axis(axes[1, col])
 
         # Max fitness (bottom row)
-        ax = sns.lineplot(
-            data=df_plot,
-            x="time",
-            y="max_fitness",
-            hue="algo",
-            hue_order=ALGO_LIST,
-            estimator=np.median,
-            errorbar=lambda x: (np.quantile(x, 0.25), np.quantile(x, 0.75)),
-            legend=False,
-            ax=axes[2, col],
-        )
+        if col == 0:
+            ax = sns.lineplot(
+                data=df_plot,
+                x="time",
+                y="max_fitness",
+                hue="algo",
+                hue_order=ALGO_LIST,
+                estimator=np.median,
+                errorbar=lambda x: (np.quantile(x, 0.25), np.quantile(x, 0.75)),
+                legend=False,
+                ax=axes[2, col],
+            )
+        else:
+            sns.lineplot(
+                data=df_plot,
+                x="time",
+                y="max_fitness",
+                hue="algo",
+                hue_order=ALGO_LIST,
+                estimator=np.median,
+                errorbar=lambda x: (np.quantile(x, 0.25), np.quantile(x, 0.75)),
+                legend=False,
+                ax=axes[2, col],
+            )
+            
+
         if col == 0:
             axes[2, col].set_ylabel("Max Fitness")
         else:
             axes[2, col].set_ylabel(None)
         customize_axis(axes[2, col])
 
-        # Retrieve line handles for QD score lines to get colors
-        line_handles = axes[0, col].get_lines()
+        # # Retrieve line handles for QD score lines to get colors
+        # line_handles = axes[0, col].get_lines()
 
-        # Place checkpoints on QD score lines
+        # # Place checkpoints on QD score lines
+        # for algo_idx, algo in enumerate(ALGO_LIST):
+        #     df_raw_algo = df_raw_env[df_raw_env["algo"] == algo]
+        #     df_plot_algo = df_plot[df_plot["algo"] == algo]
+
+        #     if len(df_raw_algo) == 0 or len(df_plot_algo) == 0:
+        #         continue
+
+        #     line_color = line_handles[algo_idx].get_color()
+
+        #     for (cp_eval, cp_marker, cp_label) in checkpoints:
+        #         # Check if the algorithm ever reached this evaluation count
+        #         if not (df_raw_algo["num_evaluations"] >= cp_eval).any():
+        #             # This algorithm never reached cp_eval, skip plotting this symbol
+        #             continue
+
+        #         # Find closest time in raw data for this algo at cp_eval
+        #         closest_idx = (df_raw_algo["num_evaluations"] - cp_eval).abs().idxmin()
+        #         cp_time = df_raw_algo.loc[closest_idx, "time"]
+
+        #         # Only plot checkpoints if within the max_time_1m
+        #         if cp_time <= max_time_1m:
+        #             # Find the closest iteration block to cp_time
+        #             closest_time_idx = (df_plot_algo["time"] - cp_time).abs().idxmin()
+        #             closest_iteration_block = df_plot_algo.loc[closest_time_idx, "iteration_block"]
+
+        #             # Get median qd_score across runs for that iteration_block
+        #             cp_y = df_plot_algo.loc[df_plot_algo["iteration_block"] == closest_iteration_block, "qd_score"].median()
+
+        #             # Label only once (first algo and first column)
+        #             label_to_use = cp_label if (col == 0 and algo == ALGO_LIST[0]) else ""
+
+        #             # Plot the checkpoint marker on the line
+        #             axes[0, col].plot(
+        #                 cp_time, cp_y, 
+        #                 marker=cp_marker, 
+        #                 markersize=10,  # Slightly bigger
+        #                 markeredgecolor='white', 
+        #                 markeredgewidth=1.5,
+        #                 color=line_color, 
+        #                 alpha=0.9, 
+        #                 label=label_to_use
+        #             )
+
+        # After plotting, retrieve line handles from each row
+        qd_score_handles = axes[0, col].get_lines()
+        coverage_handles = axes[1, col].get_lines()
+        fitness_handles = axes[2, col].get_lines()
+
+        # Loop over each algorithm
         for algo_idx, algo in enumerate(ALGO_LIST):
             df_raw_algo = df_raw_env[df_raw_env["algo"] == algo]
             df_plot_algo = df_plot[df_plot["algo"] == algo]
@@ -208,12 +286,14 @@ def plot(final_df, raw_df):
             if len(df_raw_algo) == 0 or len(df_plot_algo) == 0:
                 continue
 
-            line_color = line_handles[algo_idx].get_color()
+            # Get the line color for each metric by matching algo_idx
+            line_color_qd = qd_score_handles[algo_idx].get_color()
+            line_color_cov = coverage_handles[algo_idx].get_color()
+            line_color_fit = fitness_handles[algo_idx].get_color()
 
             for (cp_eval, cp_marker, cp_label) in checkpoints:
                 # Check if the algorithm ever reached this evaluation count
                 if not (df_raw_algo["num_evaluations"] >= cp_eval).any():
-                    # This algorithm never reached cp_eval, skip plotting this symbol
                     continue
 
                 # Find closest time in raw data for this algo at cp_eval
@@ -222,26 +302,63 @@ def plot(final_df, raw_df):
 
                 # Only plot checkpoints if within the max_time_1m
                 if cp_time <= max_time_1m:
-                    # Find the closest iteration block to cp_time
+                    # Find the iteration block in final_df that matches cp_time
                     closest_time_idx = (df_plot_algo["time"] - cp_time).abs().idxmin()
                     closest_iteration_block = df_plot_algo.loc[closest_time_idx, "iteration_block"]
 
-                    # Get median qd_score across runs for that iteration_block
-                    cp_y = df_plot_algo.loc[df_plot_algo["iteration_block"] == closest_iteration_block, "qd_score"].median()
+                    # --- QD Score (row 0) ---
+                    cp_y_qd = df_plot_algo.loc[
+                        df_plot_algo["iteration_block"] == closest_iteration_block, 
+                        "qd_score"
+                    ].median()
 
-                    # Label only once (first algo and first column)
-                    label_to_use = cp_label if (col == 0 and algo == ALGO_LIST[0]) else ""
-
-                    # Plot the checkpoint marker on the line
                     axes[0, col].plot(
-                        cp_time, cp_y, 
-                        marker=cp_marker, 
-                        markersize=10,  # Slightly bigger
-                        markeredgecolor='white', 
+                        cp_time,
+                        cp_y_qd,
+                        marker=cp_marker,
+                        markersize=10,
+                        markeredgecolor='white',
                         markeredgewidth=1.5,
-                        color=line_color, 
-                        alpha=0.9, 
-                        label=label_to_use
+                        color=line_color_qd,
+                        alpha=0.9,
+                        label=cp_label if (col == 0 and algo == ALGO_LIST[0]) else ""
+                    )
+
+                    # --- Coverage (row 1) ---
+                    cp_y_cov = df_plot_algo.loc[
+                        df_plot_algo["iteration_block"] == closest_iteration_block, 
+                        "coverage"
+                    ].median()
+
+                    axes[1, col].plot(
+                        cp_time,
+                        cp_y_cov,
+                        marker=cp_marker,
+                        markersize=10,
+                        markeredgecolor='white',
+                        markeredgewidth=1.5,
+                        color=line_color_cov,
+                        alpha=0.9,
+                        # e.g. no label here, or same logic as above if desired
+                        label=""
+                    )
+
+                    # --- Max fitness (row 2) ---
+                    cp_y_fit = df_plot_algo.loc[
+                        df_plot_algo["iteration_block"] == closest_iteration_block, 
+                        "max_fitness"
+                    ].median()
+
+                    axes[2, col].plot(
+                        cp_time,
+                        cp_y_fit,
+                        marker=cp_marker,
+                        markersize=10,
+                        markeredgecolor='white',
+                        markeredgewidth=1.5,
+                        color=line_color_fit,
+                        alpha=0.9,
+                        label=""
                     )
 
     # Legend for the algorithms
@@ -253,7 +370,7 @@ def plot(final_df, raw_df):
     checkpoint_handles = []
     checkpoint_labels = []
     for h, l in zip(handles, labels):
-        if l in ['1M', '2M', '3M', '4M']:
+        if l in ['1M', '4M', '7M', '10M']:
             checkpoint_handles.append(h)
             checkpoint_labels.append(l)
 
@@ -267,7 +384,7 @@ def plot(final_df, raw_df):
     fig.tight_layout()
 
     # Save plot
-    fig.savefig("fig1/output/plot_main_time.png", bbox_inches="tight")
+    fig.savefig("fig1_/output/plot_main_time_ppga.png", bbox_inches="tight")
     plt.close()
 
 if __name__ == "__main__":
@@ -276,15 +393,17 @@ if __name__ == "__main__":
     matplotlib.rcParams['ps.fonttype'] = 42
     plt.rc("font", size=16)
 
-    results_dir = Path("fig1/output/")
+    results_dir = Path("fig1_/output/")
     EPISODE_LENGTH = 250
     df = get_df(results_dir, EPISODE_LENGTH)
 
     # Filter
+    df['algo'] = df.apply(filter, axis=1)
     df = df[df["algo"].isin(ALGO_LIST)]
     #df = df[df["num_evaluations"] <= 1_001_400]
 
-    df['iteration_block'] = (df['iteration'] - 1) // 10
+    df['iteration_block'] = df['iteration']
+    #df['iteration_block'] = (df['iteration'] - 1) // 10
 
     metrics = ['qd_score', 'coverage', 'max_fitness']
     grouped = df.groupby(['env', 'algo', 'run', 'iteration_block'])

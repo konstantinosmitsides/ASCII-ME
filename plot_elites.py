@@ -128,49 +128,9 @@ EMITTER_DICT = {
 XLABEL = "Evaluations"
 
 def filter(df_row):
-    if df_row["algo"] == "mcpg_me_fixed":
-        #if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"]:
-        #    return "mcpg_me_orth_0_cos_sim"
-        
-        #if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"] and df_row["no_epochs"] == 4 and df_row["batch_size"] == 1024:
-        #    return "mcpg_me_4"
-        
-        #if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"] and df_row["no_epochs"] == 8 and df_row["batch_size"] == 1024:
-        #    return "mcpg_me_8"
-        
-        #if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"] and df_row["no_epochs"] == 16 and df_row["batch_size"] == 1024:
-        #    return "mcpg_me_16"
-        
-        if df_row["clip_param"] == 0.2 and df_row["std"] == 1:
-            return "mcpg_me_clip_1"
-
-        if df_row["clip_param"] == 0.2 and df_row["std"] == 2:
-            return "mcpg_me_clip_2"
-        
-        if df_row["clip_param"] == 0.2 and df_row["std"] == 3:
-            return "mcpg_me_clip_3"
-        
-        
-        if df_row["clip_param"] != 0.2 and df_row["std"] == 0.5:
-            return "mcpg_me_no_clip_05"
-        
-        if df_row["clip_param"] != 0.2 and df_row["std"] == 1:
-            return "mcpg_me_no_clip_1"
-        
-        #if df_row["init"] == "orthogonal" and df_row["greedy"] == 0.5:
-        #    return "mcpg_me_orth_05"
-        
-        #if df_row["init"] == "uniform" and df_row["greedy"] == 0:
-        #    return "mcpg_me_unif_0"
-        
-        #if df_row["init"] == "uniform" and df_row["greedy"] == 0.5:
-        #    return "mcpg_me_unif_05"
-        
-        #if df_row["init"] == "uniform" and df_row["greedy"] == 1 and df_row["cos_sim"]:
-        #    return "mcpg_me_unif_1_cos_sim"
-        
-        #if df_row["init"] == "uniform" and df_row["greedy"] == 1 and not df_row["cos_sim"]:
-        #    return "mcpg_me_unif_1_not_cos_sim"
+    if df_row["algo"] == "pga_me":
+        if df_row["batch_size"] != 1024:
+            return 
             
     return df_row["algo"]
 
@@ -261,7 +221,7 @@ def plot(df):
     fig.tight_layout()
 
     # Save plot
-    fig.savefig("fig1/output/plot_main_emitters.png", bbox_inches="tight")
+    fig.savefig("fig1_/output/plot_main_emitters.png", bbox_inches="tight")
     plt.close()
 
 
@@ -272,11 +232,14 @@ if __name__ == "__main__":
     plt.rc("font", size=16)
 
     # Create the DataFrame
-    results_dir = Path("fig1/output/")
+    results_dir = Path("fig1_/output/")
         
     EPISODE_LENGTH = 250
 
     df = get_df(results_dir, EPISODE_LENGTH)
+
+    df['algo'] = df.apply(filter, axis=1)
+
 
     # Sum PG and AI emitters
     #df["qpg_ai_offspring_added"] = df["qpg_offspring_added"] + df["ai_offspring_added"]

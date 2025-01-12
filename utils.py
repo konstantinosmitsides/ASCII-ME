@@ -153,8 +153,8 @@ def get_metrics(run_dir):
         if "qpg_offspring_added" in metrics.keys():
             if metrics["qpg_offspring_added"].shape[0] == metrics["iteration"].shape[0] // 10:
                 metrics["qpg_offspring_added"] = jnp.tile(metrics["qpg_offspring_added"], 10)
-            
-        del metrics["evaluation"]
+        if metrics["evaluation"].shape[0] != metrics['iteration'].shape[0]:    
+            del metrics["evaluation"]
     return pd.DataFrame.from_dict(metrics)
 
 def get_log(run_dir):
@@ -240,7 +240,10 @@ def get_df(results_dir, episode_length):
 
                 # Algo
                 metrics["algo"] = config.algo.name
-                metrics["batch_size"] = config.batch_size
+                if config.algo.name != "ppga":
+                    metrics["batch_size"] = config.batch_size
+                else:
+                    metrics["batch_size"] = config.algo.env_batch_size
                 if config.algo.name == "dcg_me" or config.algo.name == "pga_me":
                     metrics["num_critic_training_steps"] = config.algo.num_critic_training_steps
                     metrics["num_pg_training_steps"] = config.algo.num_pg_training_steps
@@ -266,13 +269,16 @@ def get_df(results_dir, episode_length):
                     metrics["std"] = config.algo.std
                     #metrics["iterations"] = config.batch_size
                     
-                metrics['gpu'] = config.HPC
+                #metrics['gpu'] = config.HPC
 
                 # Run
                 metrics["run"] = run_dir.name
 
                 # Number of Evaluations
-                if config.algo.name == "me_es":
+
+                if config.algo.name == "ppga":
+                    metrics["num_evaluations"] = metrics["evaluation"]
+                elif config.algo.name == "me_es":
                     metrics["num_evaluations"] = metrics["iteration"] * 1050
                 elif config.algo.name == "dcg_me_gecco":
                     metrics["num_evaluations"] = metrics["iteration"] * (config.batch_size + config.algo.actor_batch_size)
