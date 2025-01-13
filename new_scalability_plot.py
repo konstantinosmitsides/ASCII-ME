@@ -17,8 +17,8 @@ from utils import get_df
 
 # Define env and algo names
 ENV_LIST = [
-    #"ant_omni_250",
-    #"anttrap_omni_250",
+    "ant_omni_250",
+    "anttrap_omni_250",
     #"humanoid_omni",
     "walker2d_uni_250",
     #"walker2d_uni_1000",
@@ -46,10 +46,15 @@ ENV_DICT = {
 }
 
 BATCH_LIST = [
-    3000,
-    4000,
-    4800,
-    6000,
+    1,
+    2,
+    4,
+    8,
+    16,
+    # 3000,
+    # 4000,
+    # 4800,
+    # 6000,
     #16,
     #32,
     #64,
@@ -79,13 +84,13 @@ ALGO_LIST = [
     #"qd_pg",
     #"me",
     #"me_es",
-    #"memes",
+    "memes",
     #"mcpg_me_fixed",
     #"mcpg_me_4",
     #"mcpg_me_8",
     #"mcpg_me_16",
     #"mcpg_me_32",
-    'ppga',
+    #'ppga',
 ]
 
 NEW_ALGO_LIST = [
@@ -266,7 +271,7 @@ def plot__(summary_df):
         #fig.legend(ax_.get_lines(), [str(batch_size) for batch_size in BATCH_LIST], loc="lower center", bbox_to_anchor=(0.5, -0.03), ncols=len(BATCH_LIST), frameon=False)
         fig.align_ylabels(axes[:, 0])
         fig.tight_layout()
-        fig.savefig("fig2/output/plot_main_epochs_scal.png", bbox_inches="tight")
+        fig.savefig("memes_scal/output/scalability.png", bbox_inches="tight")
         plt.close()
 
 
@@ -279,7 +284,7 @@ if __name__ == "__main__":
     plt.rc("font", size=16)
 
     # Create the DataFrame
-    results_dir = Path("fig2/output/")
+    results_dir = Path("memes_scal/output/")
     #print(results_dir)
     
     EPISODE_LENGTH = 250

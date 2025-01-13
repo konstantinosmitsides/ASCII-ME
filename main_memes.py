@@ -228,8 +228,8 @@ def main(config: Config) -> None:
 
     i = 0
     
-    for i in range(num_loops):
-    #while cumulative_time < 1000:
+    #for i in range(num_loops):
+    while cumulative_time < 1000:
         #print(f"Loop {i+1}/{num_loops}")
         start_time = time.time()
         
@@ -263,7 +263,7 @@ def main(config: Config) -> None:
         #log_metrics["qpg_offspring_added"] = jnp.sum(current_metrics["qpg_offspring_added"])
         #log_metrics["ga_offspring_added"] = jnp.sum(current_metrics["ga_offspring_added"])
         csv_logger.log(log_metrics)
-        #i += 1
+        i += 1
 
         #wandb.log(log_metrics)
         

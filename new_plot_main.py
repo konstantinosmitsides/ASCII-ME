@@ -64,6 +64,10 @@ def filter(df_row):
     if df_row["algo"] == "pga_me":
         if df_row["batch_size"] != 1024:
             return 
+        
+    if df_row["algo"] == "ppga":
+        if df_row["batch_size"] != 6000:
+            return 
             
     return df_row["algo"]
 
