@@ -46,11 +46,11 @@ ENV_DICT = {
 }
 
 BATCH_LIST = [
-    1,
-    2,
-    4,
-    8,
-    16,
+    # 1,
+    # 2,
+    # 4,
+    # 8,
+    # 16,
     # 3000,
     # 4000,
     # 4800,
@@ -59,11 +59,12 @@ BATCH_LIST = [
     #32,
     #64,
     #128,
-    # 256,
-    # 512,
-    # 1024,
-    # 2048,
-    # 4096,
+    256,
+    512,
+    1024,
+    2048,
+    4096,
+    8192,
     #16384,
     #32768,
     #65536
@@ -71,18 +72,18 @@ BATCH_LIST = [
 ]
 
 ALGO_LIST = [
-    #"mcpg_me",
-    #"dcg_me",
+    "mcpg_me",
+    "dcg_me",
     # "dcg_me_pg_steps",
     # "dcg_me_batch_size",
     # "dcg_me_cr_steps",
     #"dcg_me_gecco",
-    #"pga_me",
+    "pga_me",
     # "pga_me_pg_steps",
     # "pga_me_batch_size",
     # "pga_me_cr_steps",
     #"qd_pg",
-    #"me",
+    "me",
     #"me_es",
     "memes",
     #"mcpg_me_fixed",
@@ -271,7 +272,7 @@ def plot__(summary_df):
         #fig.legend(ax_.get_lines(), [str(batch_size) for batch_size in BATCH_LIST], loc="lower center", bbox_to_anchor=(0.5, -0.03), ncols=len(BATCH_LIST), frameon=False)
         fig.align_ylabels(axes[:, 0])
         fig.tight_layout()
-        fig.savefig("memes_scal/output/scalability.png", bbox_inches="tight")
+        fig.savefig("fig2/output/scalability.png", bbox_inches="tight")
         plt.close()
 
 
@@ -284,7 +285,7 @@ if __name__ == "__main__":
     plt.rc("font", size=16)
 
     # Create the DataFrame
-    results_dir = Path("memes_scal/output/")
+    results_dir = Path("fig2/output/")
     #print(results_dir)
     
     EPISODE_LENGTH = 250

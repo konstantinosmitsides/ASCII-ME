@@ -16,8 +16,8 @@ ENV_LIST = [
     "hopper_uni_250",
     "walker2d_uni_250",
     "ant_uni_250",
-    "ant_omni_250",
     "anttrap_omni_250",
+    "ant_omni_250",
     # "walker2d_uni_250",
     # "ant_uni_250",
     # "hopper_uni_250",
@@ -36,7 +36,6 @@ ENV_DICT = {
     "hopper_uni_1000": "Hopper Uni",
 }
 ALGO_LIST = [
-    #"me",
     'mcpg_me',
     "pga_me",
     "dcg_me",
@@ -67,6 +66,10 @@ def filter(df_row):
         
     if df_row["algo"] == "ppga":
         if df_row["batch_size"] != 6000:
+            return 
+        
+    if df_row["algo"] == "memes":
+        if df_row["batch_size"] != 8192:
             return 
             
     return df_row["algo"]
