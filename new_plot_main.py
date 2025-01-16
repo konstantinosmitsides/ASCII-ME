@@ -37,10 +37,11 @@ ENV_DICT = {
 }
 ALGO_LIST = [
     'mcpg_me',
-    "pga_me",
     "dcg_me",
+    "pga_me",
     "me",
     "memes",
+    'mcpg_only',
     "ppga",
 ]
 
@@ -55,6 +56,7 @@ ALGO_DICT = {
     "mcpg_me": "MCPG-ME",
     "memes": "MEMES",
     "ppga" : "PPGA",
+    "mcpg_only": "MCPG-Only"
 }
 
 XLABEL = "Time (s)"
@@ -71,6 +73,10 @@ def filter(df_row):
     if df_row["algo"] == "memes":
         if df_row["batch_size"] != 8192:
             return 
+        
+    if df_row["algo"] == "mcpg_me":
+        if df_row["proportion_mutation_ga"] == 0:
+            return "mcpg_only"
             
     return df_row["algo"]
 
@@ -284,6 +290,9 @@ def plot(final_df, raw_df):
         qd_score_handles = axes[0, col].get_lines()
         coverage_handles = axes[1, col].get_lines()
         fitness_handles = axes[2, col].get_lines()
+
+        # print("Number of plotted lines:", len(qd_score_handles))
+        # print("Number of algorithms expected:", len(ALGO_LIST))
 
         # Loop over each algorithm
         for algo_idx, algo in enumerate(ALGO_LIST):
