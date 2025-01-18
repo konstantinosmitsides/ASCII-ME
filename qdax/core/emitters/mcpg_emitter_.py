@@ -416,7 +416,7 @@ class MCPGEmitter_05(Emitter):
         
         # Init trajectory buffer
 
-        dummy_transition = QDMCTransition.init_dummy(
+        dummy_transition = QDTransition.init_dummy(
             observation_dim=obs_size,
             action_dim=action_size,
             descriptor_dim=descriptor_size,
@@ -584,7 +584,7 @@ class MCPGEmitter_05(Emitter):
                 trans.obs,
                 trans.actions,
                 standardized_returns,
-                trans.logp,
+                #trans.logp,
                 trans.dones
             )
             return (new_policy_params, new_policy_opt_state), None
@@ -610,13 +610,13 @@ class MCPGEmitter_05(Emitter):
         obs,
         actions,
         standardized_returns,
-        logps,
+        #logps,
         mask
     ) -> Tuple[MCPGEmitterState, Genotype, optax.OptState]:
         """Train the policy.
         """
         
-        grads = jax.grad(self.loss_ppo)(policy_params, obs, actions, logps, standardized_returns, mask)
+        grads = jax.grad(self.loss)(policy_params, obs, actions, standardized_returns, mask)
         #jax.debug.print("grads : {}", grads)
         
         
@@ -628,25 +628,30 @@ class MCPGEmitter_05(Emitter):
     
     
     @partial(jax.jit, static_argnames=("self",))
-    def loss_ppo(
+    def loss(
         self,
         params,
         obs,
         actions,
-        logps,
+        #logps,
         standardized_returns,
         mask
     ):
 
         pi, _ = self._policy.apply(params, obs)
         logps_ = pi.log_prob(actions) 
+        log_factor = (jnp.log(self._config.std) + 0.5 * jnp.log(2.0 * jnp.pi))
+        #jnp.array([self._config.std]*self._env.action_size)
         
-        ratio = jnp.exp(logps_ - jax.lax.stop_gradient(logps))
-        
+        #ratio = jnp.exp(logps_ - jax.lax.stop_gradient(logps))
+
+        ratio = jnp.exp(logps_ + self._env.action_size * log_factor)  
+
         pg_loss_1 = jnp.multiply(ratio, jax.lax.stop_gradient(standardized_returns * (1.0 - mask)))
-        pg_loss_2 = jax.lax.stop_gradient(standardized_returns * (1.0 - mask)) * jax.lax.clamp(1. - self._config.clip_param, ratio, 1. + self._config.clip_param) 
+        pg_loss_2 = jax.lax.stop_gradient(standardized_returns * (1.0 - mask)) * jnp.maximum(ratio, 1. - self._config.clip_param)
+        #pg_loss_2 = jax.lax.stop_gradient(standardized_returns * (1.0 - mask)) * jax.lax.clamp(1. - self._config.clip_param, ratio, 1. + self._config.clip_param) 
         
-        #return (-jnp.sum(jnp.minimum(pg_loss_1, pg_loss_2))) / jnp.sum(ratio  * (1.0 - mask)) 
+        #return (-jnp.sum(jnp.minimum(pg_loss_1, pg_loss_2))) / jnp.sum((jax.lax.stop_gradient(ratio) + EPS)  * (1.0 - mask)) 
         return -jnp.mean(jnp.minimum(pg_loss_1, pg_loss_2))
 
 
@@ -715,7 +720,7 @@ class MCPGEmitter_1(Emitter):
         
         # Init trajectory buffer
 
-        dummy_transition = QDMCTransition.init_dummy(
+        dummy_transition = QDTransition.init_dummy(
             observation_dim=obs_size,
             action_dim=action_size,
             descriptor_dim=descriptor_size,
@@ -883,7 +888,7 @@ class MCPGEmitter_1(Emitter):
                 trans.obs,
                 trans.actions,
                 standardized_returns,
-                trans.logp,
+                #trans.logp,
                 trans.dones
             )
             return (new_policy_params, new_policy_opt_state), None
@@ -909,13 +914,13 @@ class MCPGEmitter_1(Emitter):
         obs,
         actions,
         standardized_returns,
-        logps,
+        #logps,
         mask
     ) -> Tuple[MCPGEmitterState, Genotype, optax.OptState]:
         """Train the policy.
         """
         
-        grads = jax.grad(self.loss_ppo)(policy_params, obs, actions, logps, standardized_returns, mask)
+        grads = jax.grad(self.loss)(policy_params, obs, actions, standardized_returns, mask)
         #jax.debug.print("grads : {}", grads)
         
         
@@ -927,23 +932,28 @@ class MCPGEmitter_1(Emitter):
     
     
     @partial(jax.jit, static_argnames=("self",))
-    def loss_ppo(
+    def loss(
         self,
         params,
         obs,
         actions,
-        logps,
+        #logps,
         standardized_returns,
         mask
     ):
 
         pi, _ = self._policy.apply(params, obs)
         logps_ = pi.log_prob(actions) 
+        log_factor = (jnp.log(self._config.std) + 0.5 * jnp.log(2.0 * jnp.pi))
+        #jnp.array([self._config.std]*self._env.action_size)
         
-        ratio = jnp.exp(logps_ - jax.lax.stop_gradient(logps))
-        
+        #ratio = jnp.exp(logps_ - jax.lax.stop_gradient(logps))
+
+        ratio = jnp.exp(logps_ + self._env.action_size * log_factor)  
+
         pg_loss_1 = jnp.multiply(ratio, jax.lax.stop_gradient(standardized_returns * (1.0 - mask)))
-        pg_loss_2 = jax.lax.stop_gradient(standardized_returns * (1.0 - mask)) * jax.lax.clamp(1. - self._config.clip_param, ratio, 1. + self._config.clip_param) 
+        pg_loss_2 = jax.lax.stop_gradient(standardized_returns * (1.0 - mask)) * jnp.maximum(ratio, 1. - self._config.clip_param)
+        #pg_loss_2 = jax.lax.stop_gradient(standardized_returns * (1.0 - mask)) * jax.lax.clamp(1. - self._config.clip_param, ratio, 1. + self._config.clip_param) 
         
         #return (-jnp.sum(jnp.minimum(pg_loss_1, pg_loss_2))) / jnp.sum((jax.lax.stop_gradient(ratio) + EPS)  * (1.0 - mask)) 
         return -jnp.mean(jnp.minimum(pg_loss_1, pg_loss_2))
