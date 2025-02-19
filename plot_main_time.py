@@ -41,23 +41,37 @@ ENV_DICT = {
     "hopper_uni_1000": "Hopper Uni",
 }
 ALGO_LIST = [
-    "mcpg_me",
-    #"mcpg_me_no_normalizer",
-    #"mcpg_me_no_baseline",
-    #"mcpg_me_no_ppo_loss",
-    #"mcpg_me_epoch_32_batch_512",
-    #"mcpg_me_epoch_32_batch_1024",
-    #"mcpg_me_epoch_32_batch_2048",
-    #"mcpg_me_epoch_32_batch_4096",
-    "dcg_me",
-    #"dcg_me_"
-    #"dcg_me_gecco",
+    'mcpg_me',
+    'mcpg_me_ga_0_greedy_0',
+    'mcpg_me_ga_25_greedy_0',
+    'mcpg_me_ga_75_greedy_0',
+    'mcpg_me_ga_1_greedy_0',
+    # 'mcpg_me_1',
     "pga_me",
-    #"qd_pg",
-    #"me_es",
-    "memes",
-    "me",
 ]
+
+
+ALGO_DICT = {
+    "dcg_me": "DCRL",
+    "dcg_me_": "DCRL",
+    "dcg_me_gecco": "DCG-MAP-Elites GECCO",
+    "pga_me": "PGA-MAP-Elites",
+    "qd_pg": "QD-PG",
+    "me": "MAP-Elites",
+    "me_es": "MAP-Elites-ES",
+    "mcpg_me": "MCPG-ME 50% GA (MCPG-ME)",
+    "mcpg_me_25_greedy_0": "MCPG-ME 25% GA",
+    "mcpg_me_75_greedy_0": "MCPG-ME 75% GA",
+    "mcpg_me_1_greedy_0": "MCPG-ME 100% GA",
+    "memes": "MEMES",
+    "ppga" : "PPGA",
+    "mcpg_only": "MCPG-Only",
+    "mcpg_only_05": "MCPG-Only (0.5)",
+    "mcpg_only_1": "MCPG-Only (1)",
+    "mcpg_me_05": "MCPG-ME (0.5)",
+    "mcpg_me_1": "MCPG-ME (1)",
+}
+
 
 BATCH_LIST = [
     512,
@@ -68,72 +82,71 @@ BATCH_LIST = [
 
 ALGO_DICT = {
     "dcg_me": "DCRL",
-    "dcg_me_" : "DCRL",
+    "dcg_me_": "DCRL",
     "dcg_me_gecco": "DCG-MAP-Elites GECCO",
     "pga_me": "PGA-MAP-Elites",
     "qd_pg": "QD-PG",
     "me": "MAP-Elites",
     "me_es": "MAP-Elites-ES",
-    "mcpg_me": "MCPG-ME",
+    "mcpg_me": "MCPG-ME 50% GA (MCPG-ME)",
+    "mcpg_me_25_greedy_0": "MCPG-ME 25% GA",
+    "mcpg_me_75_greedy_0": "MCPG-ME 75% GA",
+    "mcpg_me_1_greedy_0": "MCPG-ME 100% GA",
     "memes": "MEMES",
-    "mcpg_me_no_normalizer": "MCPG-ME no normalizer",
-    "mcpg_me_no_baseline": "MCPG-ME no baseline",
-    "mcpg_me_no_ppo_loss": "MCPG-ME no PPO loss",
-    "mcpg_me_epoch_32_batch_512": "MCPG-ME",
-    "mcpg_me_epoch_32_batch_1024": "epoch 32 batch 1024",
-    "mcpg_me_epoch_32_batch_2048": "epoch 32 batch 2048",
-    "mcpg_me_epoch_32_batch_4096": "epoch 32 batch 4096",
+    "ppga" : "PPGA",
+    "mcpg_only": "MCPG-Only",
+    "mcpg_only_05": "MCPG-Only (0.5)",
+    "mcpg_only_1": "MCPG-Only (1)",
+    "mcpg_me_05": "MCPG-ME (0.5)",
+    "mcpg_me_1": "MCPG-ME (1)",
 }
 
 XLABEL = "Time (s)"
 
 
 def filter(df_row):
-    if df_row["algo"] == "mcpg_me_fixed":
-        #if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"]:
-        #    return "mcpg_me_orth_0_cos_sim"
-        
-        #if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"] and df_row["no_epochs"] == 4 and df_row["batch_size"] == 1024:
-        #    return "mcpg_me_4"
-        
-        #if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"] and df_row["no_epochs"] == 8 and df_row["batch_size"] == 1024:
-        #    return "mcpg_me_8"
-        
-        #if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"] and df_row["no_epochs"] == 16 and df_row["batch_size"] == 1024:
-        #    return "mcpg_me_16"
-        
-        #if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"] and df_row["no_epochs"] == 32 and df_row["batch_size"] == 512 and df_row["proportion_mutation_ga"] == 0.5 and df_row["clipping"] != 0.2:
-        #    return "mcpg_me_no_clipping"
-
-        if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"] and df_row["no_epochs"] == 32 and df_row["batch_size"] == 512 and df_row["proportion_mutation_ga"] == 0.5 and df_row["clipping"] == 0.2:
-            return "mcpg_me_epoch_32_batch_512"
-        
-        #if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"] and df_row["no_epochs"] == 32 and df_row["batch_size"] == 1024 and df_row["proportion_mutation_ga"] == 0.5 and df_row["clipping"] == 0.2:
-        #    return "mcpg_me_epoch_32_batch_1024"
-        
-        #if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"] and df_row["no_epochs"] == 32 and df_row["batch_size"] == 2048 and df_row["proportion_mutation_ga"] == 0.5 and df_row["clipping"] == 0.2:
-        #    return "mcpg_me_epoch_32_batch_2048"
-
-        #if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"] and df_row["no_epochs"] == 32 and df_row["batch_size"] == 4096 and df_row["proportion_mutation_ga"] == 0.5 and df_row["clipping"] == 0.2:
-        #    return "mcpg_me_epoch_32_batch_4096"
-        
+    if df_row["algo"] == "pga_me":
+        if df_row["batch_size"] != 1024:
+            return 
+    if df_row["algo"] == "ppga":
+        if df_row["batch_size"] != 6000:
+            return 
+    if df_row["algo"] == "memes":
+        if df_row["batch_size"] != 8192:
+            return 
+    if df_row["algo"] == "mcpg_me":
+        if df_row["batch_size"] != 4096:
+            return 
     
+    if df_row["algo"] == "mcpg_me":
+        if df_row["proportion_mutation_ga"] == 0 and df_row["greedy"] == 0:
+            return "mcpg_me_ga_0_greedy_0"
+        
+    if df_row["algo"] == "mcpg_me":
+        if df_row["proportion_mutation_ga"] == 0.25 and df_row["greedy"] == 0:
+            return "mcpg_me_ga_25_greedy_0"
 
-        #if df_row["init"] == "orthogonal" and df_row["greedy"] == 0.5:
-        #    return "mcpg_me_orth_05"
+    if df_row["algo"] == "mcpg_me":
+        if df_row["proportion_mutation_ga"] == 0.75 and df_row["greedy"] == 0:
+            return "mcpg_me_ga_75_greedy_0"
         
-        #if df_row["init"] == "uniform" and df_row["greedy"] == 0:
-        #    return "mcpg_me_unif_0"
-        
-        #if df_row["init"] == "uniform" and df_row["greedy"] == 0.5:
-        #    return "mcpg_me_unif_05"
-        
-        #if df_row["init"] == "uniform" and df_row["greedy"] == 1 and df_row["cos_sim"]:
-        #    return "mcpg_me_unif_1_cos_sim"
-        
-        #if df_row["init"] == "uniform" and df_row["greedy"] == 1 and not df_row["cos_sim"]:
-        #    return "mcpg_me_unif_1_not_cos_sim"
-            
+    if df_row["algo"] == "mcpg_me":
+        if df_row["proportion_mutation_ga"] == 1 and df_row["greedy"] == 0:
+            return "mcpg_me_ga_1_greedy_0"
+
+
+    if df_row["algo"] == "mcpg_me":
+        if df_row["proportion_mutation_ga"] == 0 and df_row["greedy"] == 0.5:
+            return "mcpg_me_ga_0_greedy_05"
+    if df_row["algo"] == "mcpg_me":
+        if df_row["proportion_mutation_ga"] == 0 and df_row["greedy"] == 1:
+            return "mcpg_me_ga_0_greedy_1"
+    if df_row["algo"] == "mcpg_me":
+        if df_row["proportion_mutation_ga"] == 0.5 and df_row["greedy"] == 0.5:
+            return "mcpg_me_ga_05_greedy_05"
+    if df_row["algo"] == "mcpg_me":
+        if df_row["proportion_mutation_ga"] == 0.5 and df_row["greedy"] == 1:
+            return "mcpg_me_ga_05_greedy_1"
     return df_row["algo"]
 
 def simple_moving_average(data, window_size):
@@ -282,7 +295,7 @@ def plot(df):
     fig.tight_layout()
 
     # Save plot
-    fig.savefig("data_time_efficiency/output/plot_main_time.png", bbox_inches="tight")
+    fig.savefig("fig4/output/GA_ablation.png", bbox_inches="tight")
     plt.close()
 
 
@@ -293,7 +306,7 @@ if __name__ == "__main__":
     plt.rc("font", size=16)
 
     # Create the DataFrame
-    results_dir = Path("data_time_efficiency/output/")
+    results_dir = Path("fig4/output/")
     #print(results_dir)
     EPISODE_LENGTH = 250
     df = get_df(results_dir, EPISODE_LENGTH)
@@ -301,7 +314,7 @@ if __name__ == "__main__":
     # Filter
     #df['algo'] = df.apply(filter, axis=1)
     df = df[df["algo"].isin(ALGO_LIST)]
-    df = df[df["num_evaluations"] <= 1_001_400]
+    df = df[df["num_evaluations"] <= 1_005_00]
 
     
     

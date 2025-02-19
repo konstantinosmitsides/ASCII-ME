@@ -18,14 +18,14 @@ from utils import get_df
 # Define env and algo names
 ENV_LIST = [
     "ant_omni_250",
-    "anttrap_omni_250",
+    # "anttrap_omni_250",
     #"humanoid_omni",
     "walker2d_uni_250",
     #"walker2d_uni_1000",
     #"halfcheetah_uni",
     "ant_uni_250",
     #"ant_uni_1000",
-    "hopper_uni_250",
+    # "hopper_uni_250",
     #"hopper_uni_1000",
     #"humanoid_uni",
 ]
@@ -59,7 +59,7 @@ BATCH_LIST = [
     #32,
     #64,
     #128,
-    256,
+    # 256,
     512,
     1024,
     2048,
@@ -72,20 +72,24 @@ BATCH_LIST = [
 ]
 
 ALGO_LIST = [
-    "mcpg_me",
+    # "mcpg_me",
+    "dcg_me_batch_size",
+    "dcg_me_cr_steps",
     "dcg_me",
     # "dcg_me_pg_steps",
     # "dcg_me_batch_size",
     # "dcg_me_cr_steps",
     #"dcg_me_gecco",
+    "pga_me_batch_size",
+    "pga_me_cr_steps",
     "pga_me",
     # "pga_me_pg_steps",
     # "pga_me_batch_size",
     # "pga_me_cr_steps",
     #"qd_pg",
-    "me",
+    # "me",
     #"me_es",
-    "memes",
+    # "memes",
     #"mcpg_me_fixed",
     #"mcpg_me_4",
     #"mcpg_me_8",
@@ -107,18 +111,18 @@ NEW_ALGO_LIST = [
     #"mcpg_me_unif_1_not_cos_sim",
 ]
 ALGO_DICT = {
-    "mcpg_me" : "MCPG-ME",
-    "dcg_me": "DCRL",
-    "dcg_me_pg_steps" : "DCRL 1",
-    "dcg_me_batch_size" : "DCRL 2",
-    "dcg_me_cr_steps" : "DCRL 3",
+    "mcpg_me" : "ASCII-ME",
+    "dcg_me": "DCRL-ME \n(Strategy 3)",
+    "dcg_me_pg_steps" : "DCRL (pg)",
+    "dcg_me_batch_size" : "DCRL-ME \n(Strategy 1)",
+    "dcg_me_cr_steps" : "DCRL-ME \n(Strategy 2)",
     "dcg_me_gecco": "DCG-MAP-Elites GECCO",
-    "pga_me": "PGA-ME",
-    "pga_me_pg_steps" : "PGA-ME 1",
-    "pga_me_batch_size" : "PGA-ME 2", 
-    "pga_me_cr_steps" : "PGA-ME 3",
+    "pga_me": "PGA-ME \n(Strategy 3)",
+    "pga_me_pg_steps" : "PGA-ME (pg)",
+    "pga_me_batch_size" : "PGA-ME \n(Strategy 1)", 
+    "pga_me_cr_steps" : "PGA-ME \n(Strategy 2)",
     "qd_pg": "QD-PG",
-    "me": "MAP-Elites",
+    "me": "ME",
     "me_es": "MAP-Elites-ES",
     "mcpg_me_2": "2 epochs",
     "mcpg_me_4": "4 epochs",
@@ -177,7 +181,7 @@ def customize_axis(ax):
     return ax
 
 def plot__(summary_df):
-    fig, axes = plt.subplots(nrows=len(ENV_LIST), ncols=2, sharex='col', figsize=(25, 15))
+    fig, axes = plt.subplots(nrows=len(ENV_LIST), ncols=2, sharex='col', figsize=(25, 15 * 0.7))
 
 
 
@@ -192,7 +196,7 @@ def plot__(summary_df):
     
 
     
-    x_label = "Batch Size"
+    x_labels = ["Batch Size    (the higher the better)", "Batch Size    (the lower the better)"]
     y_labels = ["QD Score after 1M evaluations", "Runtime (s) after 1M evaluations"]
 
     for col in range(2):
@@ -201,7 +205,7 @@ def plot__(summary_df):
             
             # Set title for each subplot
             if row == 0:
-                ax.set_title(f"{y_labels[col]} vs. {x_label}")
+                ax.set_title(f"{y_labels[col]} vs. {x_labels[col]}")
             
             # Formatter for the x-axis
             ax.xaxis.set_major_formatter(ScalarFormatter(useMathText=True))
@@ -262,17 +266,19 @@ def plot__(summary_df):
                 
             # Customize the axis aesthetics
             customize_axis(ax)
+            ax.set_axisbelow(True)
         
 
         # Legend and final adjustments
         colors = sns.color_palette(palette=color_palette, n_colors=len(BATCH_LIST))  # Get a color palette with 3 distinct colors
         patches = [mlines.Line2D([], [], color=colors[i], label=str(batch_size), linewidth=2.2, linestyle='-') for i, batch_size in enumerate(BATCH_LIST)]
-        fig.legend(handles=patches, loc='lower center', bbox_to_anchor=(0.5, -0.03), ncols=len(BATCH_LIST), frameon=False)    
+        fig.legend(handles=patches, loc='lower center', bbox_to_anchor=(0.5, -0.03), ncols=len(BATCH_LIST), frameon=False)  
+        #fig.text(0.1, 0.02, "Batch Size", ha='right', va='center', fontsize=12)  
     
         #fig.legend(ax_.get_lines(), [str(batch_size) for batch_size in BATCH_LIST], loc="lower center", bbox_to_anchor=(0.5, -0.03), ncols=len(BATCH_LIST), frameon=False)
         fig.align_ylabels(axes[:, 0])
         fig.tight_layout()
-        fig.savefig("fig2/output/scalability.png", bbox_inches="tight")
+        fig.savefig("scal_test_ac/output/ac_strategies.pdf", bbox_inches="tight")
         plt.close()
 
 
@@ -285,7 +291,7 @@ if __name__ == "__main__":
     plt.rc("font", size=16)
 
     # Create the DataFrame
-    results_dir = Path("fig2/output/")
+    results_dir = Path("scal_test_ac/output/")
     #print(results_dir)
     
     EPISODE_LENGTH = 250
@@ -293,7 +299,7 @@ if __name__ == "__main__":
     df = get_df(results_dir, EPISODE_LENGTH)
 
     # Filter
-    #df['algo'] = df.apply(filter, axis=1)
+    df['algo'] = df.apply(filter, axis=1)
     df = df[df["algo"].isin(ALGO_LIST)]
     df = df[df["num_evaluations"] <= 1_005_000]
     #df['env_'] = df.apply(filter_gpu_variants, axis=1)

@@ -64,7 +64,7 @@ BATCH_LIST = [
     1024,
     # 2048,
     # 4096,
-    8192,
+    #8192,
     #16384,
     #32768,
     #65536
@@ -85,7 +85,7 @@ ALGO_LIST = [
     #"qd_pg",
     "me",
     #"me_es",
-    "memes",
+    #"memes",
     #"mcpg_me_fixed",
     #"mcpg_me_4",
     #"mcpg_me_8",

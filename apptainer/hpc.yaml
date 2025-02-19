@@ -1,4 +1,4 @@
-job_name: Runtimes
+job_name: GA_ablation
 
 walltime: 07:59:00
 
@@ -9,7 +9,7 @@ ngpus: 1
 gpu_type: L40S
 
 queue: null  # -q express -P exp-00097
-njobs: 3
+njobs: 15
 args:
   # SCALABILITY
 
@@ -212,24 +212,65 @@ args:
   # - "HPC=L40S algo=pga_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=1024 algo.replay_buffer_size=4_000_000 num_iterations=1000"
   # - "HPC=L40S algo=pga_me seed=\$RANDOM env=anttrap_omni env.episode_length=250 batch_size=1024 algo.replay_buffer_size=4_000_000 num_iterations=1000"
 
-  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=1024 algo.replay_buffer_size=4_000_000 algo.ga_batch_size=512 algo.qpg_batch_size=256 algo.ai_batch_size=256"
-  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=1024 algo.replay_buffer_size=4_000_000 algo.ga_batch_size=512 algo.qpg_batch_size=256 algo.ai_batch_size=256"
-  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=hopper_uni env.episode_length=250 batch_size=1024 algo.replay_buffer_size=4_000_000 algo.ga_batch_size=512 algo.qpg_batch_size=256 algo.ai_batch_size=256"
-  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=1024 algo.replay_buffer_size=4_000_000 algo.ga_batch_size=512 algo.qpg_batch_size=256 algo.ai_batch_size=256"
-  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=anttrap_omni env.episode_length=250 batch_size=1024 algo.replay_buffer_size=4_000_000 algo.ga_batch_size=512 algo.qpg_batch_size=256 algo.ai_batch_size=256"
+  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=2048 algo.replay_buffer_size=8_000_000 algo.ga_batch_size=1024 algo.qpg_batch_size=512 algo.ai_batch_size=512"
+  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=2048 algo.replay_buffer_size=8_000_000 algo.ga_batch_size=1024 algo.qpg_batch_size=512 algo.ai_batch_size=512"
+  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=hopper_uni env.episode_length=250 batch_size=2048 algo.replay_buffer_size=8_000_000 algo.ga_batch_size=1024 algo.qpg_batch_size=512 algo.ai_batch_size=512"
+  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=2048 algo.replay_buffer_size=8_000_000 algo.ga_batch_size=1024 algo.qpg_batch_size=512 algo.ai_batch_size=512"
+  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=anttrap_omni env.episode_length=250 batch_size=2048 algo.replay_buffer_size=8_000_000 algo.ga_batch_size=1024 algo.qpg_batch_size=512 algo.ai_batch_size=512"
 
 
-  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=4096 algo.proportion_mutation_ga=0"
-  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=4096 algo.proportion_mutation_ga=0"
-  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=hopper_uni env.episode_length=250 batch_size=4096 algo.proportion_mutation_ga=0"
-  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=4096 algo.proportion_mutation_ga=0"
-  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=anttrap_omni env.episode_length=250 batch_size=4096 algo.proportion_mutation_ga=0"
+  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=4096"
+  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=4096"
+  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=hopper_uni env.episode_length=250 batch_size=4096"
+  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=4096"
+  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=anttrap_omni env.episode_length=250 batch_size=4096"
 
-  # - "HPC=L40S algo=me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=4096"
-  # - "HPC=L40S algo=me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=4096"
-  # - "HPC=L40S algo=me seed=\$RANDOM env=hopper_uni env.episode_length=250 batch_size=4096"
-  # - "HPC=L40S algo=me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=4096"
-  # - "HPC=L40S algo=me seed=\$RANDOM env=anttrap_omni env.episode_length=250 batch_size=4096"
+
+  - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=4096 algo.proportion_mutation_ga=0 num_iterations=250"
+  - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=4096 algo.proportion_mutation_ga=0 num_iterations=250"
+  - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=hopper_uni env.episode_length=250 batch_size=4096 algo.proportion_mutation_ga=0 num_iterations=250"
+  - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=4096 algo.proportion_mutation_ga=0 num_iterations=250"
+  - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=anttrap_omni env.episode_length=250 batch_size=4096 algo.proportion_mutation_ga=0 num_iterations=250"
+
+  - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=4096 algo.proportion_mutation_ga=0.25 num_iterations=250"
+  - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=4096 algo.proportion_mutation_ga=0.25 num_iterations=250"
+  - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=hopper_uni env.episode_length=250 batch_size=4096 algo.proportion_mutation_ga=0.25 num_iterations=250"
+  - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=4096 algo.proportion_mutation_ga=0.25 num_iterations=250"
+  - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=anttrap_omni env.episode_length=250 batch_size=4096 algo.proportion_mutation_ga=0.25 num_iterations=250"
+
+  - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=4096 algo.proportion_mutation_ga=0.75 num_iterations=250"
+  - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=4096 algo.proportion_mutation_ga=0.75 num_iterations=250"
+  - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=hopper_uni env.episode_length=250 batch_size=4096 algo.proportion_mutation_ga=0.75 num_iterations=250"
+  - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=4096 algo.proportion_mutation_ga=0.75 num_iterations=250"
+  - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=anttrap_omni env.episode_length=250 batch_size=4096 algo.proportion_mutation_ga=0.75 num_iterations=250"
+
+
+  - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=4096 algo.proportion_mutation_ga=1 num_iterations=250"
+  - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=4096 algo.proportion_mutation_ga=1 num_iterations=250"
+  - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=hopper_uni env.episode_length=250 batch_size=4096 algo.proportion_mutation_ga=1 num_iterations=250"
+  - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=4096 algo.proportion_mutation_ga=1 num_iterations=250"
+  - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=anttrap_omni env.episode_length=250 batch_size=4096 algo.proportion_mutation_ga=1 num_iterations=250"
+
+  
+
+
+  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=4096 algo.greedy=0.5"
+  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=4096 algo.greedy=0.5"
+  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=hopper_uni env.episode_length=250 batch_size=4096 algo.greedy=0.5"
+  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=4096 algo.greedy=0.5"
+  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=anttrap_omni env.episode_length=250 batch_size=4096 algo.greedy=0.5"
+
+  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=4096 algo.greedy=1"
+  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=4096 algo.greedy=1"
+  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=hopper_uni env.episode_length=250 batch_size=4096 algo.greedy=1"
+  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=4096 algo.greedy=1"
+  # - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=anttrap_omni env.episode_length=250 batch_size=4096 algo.greedy=1"
+
+  # - "HPC=L40S algo=me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=8192"
+  # - "HPC=L40S algo=me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=8192"
+  # - "HPC=L40S algo=me seed=\$RANDOM env=hopper_uni env.episode_length=250 batch_size=8192"
+  # - "HPC=L40S algo=me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=8192"
+  # - "HPC=L40S algo=me seed=\$RANDOM env=anttrap_omni env.episode_length=250 batch_size=8192"
 
 
   # - "seed=\$RANDOM HPC=L40S algo=memes env=anttrap_omni env.episode_length=250 batch_size=16 algo.sample_number=512 algo.num_in_optimizer_steps=1 algo.scan_novelty=8192 num_iterations=125"
@@ -239,37 +280,106 @@ args:
   # - "seed=\$RANDOM HPC=L40S algo=memes env=hopper_uni env.episode_length=250 batch_size=16 algo.sample_number=512 algo.num_in_optimizer_steps=1 algo.scan_novelty=8192 num_iterations=125"
 
 
-  # TIME
+  # AC strategies Scalability
 
-  - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=walker2d_uni env.episode_length=1 batch_size=1024 num_iterations=1000"
-  - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_uni env.episode_length=1 batch_size=1024 num_iterations=1000"
-  - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=hopper_uni env.episode_length=1 batch_size=1024 num_iterations=1000"
-  - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=ant_omni env.episode_length=1 batch_size=1024 num_iterations=1000"
-  - "HPC=L40S algo=mcpg_me seed=\$RANDOM env=anttrap_omni env.episode_length=1 batch_size=1024 num_iterations=1000"
+  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=512 algo.ga_batch_size=256 algo.qpg_batch_size=128 algo.ai_batch_size=128 algo.replay_buffer_size=2_000_000 num_iterations=2000 algo.num_critic_training_steps=6000"
+  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=512 algo.ga_batch_size=256 algo.qpg_batch_size=128 algo.ai_batch_size=128 algo.replay_buffer_size=2_000_000 num_iterations=2000 algo.num_pg_training_steps=300"
+  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=512 algo.ga_batch_size=256 algo.qpg_batch_size=128 algo.ai_batch_size=128 algo.replay_buffer_size=2_000_000 num_iterations=2000 algo.batch_size=200"
+  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=1024 algo.ga_batch_size=512 algo.qpg_batch_size=256 algo.ai_batch_size=256 algo.replay_buffer_size=4_000_000 num_iterations=1000 algo.num_critic_training_steps=12000"
+  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=1024 algo.ga_batch_size=512 algo.qpg_batch_size=256 algo.ai_batch_size=256 algo.replay_buffer_size=4_000_000 num_iterations=1000 algo.num_pg_training_steps=600"
+  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=1024 algo.ga_batch_size=512 algo.qpg_batch_size=256 algo.ai_batch_size=256 algo.replay_buffer_size=4_000_000 num_iterations=1000 algo.batch_size=400"
+  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=2048 algo.ga_batch_size=1024 algo.qpg_batch_size=512 algo.ai_batch_size=512 algo.replay_buffer_size=8_000_000 num_iterations=500 algo.num_critic_training_steps=24000"
+  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=2048 algo.ga_batch_size=1024 algo.qpg_batch_size=512 algo.ai_batch_size=512 algo.replay_buffer_size=8_000_000 num_iterations=500 algo.num_pg_training_steps=1200"
+  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=2048 algo.ga_batch_size=1024 algo.qpg_batch_size=512 algo.ai_batch_size=512 algo.replay_buffer_size=8_000_000 num_iterations=500 algo.batch_size=800"
+  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=4096 algo.ga_batch_size=2048 algo.qpg_batch_size=1024 algo.ai_batch_size=1024 algo.replay_buffer_size=16_000_000 num_iterations=250 algo.num_critic_training_steps=48000"
+  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=4096 algo.ga_batch_size=2048 algo.qpg_batch_size=1024 algo.ai_batch_size=1024 algo.replay_buffer_size=16_000_000 num_iterations=250 algo.num_pg_training_steps=2400"
+  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=4096 algo.ga_batch_size=2048 algo.qpg_batch_size=1024 algo.ai_batch_size=1024 algo.replay_buffer_size=16_000_000 num_iterations=250 algo.batch_size=1600"
+  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=8192 algo.ga_batch_size=4096 algo.qpg_batch_size=2048 algo.ai_batch_size=2048 algo.replay_buffer_size=32_000_000 num_iterations=125 algo.num_critic_training_steps=96000"
+  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=8192 algo.ga_batch_size=4096 algo.qpg_batch_size=2048 algo.ai_batch_size=2048 algo.replay_buffer_size=32_000_000 num_iterations=125 algo.num_pg_training_steps=4800"
+  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=8192 algo.ga_batch_size=4096 algo.qpg_batch_size=2048 algo.ai_batch_size=2048 algo.replay_buffer_size=32_000_000 num_iterations=125 algo.batch_size=3200"
 
-  - "HPC=L40S algo=dcg_me seed=\$RANDOM env=walker2d_uni env.episode_length=1 batch_size=1024 num_iterations=1000 algo.replay_buffer_size=4_000_000 algo.ga_batch_size=512 algo.qpg_batch_size=256 algo.ai_batch_size=256"
-  - "HPC=L40S algo=dcg_me seed=\$RANDOM env=ant_uni env.episode_length=1 batch_size=1024 num_iterations=1000 algo.replay_buffer_size=4_000_000 algo.ga_batch_size=512 algo.qpg_batch_size=256 algo.ai_batch_size=256"
-  - "HPC=L40S algo=dcg_me seed=\$RANDOM env=hopper_uni env.episode_length=1 batch_size=1024 num_iterations=1000 algo.replay_buffer_size=4_000_000 algo.ga_batch_size=512 algo.qpg_batch_size=256 algo.ai_batch_size=256"
-  - "HPC=L40S algo=dcg_me seed=\$RANDOM env=ant_omni env.episode_length=1 batch_size=1024 num_iterations=1000 algo.replay_buffer_size=4_000_000 algo.ga_batch_size=512 algo.qpg_batch_size=256 algo.ai_batch_size=256"
-  - "HPC=L40S algo=dcg_me seed=\$RANDOM env=anttrap_omni env.episode_length=1 batch_size=1024 num_iterations=1000 algo.replay_buffer_size=4_000_000 algo.ga_batch_size=512 algo.qpg_batch_size=256 algo.ai_batch_size=256"
+  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=512 algo.ga_batch_size=256 algo.qpg_batch_size=128 algo.ai_batch_size=128 algo.replay_buffer_size=2_000_000 num_iterations=2000 algo.num_critic_training_steps=6000"
+  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=512 algo.ga_batch_size=256 algo.qpg_batch_size=128 algo.ai_batch_size=128 algo.replay_buffer_size=2_000_000 num_iterations=2000 algo.num_pg_training_steps=300"
+  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=512 algo.ga_batch_size=256 algo.qpg_batch_size=128 algo.ai_batch_size=128 algo.replay_buffer_size=2_000_000 num_iterations=2000 algo.batch_size=200"
+  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=1024 algo.ga_batch_size=512 algo.qpg_batch_size=256 algo.ai_batch_size=256 algo.replay_buffer_size=4_000_000 num_iterations=1000 algo.num_critic_training_steps=12000"
+  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=1024 algo.ga_batch_size=512 algo.qpg_batch_size=256 algo.ai_batch_size=256 algo.replay_buffer_size=4_000_000 num_iterations=1000 algo.num_pg_training_steps=600"
+  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=1024 algo.ga_batch_size=512 algo.qpg_batch_size=256 algo.ai_batch_size=256 algo.replay_buffer_size=4_000_000 num_iterations=1000 algo.batch_size=400"
+  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=2048 algo.ga_batch_size=1024 algo.qpg_batch_size=512 algo.ai_batch_size=512 algo.replay_buffer_size=8_000_000 num_iterations=500 algo.num_critic_training_steps=24000"
+  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=2048 algo.ga_batch_size=1024 algo.qpg_batch_size=512 algo.ai_batch_size=512 algo.replay_buffer_size=8_000_000 num_iterations=500 algo.num_pg_training_steps=1200"
+  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=2048 algo.ga_batch_size=1024 algo.qpg_batch_size=512 algo.ai_batch_size=512 algo.replay_buffer_size=8_000_000 num_iterations=500 algo.batch_size=800"
+  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=4096 algo.ga_batch_size=2048 algo.qpg_batch_size=1024 algo.ai_batch_size=1024 algo.replay_buffer_size=16_000_000 num_iterations=250 algo.num_critic_training_steps=48000"
+  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=4096 algo.ga_batch_size=2048 algo.qpg_batch_size=1024 algo.ai_batch_size=1024 algo.replay_buffer_size=16_000_000 num_iterations=250 algo.num_pg_training_steps=2400"
+  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=4096 algo.ga_batch_size=2048 algo.qpg_batch_size=1024 algo.ai_batch_size=1024 algo.replay_buffer_size=16_000_000 num_iterations=250 algo.batch_size=1600"
+  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=8192 algo.ga_batch_size=4096 algo.qpg_batch_size=2048 algo.ai_batch_size=2048 algo.replay_buffer_size=32_000_000 num_iterations=125 algo.num_critic_training_steps=96000"
+  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=8192 algo.ga_batch_size=4096 algo.qpg_batch_size=2048 algo.ai_batch_size=2048 algo.replay_buffer_size=32_000_000 num_iterations=125 algo.num_pg_training_steps=4800"
+  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=8192 algo.ga_batch_size=4096 algo.qpg_batch_size=2048 algo.ai_batch_size=2048 algo.replay_buffer_size=32_000_000 num_iterations=125 algo.batch_size=3200"
 
-  - "HPC=L40S algo=pga_me seed=\$RANDOM env=walker2d_uni env.episode_length=1 batch_size=1024 num_iterations=1000 algo.replay_buffer_size=4_000_000"
-  - "HPC=L40S algo=pga_me seed=\$RANDOM env=ant_uni env.episode_length=1 batch_size=1024 num_iterations=1000 algo.replay_buffer_size=4_000_000"
-  - "HPC=L40S algo=pga_me seed=\$RANDOM env=hopper_uni env.episode_length=1 batch_size=1024 num_iterations=1000 algo.replay_buffer_size=4_000_000"
-  - "HPC=L40S algo=pga_me seed=\$RANDOM env=ant_omni env.episode_length=1 batch_size=1024 num_iterations=1000 algo.replay_buffer_size=4_000_000"
-  - "HPC=L40S algo=pga_me seed=\$RANDOM env=anttrap_omni env.episode_length=1 batch_size=1024 num_iterations=1000 algo.replay_buffer_size=4_000_000"
+  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=512 algo.ga_batch_size=256 algo.qpg_batch_size=128 algo.ai_batch_size=128 algo.replay_buffer_size=2_000_000 num_iterations=2000 algo.num_critic_training_steps=6000"
+  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=512 algo.ga_batch_size=256 algo.qpg_batch_size=128 algo.ai_batch_size=128 algo.replay_buffer_size=2_000_000 num_iterations=2000 algo.num_pg_training_steps=300"
+  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=512 algo.ga_batch_size=256 algo.qpg_batch_size=128 algo.ai_batch_size=128 algo.replay_buffer_size=2_000_000 num_iterations=2000 algo.batch_size=200"
+  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=1024 algo.ga_batch_size=512 algo.qpg_batch_size=256 algo.ai_batch_size=256 algo.replay_buffer_size=4_000_000 num_iterations=1000 algo.num_critic_training_steps=12000"
+  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=1024 algo.ga_batch_size=512 algo.qpg_batch_size=256 algo.ai_batch_size=256 algo.replay_buffer_size=4_000_000 num_iterations=1000 algo.num_pg_training_steps=600"
+  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=1024 algo.ga_batch_size=512 algo.qpg_batch_size=256 algo.ai_batch_size=256 algo.replay_buffer_size=4_000_000 num_iterations=1000 algo.batch_size=400"
+  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=2048 algo.ga_batch_size=1024 algo.qpg_batch_size=512 algo.ai_batch_size=512 algo.replay_buffer_size=8_000_000 num_iterations=500 algo.num_critic_training_steps=24000"
+  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=2048 algo.ga_batch_size=1024 algo.qpg_batch_size=512 algo.ai_batch_size=512 algo.replay_buffer_size=8_000_000 num_iterations=500 algo.num_pg_training_steps=1200"
+  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=2048 algo.ga_batch_size=1024 algo.qpg_batch_size=512 algo.ai_batch_size=512 algo.replay_buffer_size=8_000_000 num_iterations=500 algo.batch_size=800"
+  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=4096 algo.ga_batch_size=2048 algo.qpg_batch_size=1024 algo.ai_batch_size=1024 algo.replay_buffer_size=16_000_000 num_iterations=250 algo.num_critic_training_steps=48000"
+  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=4096 algo.ga_batch_size=2048 algo.qpg_batch_size=1024 algo.ai_batch_size=1024 algo.replay_buffer_size=16_000_000 num_iterations=250 algo.num_pg_training_steps=2400"
+  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=4096 algo.ga_batch_size=2048 algo.qpg_batch_size=1024 algo.ai_batch_size=1024 algo.replay_buffer_size=16_000_000 num_iterations=250 algo.batch_size=1600"
+  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=8192 algo.ga_batch_size=4096 algo.qpg_batch_size=2048 algo.ai_batch_size=2048 algo.replay_buffer_size=32_000_000 num_iterations=125 algo.num_critic_training_steps=96000"
+  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=8192 algo.ga_batch_size=4096 algo.qpg_batch_size=2048 algo.ai_batch_size=2048 algo.replay_buffer_size=32_000_000 num_iterations=125 algo.num_pg_training_steps=4800"
+  # - "HPC=L40S algo=dcg_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=8192 algo.ga_batch_size=4096 algo.qpg_batch_size=2048 algo.ai_batch_size=2048 algo.replay_buffer_size=32_000_000 num_iterations=125 algo.batch_size=3200"
 
-  - "HPC=L40S algo=me seed=\$RANDOM env=walker2d_uni env.episode_length=1 batch_size=1024 num_iterations=1000"
-  - "HPC=L40S algo=me seed=\$RANDOM env=ant_uni env.episode_length=1 batch_size=1024 num_iterations=1000"
-  - "HPC=L40S algo=me seed=\$RANDOM env=hopper_uni env.episode_length=1 batch_size=1024 num_iterations=1000"
-  - "HPC=L40S algo=me seed=\$RANDOM env=ant_omni env.episode_length=1 batch_size=1024 num_iterations=1000"
-  - "HPC=L40S algo=me seed=\$RANDOM env=anttrap_omni env.episode_length=1 batch_size=1024 num_iterations=1000"
 
-  - "seed=\$RANDOM HPC=L40S algo=memes env=anttrap_omni env.episode_length=1 batch_size=16 algo.sample_number=512 algo.num_in_optimizer_steps=1 algo.scan_novelty=8192 num_iterations=125"
-  - "seed=\$RANDOM HPC=L40S algo=memes env=ant_omni env.episode_length=1 batch_size=16 algo.sample_number=512 algo.num_in_optimizer_steps=1 algo.scan_novelty=8192 num_iterations=125"
-  - "seed=\$RANDOM HPC=L40S algo=memes env=ant_uni env.episode_length=1 batch_size=16 algo.sample_number=512 algo.num_in_optimizer_steps=1 algo.scan_novelty=8192 num_iterations=125"
-  - "seed=\$RANDOM HPC=L40S algo=memes env=walker2d_uni env.episode_length=1 batch_size=16 algo.sample_number=512 algo.num_in_optimizer_steps=1 algo.scan_novelty=8192 num_iterations=125"
-  - "seed=\$RANDOM HPC=L40S algo=memes env=hopper_uni env.episode_length=1 batch_size=16 algo.sample_number=512 algo.num_in_optimizer_steps=1 algo.scan_novelty=8192 num_iterations=125"
+  # - "HPC=L40S algo=pga_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=512 algo.replay_buffer_size=2_000_000 num_iterations=2000 algo.num_critic_training_steps=6000"
+  # # - "HPC=L40S algo=pga_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=512 algo.replay_buffer_size=2_000_000 num_iterations=2000 algo.num_pg_training_steps=300"
+  # - "HPC=L40S algo=pga_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=512 algo.replay_buffer_size=2_000_000 num_iterations=2000 algo.batch_size=200"
+  # - "HPC=L40S algo=pga_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=1024 algo.replay_buffer_size=4_000_000 num_iterations=1000 algo.num_critic_training_steps=12000"
+  # # - "HPC=L40S algo=pga_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=1024 algo.replay_buffer_size=4_000_000 num_iterations=1000 algo.num_pg_training_steps=600"
+  # - "HPC=L40S algo=pga_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=1024 algo.replay_buffer_size=4_000_000 num_iterations=1000 algo.batch_size=400"
+  # - "HPC=L40S algo=pga_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=2048 algo.replay_buffer_size=8_000_000 num_iterations=500 algo.num_critic_training_steps=24000"
+  # # - "HPC=L40S algo=pga_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=2048 algo.replay_buffer_size=8_000_000 num_iterations=500 algo.num_pg_training_steps=1200"
+  # - "HPC=L40S algo=pga_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=2048 algo.replay_buffer_size=8_000_000 num_iterations=500 algo.batch_size=800"
+  # - "HPC=L40S algo=pga_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=4096 algo.replay_buffer_size=16_000_000 num_iterations=250 algo.num_critic_training_steps=48000"
+  # # - "HPC=L40S algo=pga_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=4096 algo.replay_buffer_size=16_000_000 num_iterations=250 algo.num_pg_training_steps=2400"
+  # - "HPC=L40S algo=pga_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=4096 algo.replay_buffer_size=16_000_000 num_iterations=250 algo.batch_size=1600"
+  # - "HPC=L40S algo=pga_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=8192 algo.replay_buffer_size=32_000_000 num_iterations=125 algo.num_critic_training_steps=96000"
+  # # - "HPC=L40S algo=pga_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=8192 algo.replay_buffer_size=32_000_000 num_iterations=125 algo.num_pg_training_steps=4800"
+  # - "HPC=L40S algo=pga_me seed=\$RANDOM env=ant_uni env.episode_length=250 batch_size=8192 algo.replay_buffer_size=32_000_000 num_iterations=125 algo.batch_size=3200"
+
+  # - "HPC=L40S algo=pga_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=512 algo.replay_buffer_size=2_000_000 num_iterations=2000 algo.num_critic_training_steps=6000"
+  # # - "HPC=L40S algo=pga_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=512 algo.replay_buffer_size=2_000_000 num_iterations=2000 algo.num_pg_training_steps=300"
+  # - "HPC=L40S algo=pga_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=512 algo.replay_buffer_size=2_000_000 num_iterations=2000 algo.batch_size=200"
+  # - "HPC=L40S algo=pga_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=1024 algo.replay_buffer_size=4_000_000 num_iterations=1000 algo.num_critic_training_steps=12000"
+  # # - "HPC=L40S algo=pga_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=1024 algo.replay_buffer_size=4_000_000 num_iterations=1000 algo.num_pg_training_steps=600"
+  # - "HPC=L40S algo=pga_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=1024 algo.replay_buffer_size=4_000_000 num_iterations=1000 algo.batch_size=400"
+  # - "HPC=L40S algo=pga_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=2048 algo.replay_buffer_size=8_000_000 num_iterations=500 algo.num_critic_training_steps=24000"
+  # # - "HPC=L40S algo=pga_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=2048 algo.replay_buffer_size=8_000_000 num_iterations=500 algo.num_pg_training_steps=1200"
+  # - "HPC=L40S algo=pga_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=2048 algo.replay_buffer_size=8_000_000 num_iterations=500 algo.batch_size=800"
+  # - "HPC=L40S algo=pga_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=4096 algo.replay_buffer_size=16_000_000 num_iterations=250 algo.num_critic_training_steps=48000"
+  # # - "HPC=L40S algo=pga_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=4096 algo.replay_buffer_size=16_000_000 num_iterations=250 algo.num_pg_training_steps=2400"
+  # - "HPC=L40S algo=pga_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=4096 algo.replay_buffer_size=16_000_000 num_iterations=250 algo.batch_size=1600"
+  # - "HPC=L40S algo=pga_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=8192 algo.replay_buffer_size=32_000_000 num_iterations=125 algo.num_critic_training_steps=96000"
+  # # - "HPC=L40S algo=pga_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=8192 algo.replay_buffer_size=32_000_000 num_iterations=125 algo.num_pg_training_steps=4800"
+  # - "HPC=L40S algo=pga_me seed=\$RANDOM env=walker2d_uni env.episode_length=250 batch_size=8192 algo.replay_buffer_size=32_000_000 num_iterations=125 algo.batch_size=3200"
+
+  # - "HPC=L40S algo=pga_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=512 algo.replay_buffer_size=2_000_000 num_iterations=2000 algo.num_critic_training_steps=6000"
+  # # - "HPC=L40S algo=pga_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=512 algo.replay_buffer_size=2_000_000 num_iterations=2000 algo.num_pg_training_steps=300"
+  # - "HPC=L40S algo=pga_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=512 algo.replay_buffer_size=2_000_000 num_iterations=2000 algo.batch_size=200"
+  # - "HPC=L40S algo=pga_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=1024 algo.replay_buffer_size=4_000_000 num_iterations=1000 algo.num_critic_training_steps=12000"
+  # # - "HPC=L40S algo=pga_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=1024 algo.replay_buffer_size=4_000_000 num_iterations=1000 algo.num_pg_training_steps=600"
+  # - "HPC=L40S algo=pga_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=1024 algo.replay_buffer_size=4_000_000 num_iterations=1000 algo.batch_size=400"
+  # - "HPC=L40S algo=pga_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=2048 algo.replay_buffer_size=8_000_000 num_iterations=500 algo.num_critic_training_steps=24000"
+  # # - "HPC=L40S algo=pga_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=2048 algo.replay_buffer_size=8_000_000 num_iterations=500 algo.num_pg_training_steps=1200"
+  # - "HPC=L40S algo=pga_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=2048 algo.replay_buffer_size=8_000_000 num_iterations=500 algo.batch_size=800"
+  # - "HPC=L40S algo=pga_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=4096 algo.replay_buffer_size=16_000_000 num_iterations=250 algo.num_critic_training_steps=48000"
+  # # - "HPC=L40S algo=pga_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=4096 algo.replay_buffer_size=16_000_000 num_iterations=250 algo.num_pg_training_steps=2400"
+  # - "HPC=L40S algo=pga_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=4096 algo.replay_buffer_size=16_000_000 num_iterations=250 algo.batch_size=1600"
+  # - "HPC=L40S algo=pga_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=8192 algo.replay_buffer_size=32_000_000 num_iterations=125 algo.num_critic_training_steps=96000"
+  # # - "HPC=L40S algo=pga_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=8192 algo.replay_buffer_size=32_000_000 num_iterations=125 algo.num_pg_training_steps=4800"
+  # - "HPC=L40S algo=pga_me seed=\$RANDOM env=ant_omni env.episode_length=250 batch_size=8192 algo.replay_buffer_size=32_000_000 num_iterations=125 algo.batch_size=3200"
+
+
 
 
 

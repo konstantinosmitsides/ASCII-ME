@@ -258,6 +258,7 @@ def get_df(results_dir, episode_length):
                 if config.algo.name == "mcpg_me":
                     metrics["proportion_mutation_ga"] = config.algo.proportion_mutation_ga
                     metrics["no_epochs"] = config.algo.no_epochs
+                    metrics['greedy'] = config.algo.greedy
                     
                 if config.algo.name == "me_2":
                     metrics["iso_sigma_2"] = config.algo.iso_sigma_2

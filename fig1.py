@@ -36,27 +36,36 @@ ENV_DICT = {
     "hopper_uni_1000": "Hopper Uni",
 }
 ALGO_LIST = [
-    'mcpg_me',
-    "dcg_me",
-    "pga_me",
-    "me",
-    "memes",
-    'mcpg_only',
+    # 'mcpg_me',
+    #"mcpg_only",
+    #'mcpg_me_05',
+    #'mcpg_me_1',
+    #'mcpg_only',
+    # "mcpg_only_05",
+    #"mcpg_only_1",
+    # "dcg_me",
+    # "pga_me",
+    # "me",
+    # "memes",
     "ppga",
 ]
 
 ALGO_DICT = {
-    "dcg_me": "DCRL",
+    "dcg_me": "DCRL-ME",
     "dcg_me_": "DCRL",
     "dcg_me_gecco": "DCG-MAP-Elites GECCO",
-    "pga_me": "PGA-MAP-Elites",
+    "pga_me": "PGA-ME",
     "qd_pg": "QD-PG",
-    "me": "MAP-Elites",
+    "me": "ME",
     "me_es": "MAP-Elites-ES",
-    "mcpg_me": "MCPG-ME",
+    "mcpg_me": "ASCII-ME",
     "memes": "MEMES",
     "ppga" : "PPGA",
-    "mcpg_only": "MCPG-Only"
+    "mcpg_only": "MCPG-Only",
+    "mcpg_only_05": "MCPG-Only (0.5)",
+    "mcpg_only_1": "MCPG-Only (1)",
+    "mcpg_me_05": "MCPG-ME (0.5)",
+    "mcpg_me_1": "MCPG-ME (1)",
 }
 
 XLABEL = "Time (s)"
@@ -64,6 +73,10 @@ XLABEL = "Time (s)"
 def filter(df_row):
     if df_row["algo"] == "pga_me":
         if df_row["batch_size"] != 1024:
+            return 
+
+    if df_row["algo"] == "me":
+        if df_row["batch_size"] != 8192:
             return 
         
     if df_row["algo"] == "ppga":
@@ -74,11 +87,39 @@ def filter(df_row):
         if df_row["batch_size"] != 8192:
             return 
         
+    if df_row["algo"] == "dcg_me":
+        if df_row["batch_size"] != 2048:
+            return 
+        
     if df_row["algo"] == "mcpg_me":
-        if df_row["proportion_mutation_ga"] == 0:
+        if df_row["batch_size"] != 4096:
+            return 
+        
+
+        
+    if df_row["algo"] == "mcpg_me":
+        if df_row["proportion_mutation_ga"] == 0 and df_row["greedy"] == 0:
             return "mcpg_only"
-            
+    if df_row["algo"] == "mcpg_me":
+        if df_row["proportion_mutation_ga"] == 0 and df_row["greedy"] == 0.5:
+            return "mcpg_only_05"
+        
+    if df_row["algo"] == "mcpg_me":
+        if df_row["proportion_mutation_ga"] == 0 and df_row["greedy"] == 1:
+            return "mcpg_only_1"
+        
+
+    if df_row["algo"] == "mcpg_me":
+        if df_row["proportion_mutation_ga"] == 0.5 and df_row["greedy"] == 0.5:
+            return "mcpg_me_05"
+        
+    if df_row["algo"] == "mcpg_me":
+        if df_row["proportion_mutation_ga"] == 0.5 and df_row["greedy"] == 1:
+            return "mcpg_me_1"
+        
+
     return df_row["algo"]
+
 
 def simple_moving_average(data, window_size):
     """Calculates the simple moving average over a specified window size."""
@@ -117,11 +158,16 @@ def customize_axis(ax):
     ax.spines["right"].set_visible(False)
     # Add grid
     ax.grid(which="major", axis="y", color="0.9")
+
+    formatter = ScalarFormatter(useMathText=True)
+    formatter.set_scientific(True)
+    formatter.set_powerlimits((0, 0))
+    ax.yaxis.set_major_formatter(formatter)
     return ax
 
 def plot(final_df, raw_df):
     # Create subplots
-    fig, axes = plt.subplots(nrows=3, ncols=len(ENV_LIST), sharex=True, squeeze=False, figsize=(25, 10))
+    fig, axes = plt.subplots(nrows=3, ncols=len(ENV_LIST), sharex=True, squeeze=False, figsize=(25 * 0.85, 10 * 0.7))
 
     # Create formatter
     formatter = ScalarFormatter(useMathText=True)
@@ -181,7 +227,7 @@ def plot(final_df, raw_df):
             ax=axes[0, col],
         )
         if col == 0:
-            axes[0, col].set_ylabel("QD score")
+            axes[0, col].set_ylabel("QD Score")
         else:
             axes[0, col].set_ylabel(None)
         customize_axis(axes[0, col])
@@ -204,7 +250,12 @@ def plot(final_df, raw_df):
             axes[1, col].set_ylabel("Coverage")
         else:
             axes[1, col].set_ylabel(None)
-        customize_axis(axes[1, col])
+        # Remove spines
+        axes[1, col].spines["top"].set_visible(False)
+        axes[1, col].spines["right"].set_visible(False)
+        # Add grid
+        axes[1, col].grid(which="major", axis="y", color="0.9")
+        #customize_axis(axes[1, col])
 
         # Max fitness (bottom row)
         if col == 0:
@@ -379,7 +430,7 @@ def plot(final_df, raw_df):
 
     # Legend for the algorithms
     fig.legend(ax.get_lines(), [ALGO_DICT.get(algo, algo) for algo in ALGO_LIST],
-               loc="lower center", bbox_to_anchor=(0.5, -0.1), ncols=len(ALGO_LIST), frameon=False)
+               loc="lower center", bbox_to_anchor=(0.5, -0.04), ncols=len(ALGO_LIST), frameon=False)
     
     # Create a separate legend for the checkpoints
     handles, labels = axes[0,0].get_legend_handles_labels()
@@ -393,14 +444,14 @@ def plot(final_df, raw_df):
     # Add the checkpoint legend below the main legend (only if checkpoints are present)
     if checkpoint_handles:
         fig.legend(checkpoint_handles, checkpoint_labels, loc="lower center", 
-                   bbox_to_anchor=(0.5, -0.2), ncols=len(checkpoint_labels), frameon=False)
+                   bbox_to_anchor=(0.5, -0.1), ncols=len(checkpoint_labels), frameon=False)
 
     # Aesthetic
     fig.align_ylabels(axes)
     fig.tight_layout()
 
     # Save plot
-    fig.savefig("fig1/output/plot_main_time_ppga.png", bbox_inches="tight")
+    fig.savefig("ah/output/fig1.pdf", bbox_inches="tight")
     plt.close()
 
 if __name__ == "__main__":
@@ -409,7 +460,7 @@ if __name__ == "__main__":
     matplotlib.rcParams['ps.fonttype'] = 42
     plt.rc("font", size=16)
 
-    results_dir = Path("fig1/output/")
+    results_dir = Path("ah/output/")
     EPISODE_LENGTH = 250
     df = get_df(results_dir, EPISODE_LENGTH)
 

@@ -18,14 +18,17 @@ from utils import get_df
 
 # Define env and algo names
 ENV_LIST = [
-    "ant_omni_250",
-    "anttrap_omni_250",
+    # "ant_omni_250",
+    # "anttrap_omni_250",
     #"humanoid_omni",
+    "hopper_uni_250",
     "walker2d_uni_250",
     #"walker2d_uni_1000",
     #"halfcheetah_uni",
     "ant_uni_250",
-    "hopper_uni_250",
+    "anttrap_omni_250",
+    "ant_omni_250",
+
     #"hopper_uni_1000",
     #"ant_uni_1000",
     #"humanoid_uni",
@@ -52,141 +55,84 @@ BATCH_LIST = [
 ]
 
 ALGO_LIST = [
-    #"mcpg_me",
-    #"mcpg_me__"
-    #"mcpg_me_",
-    #"mcpg_me_no_normalizer",
-    #"mcpg_me_no_baseline",
-    #"mcpg_me_no_ppo_loss",
-    #"dcg_me",
-    #"dcg_me_"
-    #"dcg_me_gecco",
+    'mcpg_me_ga_0_greedy_0',
+    'mcpg_me_ga_25_greedy_0',
+    'mcpg_me',
+    'mcpg_me_ga_75_greedy_0',
+    'mcpg_me_ga_1_greedy_0',
+    # 'mcpg_me_1',
     #"pga_me",
-    #"qd_pg",
-    #"me_es",
-    #"memes",
-    #"me",
-    #"me_2",
-    "mcpg_me_fixed",
 ]
 
-NEW_ALGO_LIST = [
-    #"mcpg_me_",
-    #"mcpg_me_0",
-    #"mcpg_me_25",
-    #"mcpg_me_50",
-    #"mcpg_me_75",
-    # "mcpg_me_4",
-    # "mcpg_me_8",
-    # "mcpg_me_16",
-    # "mcpg_me_32",
-    #"mcpg_me_unif_0",
-    #"mcpg_me_unif_05",
-    #"mcpg_me_unif_1_cos_sim",
-    #"mcpg_me_unif_1_not_cos_sim",
-    #"mcpg_me_no_clipping",
-    #"mcpg_me_normal",
-    "mcpg_me_clip_1",
-    "mcpg_me_clip_2",
-    "mcpg_me_clip_3",
-    "mcpg_me_no_clip_05",
-    "mcpg_me_no_clip_1",
-]
+
 
 ALGO_DICT = {
-    "me_0.05_0.05": "ME (0.05, 0.05)",
-    "me_0.5_0.05": "ME (0.5, 0.05)",
-    "me_0.005_0.5": "ME (0.005, 0.5)",
-    "me_0.005_1.0": "ME (0.005, 1.0)",
-    "me_0.05_0.5": "ME (0.05, 0.5)",
-    "me_0.5_1.0": "ME (0.5, 1.0)",
-    "dcg_me": "DCRL-AI-only",
+    "dcg_me": "DCRL",
     "dcg_me_": "DCRL",
     "dcg_me_gecco": "DCG-MAP-Elites GECCO",
     "pga_me": "PGA-MAP-Elites",
     "qd_pg": "QD-PG",
     "me": "MAP-Elites",
     "me_es": "MAP-Elites-ES",
-    "mcpg_me": "MCPG-ME",
+    "mcpg_me": "50% GA (ASCII-ME)",
+    "mcpg_me_ga_0_greedy_0": "0% GA",
+    "mcpg_me_ga_25_greedy_0": "25% GA",
+    "mcpg_me_ga_75_greedy_0": "75% GA",
+    "mcpg_me_ga_1_greedy_0": "100% GA",
     "memes": "MEMES",
-    "mcpg_me_no_normalizer": "Ablation 1",
-    "mcpg_me_no_baseline": "Ablation 2",
-    "mcpg_me_no_ppo_loss": "Ablation 3",
-    "mcpg_me_": "MCPG-ME old",
-    #"mcpg_me_": "MCPG-ME orthogonal",
-    "mcpg_me_fixed": "MCPG-ME fixed",
-    "mcpg_me_orth_0_cos_sim": "MCPG-ME orth 0 cos_sim",
-    "mcpg_me_orth_0_not_cos_sim": "MCPG-ME orth 0 not_cos_sim",
-    "mcpg_me_orth_05": "MCPG-ME orth 0.5",
-    "mcpg_me_unif_0": "MCPG-ME unif 0",
-    "mcpg_me_unif_05": "MCPG-ME unif 0.5",
-    "mcpg_me_unif_1_cos_sim": "MCPG-ME unif 1 cos_sim",
-    "mcpg_me_unif_1_not_cos_sim": "MCPG-ME unif 1 not_cos_sim",
-    "mcpg_me_25": "MCPG-ME | 25% GA",
-    "mcpg_me_50": "MCPG-ME | 50% GA",
-    "mcpg_me_75": "MCPG-ME | 75% GA",
-    "mcpg_me_0": "MCPG-ME | 0% GA",
-    "mcpg_me_4": "4 epochs",
-    "mcpg_me_8": "8 epochs",
-    "mcpg_me_16": "16 epochs",
-    "mcpg_me_32": "32 epoch",
-    "mcpg_me_no_clipping": "MCPG-ME no clip",
-    "mcpg_me_normal": "MCPG-ME with clip",
-    "mcpg_me_clip_1": "clip 1",
-    "mcpg_me_clip_2": "clip 2",
-    "mcpg_me_clip_3": "clip 3",
-    "mcpg_me_no_clip_05": "no clip 0.5",
-    "mcpg_me_no_clip_1": "no clip 1",
-    
+    "ppga" : "PPGA",
+    "mcpg_only": "MCPG-Only",
+    "mcpg_only_05": "MCPG-Only (0.5)",
+    "mcpg_only_1": "MCPG-Only (1)",
+    "mcpg_me_05": "MCPG-ME (0.5)",
+    "mcpg_me_1": "MCPG-ME (1)",
 }
 
 XLABEL = "Evaluations"
 
 def filter(df_row):
-    if df_row["algo"] == "mcpg_me_fixed":
-        #if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"]:
-        #    return "mcpg_me_orth_0_cos_sim"
+    if df_row["algo"] == "pga_me":
+        if df_row["batch_size"] != 1024:
+            return 
+    if df_row["algo"] == "ppga":
+        if df_row["batch_size"] != 6000:
+            return 
+    if df_row["algo"] == "memes":
+        if df_row["batch_size"] != 8192:
+            return 
+    if df_row["algo"] == "mcpg_me":
+        if df_row["batch_size"] != 4096:
+            return 
+    
+    if df_row["algo"] == "mcpg_me":
+        if df_row["proportion_mutation_ga"] == 0 and df_row["greedy"] == 0:
+            return "mcpg_me_ga_0_greedy_0"
         
-        #if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"] and df_row["no_epochs"] == 4 and df_row["batch_size"] == 1024:
-        #    return "mcpg_me_4"
-        
-        #if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"] and df_row["no_epochs"] == 8 and df_row["batch_size"] == 1024:
-        #    return "mcpg_me_8"
-        
-        #if df_row["init"] == "orthogonal" and df_row["greedy"] == 0 and df_row["cos_sim"] and df_row["no_epochs"] == 16 and df_row["batch_size"] == 1024:
-        #    return "mcpg_me_16"
-        
-        # if df_row["clip_param"] == 0.2 and df_row["std"] == 1:
-        #     return "mcpg_me_clip_1"
+    if df_row["algo"] == "mcpg_me":
+        if df_row["proportion_mutation_ga"] == 0.25 and df_row["greedy"] == 0:
+            return "mcpg_me_ga_25_greedy_0"
 
-        if df_row["clip_param"] == 0.2 and df_row["std"] == 2:
-            return "mcpg_me_clip_2"
+    if df_row["algo"] == "mcpg_me":
+        if df_row["proportion_mutation_ga"] == 0.75 and df_row["greedy"] == 0:
+            return "mcpg_me_ga_75_greedy_0"
         
-        # if df_row["clip_param"] == 0.2 and df_row["std"] == 3:
-        #     return "mcpg_me_clip_3"
-        
-        
-        if df_row["clip_param"] != 0.2 and df_row["std"] == 0.5:
-            return "mcpg_me_no_clip_05"
-        
-        if df_row["clip_param"] != 0.2 and df_row["std"] == 1:
-            return "mcpg_me_no_clip_1"
-        
-        #if df_row["init"] == "orthogonal" and df_row["greedy"] == 0.5:
-        #    return "mcpg_me_orth_05"
-        
-        #if df_row["init"] == "uniform" and df_row["greedy"] == 0:
-        #    return "mcpg_me_unif_0"
-        
-        #if df_row["init"] == "uniform" and df_row["greedy"] == 0.5:
-        #    return "mcpg_me_unif_05"
-        
-        #if df_row["init"] == "uniform" and df_row["greedy"] == 1 and df_row["cos_sim"]:
-        #    return "mcpg_me_unif_1_cos_sim"
-        
-        #if df_row["init"] == "uniform" and df_row["greedy"] == 1 and not df_row["cos_sim"]:
-        #    return "mcpg_me_unif_1_not_cos_sim"
-            
+    if df_row["algo"] == "mcpg_me":
+        if df_row["proportion_mutation_ga"] == 1 and df_row["greedy"] == 0:
+            return "mcpg_me_ga_1_greedy_0"
+
+
+    if df_row["algo"] == "mcpg_me":
+        if df_row["proportion_mutation_ga"] == 0 and df_row["greedy"] == 0.5:
+            return "mcpg_me_ga_0_greedy_05"
+    if df_row["algo"] == "mcpg_me":
+        if df_row["proportion_mutation_ga"] == 0 and df_row["greedy"] == 1:
+            return "mcpg_me_ga_0_greedy_1"
+    if df_row["algo"] == "mcpg_me":
+        if df_row["proportion_mutation_ga"] == 0.5 and df_row["greedy"] == 0.5:
+            return "mcpg_me_ga_05_greedy_05"
+    if df_row["algo"] == "mcpg_me":
+        if df_row["proportion_mutation_ga"] == 0.5 and df_row["greedy"] == 1:
+            return "mcpg_me_ga_05_greedy_1"
     return df_row["algo"]
 
 
@@ -204,11 +150,11 @@ def customize_axis(ax):
 
 
 def plot(df):
-    # Create subplots
-    fig, axes = plt.subplots(nrows=3, ncols=len(ENV_LIST), sharex=True, squeeze=False, figsize=(25, 10))
 
-    # Create formatter
-    #x_ticks = np.arange(0, 1_000_001, 500_000)
+    fig, axes = plt.subplots(nrows=1, ncols=len(ENV_LIST), sharex=True, squeeze=False, figsize=(25, 4))
+    color_palette = sns.color_palette("viridis", len(ALGO_LIST))
+
+
     formatter = ScalarFormatter(useMathText=True)
     formatter.set_scientific(True)
     formatter.set_powerlimits((0, 0))
@@ -221,7 +167,6 @@ def plot(df):
 
         # Set the x label and formatter for the column
         axes[0, col].set_xlabel(XLABEL)
-        #axes[2, col].set_xticks(x_ticks)
         axes[0, col].xaxis.set_major_formatter(formatter)
 
         # Get df for the current env
@@ -235,7 +180,8 @@ def plot(df):
             x="num_evaluations",
             y="qd_score",
             hue="algo",
-            hue_order=NEW_ALGO_LIST,
+            hue_order=ALGO_LIST,
+            palette=color_palette,
             estimator=np.median,
             errorbar=lambda x: (np.quantile(x, 0.25), np.quantile(x, 0.75)),
             legend=False,
@@ -250,69 +196,127 @@ def plot(df):
         # Customize axis
         customize_axis(axes[0, col])
 
-        # Coverage
-        axes[1, col].set_ylim(0., 1.05)
-        axes[1, col].yaxis.set_major_formatter(PercentFormatter(1))
-
-        sns.lineplot(
-            df_plot,
-            x="num_evaluations",
-            y="coverage",
-            hue="algo",
-            hue_order=NEW_ALGO_LIST,
-            estimator=np.median,
-            errorbar=lambda x: (np.quantile(x, 0.25), np.quantile(x, 0.75)),
-            legend=False,
-            ax=axes[1, col],
-        )
-        axes[1, col].xaxis.set_major_formatter(formatter)
-
-
-        if col == 0:
-            axes[1, col].set_ylabel("Coverage")
-        else:
-            axes[1, col].set_ylabel(None)
-
-        # Customize axis
-        customize_axis(axes[1, col])
-
-        # Max fitness
-        ax = sns.lineplot(  # store ax for legend
-            df_plot,
-            x="num_evaluations",
-            y="max_fitness",
-            hue="algo",
-            hue_order=NEW_ALGO_LIST,
-            estimator=np.median,
-            errorbar=lambda x: (np.quantile(x, 0.25), np.quantile(x, 0.75)),
-            legend=False,
-            ax=axes[2, col],
-        )
-
-        if col == 0:
-            axes[2, col].set_ylabel("Max Fitness")
-        else:
-            axes[2, col].set_ylabel(None)
-
-        # Customize axis
-        customize_axis(axes[2, col])
-
     # Legend
-    #fig.legend(ax.get_lines(), [ALGO_DICT[algo] for algo in ALGO_LIST], loc="lower center", bbox_to_anchor=(0.5, -0.03), ncols=len(ALGO_LIST), frameon=False)
-    colors = sns.color_palette(n_colors=len(NEW_ALGO_LIST))  # Get a color palette with 3 distinct colors
-    #patches = [mpatches.Patch(color=colors[i], label=ALGO_DICT[algo]) for i, algo in enumerate(ALGO_LIST)]
-    #fig.legend(ax_.get_lines(), [ALGO_DICT[algo] for algo in ALGO_LIST], loc="lower center", bbox_to_anchor=(0.5, -0.03), ncols=len(ALGO_LIST), frameon=False)
-    #fig.legend(handles=patches, loc='lower center', bbox_to_anchor=(0.5, -0.07), ncols=len(ALGO_LIST), frameon=False)
-    patches = [mlines.Line2D([], [], color=colors[i], label=ALGO_DICT[algo], linewidth=2.2, linestyle='-') for i, algo in enumerate(NEW_ALGO_LIST)]
-    fig.legend(handles=patches, loc='lower center', bbox_to_anchor=(0.5, -0.03), ncols=len(NEW_ALGO_LIST), frameon=False)
+    colors = sns.color_palette(palette=color_palette,n_colors=len(ALGO_LIST))
+    patches = [mlines.Line2D([], [], color=colors[i], label=ALGO_DICT[algo], linewidth=2.2, linestyle='-') for i, algo in enumerate(ALGO_LIST)]
+    fig.legend(handles=patches, loc='lower center', bbox_to_anchor=(0.5, -0.1), ncols=len(ALGO_LIST), frameon=False)
+
     # Aesthetic
     fig.align_ylabels(axes)
     fig.tight_layout()
 
     # Save plot
-    fig.savefig("final_tuning_pt2/output/plot_main.png", bbox_inches="tight")
-    #fig.savefig("ablation/output/plot_main.pdf", bbox_inches="tight")
+    fig.savefig("fig4/output/GA_ablation.png", bbox_inches="tight")
     plt.close()
+    # # Create subplots
+    # fig, axes = plt.subplots(nrows=3, ncols=len(ENV_LIST), sharex=True, squeeze=False, figsize=(25, 10))
+
+    # # Create formatter
+    # #x_ticks = np.arange(0, 1_000_001, 500_000)
+    # formatter = ScalarFormatter(useMathText=True)
+    # formatter.set_scientific(True)
+    # formatter.set_powerlimits((0, 0))
+
+    # for col, env in enumerate(ENV_LIST):
+    #     print(env)
+
+    #     # Set title for the column
+    #     axes[0, col].set_title(ENV_DICT[env])
+
+    #     # Set the x label and formatter for the column
+    #     axes[0, col].set_xlabel(XLABEL)
+    #     #axes[2, col].set_xticks(x_ticks)
+    #     axes[0, col].xaxis.set_major_formatter(formatter)
+
+    #     # Get df for the current env
+    #     df_plot = df[df["env"] == env]
+
+    #     # QD score
+    #     axes[0, col].yaxis.set_major_formatter(formatter)
+
+    #     sns.lineplot(
+    #         df_plot,
+    #         x="num_evaluations",
+    #         y="qd_score",
+    #         hue="algo",
+    #         hue_order=ALGO_LIST,
+    #         estimator=np.median,
+    #         errorbar=lambda x: (np.quantile(x, 0.25), np.quantile(x, 0.75)),
+    #         legend=False,
+    #         ax=axes[0, col],
+    #     )
+
+    #     if col == 0:
+    #         axes[0, col].set_ylabel("QD score")
+    #     else:
+    #         axes[0, col].set_ylabel(None)
+
+    #     # Customize axis
+    #     customize_axis(axes[0, col])
+
+    #     # Coverage
+    #     axes[1, col].set_ylim(0., 1.05)
+    #     axes[1, col].yaxis.set_major_formatter(PercentFormatter(1))
+
+    #     sns.lineplot(
+    #         df_plot,
+    #         x="num_evaluations",
+    #         y="coverage",
+    #         hue="algo",
+    #         hue_order=ALGO_LIST,
+    #         estimator=np.median,
+    #         errorbar=lambda x: (np.quantile(x, 0.25), np.quantile(x, 0.75)),
+    #         legend=False,
+    #         ax=axes[1, col],
+    #     )
+    #     axes[1, col].xaxis.set_major_formatter(formatter)
+
+
+    #     if col == 0:
+    #         axes[1, col].set_ylabel("Coverage")
+    #     else:
+    #         axes[1, col].set_ylabel(None)
+
+    #     # Customize axis
+    #     customize_axis(axes[1, col])
+
+    #     # Max fitness
+    #     ax = sns.lineplot(  # store ax for legend
+    #         df_plot,
+    #         x="num_evaluations",
+    #         y="max_fitness",
+    #         hue="algo",
+    #         hue_order=ALGO_LIST,
+    #         estimator=np.median,
+    #         errorbar=lambda x: (np.quantile(x, 0.25), np.quantile(x, 0.75)),
+    #         legend=False,
+    #         ax=axes[2, col],
+    #     )
+
+    #     if col == 0:
+    #         axes[2, col].set_ylabel("Max Fitness")
+    #     else:
+    #         axes[2, col].set_ylabel(None)
+
+    #     # Customize axis
+    #     customize_axis(axes[2, col])
+
+    # # Legend
+    # #fig.legend(ax.get_lines(), [ALGO_DICT[algo] for algo in ALGO_LIST], loc="lower center", bbox_to_anchor=(0.5, -0.03), ncols=len(ALGO_LIST), frameon=False)
+    # colors = sns.color_palette(n_colors=len(ALGO_LIST))  # Get a color palette with 3 distinct colors
+    # #patches = [mpatches.Patch(color=colors[i], label=ALGO_DICT[algo]) for i, algo in enumerate(ALGO_LIST)]
+    # #fig.legend(ax_.get_lines(), [ALGO_DICT[algo] for algo in ALGO_LIST], loc="lower center", bbox_to_anchor=(0.5, -0.03), ncols=len(ALGO_LIST), frameon=False)
+    # #fig.legend(handles=patches, loc='lower center', bbox_to_anchor=(0.5, -0.07), ncols=len(ALGO_LIST), frameon=False)
+    # patches = [mlines.Line2D([], [], color=colors[i], label=ALGO_DICT[algo], linewidth=2.2, linestyle='-') for i, algo in enumerate(ALGO_LIST)]
+    # fig.legend(handles=patches, loc='lower center', bbox_to_anchor=(0.5, -0.03), ncols=len(ALGO_LIST), frameon=False)
+    # # Aesthetic
+    # fig.align_ylabels(axes)
+    # fig.tight_layout()
+
+    # # Save plot
+    # fig.savefig("fig4/output/GA_ablation.png", bbox_inches="tight")
+    # #fig.savefig("ablation/output/plot_main.pdf", bbox_inches="tight")
+    # plt.close()
 
 
 if __name__ == "__main__":
@@ -322,7 +326,7 @@ if __name__ == "__main__":
     plt.rc("font", size=16)
 
     # Create the DataFrame
-    results_dir = Path("final_tuning_pt2/output/")
+    results_dir = Path("fig4/output/")
     #results_dir = Path("ablation/output/")
     #print(results_dir)
     
@@ -331,8 +335,9 @@ if __name__ == "__main__":
     df = get_df(results_dir, EPISODE_LENGTH)
 
     # Filter
+    df['algo'] = df.apply(filter, axis=1)
     df = df[df["algo"].isin(ALGO_LIST)]
-    df = df[df["num_evaluations"] <= 1_001_400]
+    df = df[df["num_evaluations"] <= 1_005_000]
     
     df['algo'] = df.apply(filter, axis=1)
 

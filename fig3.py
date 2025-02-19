@@ -60,9 +60,9 @@ INIT_ALGO_LIST = [
 
 ALGO_LIST = [
     "mcpg_me",
-    "pga_me",
     "dcg_me",
-    #"me",
+    "pga_me",
+    "me",
     #"memes",
 ]
 
@@ -74,13 +74,13 @@ ALGO_DICT = {
     "mcpg_me_0.75": "MCPG-ME 75% GA",
     "mcpg_me_1": "MCPG-ME 100% GA",
     #"dcg_me": "DCRL-AI-only",
-    "dcg_me": "DCRL",
+    "dcg_me": "DCRL-ME",
     "dcg_me_gecco": "DCG-MAP-Elites GECCO",
-    "pga_me": "PGA-MAP-Elites",
+    "pga_me": "PGA-ME",
     "qd_pg": "QD-PG",
-    "me": "MAP-Elites",
+    "me": "ME",
     "me_es": "MAP-Elites-ES",
-    "mcpg_me": "MCPG-ME",
+    "mcpg_me": "ASCII-ME",
     "memes": "MEMES",
     "mcpg_me_no_normalizer": "Ablation 1",
     "mcpg_me_no_baseline": "Ablation 2",
@@ -109,20 +109,20 @@ ALGO_DICT = {
 }
 
 EMITTER_LIST = {
-    "dcg_me" : ["ga_offspring_added", "qpg_offspring_added", "ai_offspring_added"],
-    "pga_me" : ["ga_offspring_added", "qpg_offspring_added", "ai_offspring_added"],
-    "mcpg_me": ["ga_offspring_added", "qpg_offspring_added"],
-    # "dcg_me": ["ga_offspring_added", "qpg_ai_offspring_added"],
-    # "pga_me": ["ga_offspring_added", "qpg_ai_offspring_added"],
-    "me": ["ga_offspring_added"],    
+    #"dcg_me" : ["ga_offspring_added", "qpg_offspring_added", "ai_offspring_added"],
+    #"pga_me" : ["ga_offspring_added", "qpg_offspring_added", "ai_offspring_added"],
+    "mcpg_me": ["ga_offspring_added", "qpg_ai_offspring_added"],
+    "dcg_me": ["ga_offspring_added", "qpg_ai_offspring_added"],
+    "pga_me": ["ga_offspring_added", "qpg_ai_offspring_added"],
+    #"me": ["ga_offspring_added"],    
 }
 EMITTER_DICT = {
-    "ga_offspring_added": "GA",
-    "qpg_offspring_added": "PG",
+    "ga_offspring_added": "Iso+LineDD",
+    #"qpg_offspring_added": "PG",
     #"dpg_offspring_added": "DPG",
     #"es_offspring_added": "ES",
-    "ai_offspring_added": "AI",
-    #"qpg_ai_offspring_added": "PG + AI",
+    #"ai_offspring_added": "AI",
+    "qpg_ai_offspring_added": "PG + AI",
 }
 
 XLABEL = "Evaluations"
@@ -131,6 +131,19 @@ def filter(df_row):
     if df_row["algo"] == "pga_me":
         if df_row["batch_size"] != 1024:
             return 
+    if df_row["algo"] == "dcg_me":
+        if df_row["batch_size"] != 2048:
+            return 
+
+    if df_row["algo"] == "mcpg_me":
+        if df_row["batch_size"] != 4096 or df_row["proportion_mutation_ga"] != 0.5 or df_row["greedy"] != 0:
+            return 
+        
+    if df_row["algo"] == "me":
+        if df_row["batch_size"] != 8192:
+            return 
+    
+
             
     return df_row["algo"]
 
@@ -142,13 +155,18 @@ def customize_axis(ax):
 
     # Add grid
     ax.grid(which="major", axis="y", color="0.9")
+    # Apply scientific notation to y-axis
+    formatter = ScalarFormatter(useMathText=True)
+    formatter.set_scientific(True)
+    formatter.set_powerlimits((0, 0))
+    ax.yaxis.set_major_formatter(formatter)
     return ax
 
 
 def plot(df):
     # Create subplots
     nrows = len(EMITTER_LIST[ALGO_LIST[1]])
-    fig, axes = plt.subplots(nrows=nrows, ncols=len(ENV_LIST), sharex=True, squeeze=False, figsize=(25, 7))
+    fig, axes = plt.subplots(nrows=nrows, ncols=len(ENV_LIST), sharex=True, squeeze=False, figsize=(25 * 0.8, 7 * 0.7))
 
     # Create formatter
     formatter = ScalarFormatter(useMathText=True)
@@ -202,7 +220,7 @@ def plot(df):
             if col == 0:
                 label = EMITTER_DICT.get(emitter, None)
                 if label is not None:
-                    axes[i, col].set_ylabel("Elites for {}".format(label))
+                    axes[i, col].set_ylabel("Elites for \n{}".format(label))
             else:
                 axes[i, col].set_ylabel(None)
 
@@ -221,7 +239,7 @@ def plot(df):
     fig.tight_layout()
 
     # Save plot
-    fig.savefig("fig1_/output/plot_main_emitters.png", bbox_inches="tight")
+    fig.savefig("fig1/output/fig3.pdf", bbox_inches="tight")
     plt.close()
 
 
@@ -232,7 +250,7 @@ if __name__ == "__main__":
     plt.rc("font", size=16)
 
     # Create the DataFrame
-    results_dir = Path("fig1_/output/")
+    results_dir = Path("fig1/output/")
         
     EPISODE_LENGTH = 250
 
@@ -242,7 +260,8 @@ if __name__ == "__main__":
 
 
     # Sum PG and AI emitters
-    #df["qpg_ai_offspring_added"] = df["qpg_offspring_added"] + df["ai_offspring_added"]
+    df['ai_offspring_added'] = df['ai_offspring_added'].fillna(0)
+    df["qpg_ai_offspring_added"] = df["qpg_offspring_added"] + df["ai_offspring_added"]
 
     # Get cumulative sum of elites
     for emitter in EMITTER_DICT:
