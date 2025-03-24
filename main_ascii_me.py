@@ -25,7 +25,7 @@ from qdax.types import RNGKey
 from qdax.utils.sampling import sampling 
 from qdax.core.containers.mapelites_repertoire_ import compute_cvt_centroids, MapElitesRepertoire
 from qdax.core.neuroevolution.networks.networks import MLPMCPG
-from qdax.core.emitters.mcpg_me_emitter_ import MEMCPGConfig, MEMCPGEmitter
+from qdax.core.emitters.ascii_me_emitter import ASCIIMEConfig, ASCIIMEEmitter
 from qdax.core.neuroevolution.buffers.buffer import QDTransition  #, QDMCTransition
 from qdax.environments_v1 import behavior_descriptor_extractor
 from qdax.tasks.brax_envs_advanced_baseline_time_step import reset_based_scoring_function_brax_envs as scoring_function
@@ -279,7 +279,7 @@ def main(config: Config) -> None:
 
     # Define the PG-emitter config
     
-    me_mcpg_config = MEMCPGConfig(
+    ascii_me_config = ASCIIMEConfig(
         proportion_mutation_ga=config.algo.proportion_mutation_ga,
         no_agents=config.batch_size,
         buffer_sample_batch_size=config.algo.buffer_sample_batch_size,
@@ -296,8 +296,8 @@ def main(config: Config) -> None:
         isoline_variation, iso_sigma=config.algo.iso_sigma, line_sigma=config.algo.line_sigma
     )
     
-    me_mcpg_emitter = MEMCPGEmitter(
-        config=me_mcpg_config,
+    ascii_me_emitter = ASCIIMEEmitter(
+        config=ascii_me_config,
         policy_network=policy_network,
         env=env,
         variation_fn=variation_fn,
@@ -308,7 +308,7 @@ def main(config: Config) -> None:
     # Instantiate MAP Elites
     map_elites = MAPElites(
         scoring_function=scoring_fn,
-        emitter=me_mcpg_emitter,
+        emitter=ascii_me_emitter,
         metrics_function=metrics_function,
     )
 

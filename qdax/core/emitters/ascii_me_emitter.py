@@ -3,15 +3,15 @@ from typing import Callable, Tuple
 import flax.linen as nn
 
 from qdax.core.emitters.multi_emitter import MultiEmitter
-from qdax.core.emitters.mcpg_emitter_ import MCPGConfig, MCPGEmitter_0, MCPGEmitter_05, MCPGEmitter_1
+from qdax.core.emitters.ascii_emitter import ASCIIConfig, ASCIIEmitter_0, ASCIIEmitter_05, ASCIIEmitter_1
 from qdax.core.emitters.standard_emitters_ import MixingEmitter
 from qdax.environments.base_wrappers import QDEnv
 from qdax.types import Params, RNGKey
 from dataclasses import dataclass
 
 @dataclass
-class MEMCPGConfig:
-    """Configuration for PGAME Algorithm"""
+class ASCIIMEConfig:
+    """Configuration for ASCII-ME Algorithm"""
 
     proportion_mutation_ga: float = 0.5
     no_agents: int = 512
@@ -25,10 +25,10 @@ class MEMCPGConfig:
     std: float = 0.5
     
     
-class MEMCPGEmitter(MultiEmitter):
+class ASCIIMEEmitter(MultiEmitter):
     def __init__(
         self,
-        config: MEMCPGConfig,
+        config: ASCIIMEConfig,
         policy_network: nn.Module,
         env: QDEnv,
         variation_fn: Callable[[Params, Params, RNGKey], Tuple[Params, RNGKey]],
@@ -54,7 +54,7 @@ class MEMCPGEmitter(MultiEmitter):
             super().__init__(emitters=(ga_emitter,))
             
         elif ga_no_agents == 0:
-            mcpg_config = MCPGConfig(
+            ascii_config = ASCIIConfig(
                 no_agents=mcpg_no_agents,
                 buffer_sample_batch_size=config.buffer_sample_batch_size,
                 buffer_add_batch_size=config.no_agents,
@@ -65,11 +65,11 @@ class MEMCPGEmitter(MultiEmitter):
                 std=config.std
             )
 
-            mcpg_emitter = MCPGEmitter_0(
-                config=mcpg_config, policy_net=policy_network, env=env
+            ascii_emitter = ASCIIEmitter_0(
+                config=ascii_config, policy_net=policy_network, env=env
             )
         
-            super().__init__(emitters=(mcpg_emitter,))
+            super().__init__(emitters=(ascii_emitter,))
             
             # if config.greedy == 0.0:
             #     if config.cosine_similarity:
@@ -114,7 +114,7 @@ class MEMCPGEmitter(MultiEmitter):
             
         else:
             
-            mcpg_config = MCPGConfig(
+            ascii_config = ASCIIConfig(
                 no_agents=mcpg_no_agents,
                 buffer_sample_batch_size=config.buffer_sample_batch_size,
                 buffer_add_batch_size=config.no_agents,
@@ -133,12 +133,12 @@ class MEMCPGEmitter(MultiEmitter):
             )
             
 
-            mcpg_emitter = MCPGEmitter_0(
-                config=mcpg_config, policy_net=policy_network, env=env
+            ascii_emitter = ASCIIEmitter_0(
+                config=ascii_config, policy_net=policy_network, env=env
             )
 
 
-            super().__init__(emitters=(mcpg_emitter, ga_emitter))
+            super().__init__(emitters=(ascii_emitter, ga_emitter))
 
 
             # if config.greedy == 0.0:

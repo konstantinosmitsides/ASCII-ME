@@ -36,17 +36,11 @@ ENV_DICT = {
     "hopper_uni_1000": "Hopper Uni",
 }
 ALGO_LIST = [
-    # 'mcpg_me',
-    #"mcpg_only",
-    #'mcpg_me_05',
-    #'mcpg_me_1',
-    #'mcpg_only',
-    # "mcpg_only_05",
-    #"mcpg_only_1",
-    # "dcg_me",
-    # "pga_me",
-    # "me",
-    # "memes",
+    'mcpg_me',
+    "dcg_me",
+    "pga_me",
+    "me",
+    "memes",
     "ppga",
 ]
 
@@ -451,7 +445,7 @@ def plot(final_df, raw_df):
     fig.tight_layout()
 
     # Save plot
-    fig.savefig("ah/output/fig1.pdf", bbox_inches="tight")
+    fig.savefig("fig1/output/test.png", bbox_inches="tight")
     plt.close()
 
 if __name__ == "__main__":
@@ -460,7 +454,7 @@ if __name__ == "__main__":
     matplotlib.rcParams['ps.fonttype'] = 42
     plt.rc("font", size=16)
 
-    results_dir = Path("ah/output/")
+    results_dir = Path("fig1/output/")
     EPISODE_LENGTH = 250
     df = get_df(results_dir, EPISODE_LENGTH)
 

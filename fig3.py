@@ -41,22 +41,22 @@ ENV_DICT = {
     "hopper_uni_1000": "Hopper Uni",
 }
 
-INIT_ALGO_LIST = [
-    "mcpg_me_",
-    #"mcpg_me_"
-    #"mcpg_me_no_normalizer",
-    #"mcpg_me_no_baseline",
-    #"mcpg_me_no_ppo_loss",
-    #"dcg_me",
-    #"dcg_me_"
-    #"dcg_me_gecco",
-    #"pga_me",
-    #"qd_pg",
-    #"me_es",
-    #"memes",
-    #"me",
-    "mcpg_me_fixed",
-]
+# INIT_ALGO_LIST = [
+#     "mcpg_me_",
+#     #"mcpg_me_"
+#     #"mcpg_me_no_normalizer",
+#     #"mcpg_me_no_baseline",
+#     #"mcpg_me_no_ppo_loss",
+#     #"dcg_me",
+#     #"dcg_me_"
+#     #"dcg_me_gecco",
+#     #"pga_me",
+#     #"qd_pg",
+#     #"me_es",
+#     #"memes",
+#     #"me",
+#     "mcpg_me_fixed",
+# ]
 
 ALGO_LIST = [
     "mcpg_me",
@@ -239,7 +239,7 @@ def plot(df):
     fig.tight_layout()
 
     # Save plot
-    fig.savefig("fig1/output/fig3.pdf", bbox_inches="tight")
+    fig.savefig("fig1/output/fig3_test.png", bbox_inches="tight")
     plt.close()
 
 

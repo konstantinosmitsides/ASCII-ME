@@ -28,8 +28,8 @@ EPS = 1e-8
 
 
 @dataclass
-class MCPGConfig:
-    """Configuration for the REINaive emitter.
+class ASCIIConfig:
+    """Configuration for the ASCII emitter.
     """
     no_agents: int = 256
     buffer_sample_batch_size: int = 32
@@ -40,17 +40,17 @@ class MCPGConfig:
     clip_param: float = 0.2
     std: float = 0.5
     
-class MCPGEmitterState(EmitterState):
+class ASCIIEmitterState(EmitterState):
     """Contains the trajectory buffer.
     """
     buffer_state: Any
     random_key: RNGKey
     
-class MCPGEmitter_0(Emitter):
+class ASCIIEmitter_0(Emitter):
     
     def __init__(
         self,
-        config: MCPGConfig,
+        config: ASCIIConfig,
         policy_net: nn.Module,
         env: QDEnv,
     ) -> None:
@@ -102,7 +102,7 @@ class MCPGEmitter_0(Emitter):
         fitnesses: Fitness,
         descriptors: Descriptor,
         extra_scores: ExtraScores,
-    ) -> Tuple[MCPGEmitterState, RNGKey]:
+    ) -> Tuple[ASCIIEmitterState, RNGKey]:
         """Initializes the emitter state.
         """
         obs_size = self._env.observation_size
@@ -124,7 +124,7 @@ class MCPGEmitter_0(Emitter):
 
         
         random_key, subkey = jax.random.split(random_key)
-        emitter_state = MCPGEmitterState(
+        emitter_state = ASCIIEmitterState(
             buffer_state=buffer_state,
             random_key=subkey,
         )
@@ -135,10 +135,10 @@ class MCPGEmitter_0(Emitter):
     def emit(
         self,
         repertoire: Repertoire,
-        emitter_state: MCPGEmitterState,
+        emitter_state: ASCIIEmitterState,
         random_key: RNGKey,
     ) -> Tuple[Genotype, RNGKey]:
-        """Do a step of MCPG emission.
+        """Do a step of ASCII emission.
         """
         
         no_agents = self._config.no_agents
@@ -152,7 +152,7 @@ class MCPGEmitter_0(Emitter):
             num_samples=no_agents,
         )
         
-        offsprings_mcpg = self.emit_mcpg(emitter_state, parents, returns, trajectories, random_keys[:no_agents])
+        offsprings_ascii = self.emit_ascii(emitter_state, parents, returns, trajectories, random_keys[:no_agents])
         #jax.debug.breakpoint()
         #new_params = concatenate_params(offsprings_mcpg)
         #mean_new = jnp.mean(new_params)
@@ -171,27 +171,27 @@ class MCPGEmitter_0(Emitter):
         #jax.debug.breakpoint()
         
         #return offsprings_mcpg, {'update_magns_pg' : update_magnitudes}, random_keys[-2]
-        return offsprings_mcpg, {}, random_keys[-2]
+        return offsprings_ascii, {}, random_keys[-2]
     
     @partial(jax.jit, static_argnames=("self",))
-    def emit_mcpg(
+    def emit_ascii(
         self,
-        emitter_state: MCPGEmitterState,
+        emitter_state: ASCIIEmitterState,
         parents: Genotype,
         returns: Any,
         trajectories: Any,
         random_keys: ArrayTree,
     ) -> Genotype:
-        """Emit the offsprings generated through MCPG mutation.
+        """Emit the offsprings generated through ASCII mutation.
         """
         '''
         mutation_fn = partial(
-            self._mutation_function_mcpg,
+            self._mutation_function_ascii,
             emitter_state=emitter_state,
         )
         '''
         
-        offsprings = jax.vmap(self._mutation_function_mcpg, in_axes=(0, 0, 0, None, 0))(parents, returns, trajectories, emitter_state, random_keys)
+        offsprings = jax.vmap(self._mutation_function_ascii, in_axes=(0, 0, 0, None, 0))(parents, returns, trajectories, emitter_state, random_keys)
         
         
         
@@ -200,13 +200,13 @@ class MCPGEmitter_0(Emitter):
     @partial(jax.jit, static_argnames=("self",))
     def state_update(
         self,
-        emitter_state: MCPGEmitterState,
+        emitter_state: ASCIIEmitterState,
         repertoire: Optional[Repertoire],
         genotypes: Optional[Genotype],
         fitnesses: Optional[Fitness],
         descriptors: Optional[Descriptor],
         extra_scores: ExtraScores,
-    ) -> MCPGEmitterState:
+    ) -> ASCIIEmitterState:
         """Update the emitter state.
         """
         
@@ -242,15 +242,15 @@ class MCPGEmitter_0(Emitter):
 
 
     @partial(jax.jit, static_argnames=("self",))
-    def _mutation_function_mcpg(
+    def _mutation_function_ascii(
         self,
         policy_params,
         returns,
         trajectories,
-        emitter_state: MCPGEmitterState,
+        emitter_state: ASCIIEmitterState,
         random_key: RNGKey,
     ) -> Genotype:
-        """Mutation function for MCPG."""
+        """Mutation function for ASCII."""
 
         policy_opt_state = self._policy_opt.init(policy_params)
         
@@ -266,9 +266,9 @@ class MCPGEmitter_0(Emitter):
 
         
         def scan_train_policy(
-            carry: Tuple[MCPGEmitterState, Genotype, optax.OptState],
+            carry: Tuple[ASCIIEmitterState, Genotype, optax.OptState],
             unused: Any,
-        ) -> Tuple[Tuple[MCPGEmitterState, Genotype, optax.OptState], Any]:
+        ) -> Tuple[Tuple[ASCIIEmitterState, Genotype, optax.OptState], Any]:
             
             policy_params, policy_opt_state = carry
             
@@ -307,7 +307,7 @@ class MCPGEmitter_0(Emitter):
         standardized_returns,
         #logps,
         mask
-    ) -> Tuple[MCPGEmitterState, Genotype, optax.OptState]:
+    ) -> Tuple[ASCIIEmitterState, Genotype, optax.OptState]:
         """Train the policy.
         """
         
@@ -351,11 +351,11 @@ class MCPGEmitter_0(Emitter):
         
         
 
-class MCPGEmitter_05(Emitter):
+class ASCIIEmitter_05(Emitter):
     
     def __init__(
         self,
-        config: MCPGConfig,
+        config: ASCIIConfig,
         policy_net: nn.Module,
         env: QDEnv,
     ) -> None:
@@ -407,7 +407,7 @@ class MCPGEmitter_05(Emitter):
         fitnesses: Fitness,
         descriptors: Descriptor,
         extra_scores: ExtraScores,
-    ) -> Tuple[MCPGEmitterState, RNGKey]:
+    ) -> Tuple[ASCIIEmitterState, RNGKey]:
         """Initializes the emitter state.
         """
         obs_size = self._env.observation_size
@@ -429,7 +429,7 @@ class MCPGEmitter_05(Emitter):
 
         
         random_key, subkey = jax.random.split(random_key)
-        emitter_state = MCPGEmitterState(
+        emitter_state = ASCIIEmitterState(
             buffer_state=buffer_state,
             random_key=subkey,
         )
@@ -440,10 +440,10 @@ class MCPGEmitter_05(Emitter):
     def emit(
         self,
         repertoire: Repertoire,
-        emitter_state: MCPGEmitterState,
+        emitter_state: ASCIIEmitterState,
         random_key: RNGKey,
     ) -> Tuple[Genotype, RNGKey]:
-        """Do a step of MCPG emission.
+        """Do a step of ASCII emission.
         """
         
         no_agents = self._config.no_agents
@@ -457,7 +457,7 @@ class MCPGEmitter_05(Emitter):
             num_samples=no_agents,
         )
         
-        offsprings_mcpg = self.emit_mcpg(emitter_state, parents, returns, trajectories, random_keys[:no_agents])
+        offsprings_ascii = self.emit_ascii(emitter_state, parents, returns, trajectories, random_keys[:no_agents])
         #jax.debug.breakpoint()
         #new_params = concatenate_params(offsprings_mcpg)
         #mean_new = jnp.mean(new_params)
@@ -476,27 +476,27 @@ class MCPGEmitter_05(Emitter):
         #jax.debug.breakpoint()
         
         #return offsprings_mcpg, {'update_magns_pg' : update_magnitudes}, random_keys[-2]
-        return offsprings_mcpg, {}, random_keys[-2]
+        return offsprings_ascii, {}, random_keys[-2]
     
     @partial(jax.jit, static_argnames=("self",))
-    def emit_mcpg(
+    def emit_ascii(
         self,
-        emitter_state: MCPGEmitterState,
+        emitter_state: ASCIIEmitterState,
         parents: Genotype,
         returns: Any,
         trajectories: Any,
         random_keys: ArrayTree,
     ) -> Genotype:
-        """Emit the offsprings generated through MCPG mutation.
+        """Emit the offsprings generated through ASCII mutation.
         """
         '''
         mutation_fn = partial(
-            self._mutation_function_mcpg,
+            self._mutation_function_ascii,
             emitter_state=emitter_state,
         )
         '''
         
-        offsprings = jax.vmap(self._mutation_function_mcpg, in_axes=(0, 0, 0, None, 0))(parents, returns, trajectories, emitter_state, random_keys)
+        offsprings = jax.vmap(self._mutation_function_ascii, in_axes=(0, 0, 0, None, 0))(parents, returns, trajectories, emitter_state, random_keys)
         
         
         
@@ -505,13 +505,13 @@ class MCPGEmitter_05(Emitter):
     @partial(jax.jit, static_argnames=("self",))
     def state_update(
         self,
-        emitter_state: MCPGEmitterState,
+        emitter_state: ASCIIEmitterState,
         repertoire: Optional[Repertoire],
         genotypes: Optional[Genotype],
         fitnesses: Optional[Fitness],
         descriptors: Optional[Descriptor],
         extra_scores: ExtraScores,
-    ) -> MCPGEmitterState:
+    ) -> ASCIIEmitterState:
         """Update the emitter state.
         """
         
@@ -547,15 +547,15 @@ class MCPGEmitter_05(Emitter):
 
 
     @partial(jax.jit, static_argnames=("self",))
-    def _mutation_function_mcpg(
+    def _mutation_function_ascii(
         self,
         policy_params,
         returns,
         trajectories,
-        emitter_state: MCPGEmitterState,
+        emitter_state: ASCIIEmitterState,
         random_key: RNGKey,
     ) -> Genotype:
-        """Mutation function for MCPG."""
+        """Mutation function for ASCII."""
 
         policy_opt_state = self._policy_opt.init(policy_params)
         
@@ -571,9 +571,9 @@ class MCPGEmitter_05(Emitter):
 
         
         def scan_train_policy(
-            carry: Tuple[MCPGEmitterState, Genotype, optax.OptState],
+            carry: Tuple[ASCIIEmitterState, Genotype, optax.OptState],
             unused: Any,
-        ) -> Tuple[Tuple[MCPGEmitterState, Genotype, optax.OptState], Any]:
+        ) -> Tuple[Tuple[ASCIIEmitterState, Genotype, optax.OptState], Any]:
             
             policy_params, policy_opt_state = carry
             
@@ -612,7 +612,7 @@ class MCPGEmitter_05(Emitter):
         standardized_returns,
         #logps,
         mask
-    ) -> Tuple[MCPGEmitterState, Genotype, optax.OptState]:
+    ) -> Tuple[ASCIIEmitterState, Genotype, optax.OptState]:
         """Train the policy.
         """
         
@@ -655,11 +655,11 @@ class MCPGEmitter_05(Emitter):
         return -jnp.mean(jnp.minimum(pg_loss_1, pg_loss_2))
 
 
-class MCPGEmitter_1(Emitter):
+class ASCIIEmitter_1(Emitter):
     
     def __init__(
         self,
-        config: MCPGConfig,
+        config: ASCIIConfig,
         policy_net: nn.Module,
         env: QDEnv,
     ) -> None:
@@ -711,7 +711,7 @@ class MCPGEmitter_1(Emitter):
         fitnesses: Fitness,
         descriptors: Descriptor,
         extra_scores: ExtraScores,
-    ) -> Tuple[MCPGEmitterState, RNGKey]:
+    ) -> Tuple[ASCIIEmitterState, RNGKey]:
         """Initializes the emitter state.
         """
         obs_size = self._env.observation_size
@@ -733,7 +733,7 @@ class MCPGEmitter_1(Emitter):
 
         
         random_key, subkey = jax.random.split(random_key)
-        emitter_state = MCPGEmitterState(
+        emitter_state = ASCIIEmitterState(
             buffer_state=buffer_state,
             random_key=subkey,
         )
@@ -744,10 +744,10 @@ class MCPGEmitter_1(Emitter):
     def emit(
         self,
         repertoire: Repertoire,
-        emitter_state: MCPGEmitterState,
+        emitter_state: ASCIIEmitterState,
         random_key: RNGKey,
     ) -> Tuple[Genotype, RNGKey]:
-        """Do a step of MCPG emission.
+        """Do a step of ASCII emission.
         """
         
         no_agents = self._config.no_agents
@@ -761,7 +761,7 @@ class MCPGEmitter_1(Emitter):
             num_samples=no_agents,
         )
         
-        offsprings_mcpg = self.emit_mcpg(emitter_state, parents, returns, trajectories, random_keys[:no_agents])
+        offsprings_ascii = self.emit_ascii(emitter_state, parents, returns, trajectories, random_keys[:no_agents])
         #jax.debug.breakpoint()
         #new_params = concatenate_params(offsprings_mcpg)
         #mean_new = jnp.mean(new_params)
@@ -780,27 +780,27 @@ class MCPGEmitter_1(Emitter):
         #jax.debug.breakpoint()
         
         #return offsprings_mcpg, {'update_magns_pg' : update_magnitudes}, random_keys[-2]
-        return offsprings_mcpg, {}, random_keys[-2]
+        return offsprings_ascii, {}, random_keys[-2]
     
     @partial(jax.jit, static_argnames=("self",))
-    def emit_mcpg(
+    def emit_ascii(
         self,
-        emitter_state: MCPGEmitterState,
+        emitter_state: ASCIIEmitterState,
         parents: Genotype,
         returns: Any,
         trajectories: Any,
         random_keys: ArrayTree,
     ) -> Genotype:
-        """Emit the offsprings generated through MCPG mutation.
+        """Emit the offsprings generated through ASCII mutation.
         """
         '''
         mutation_fn = partial(
-            self._mutation_function_mcpg,
+            self._mutation_function_ascii,
             emitter_state=emitter_state,
         )
         '''
         
-        offsprings = jax.vmap(self._mutation_function_mcpg, in_axes=(0, 0, 0, None, 0))(parents, returns, trajectories, emitter_state, random_keys)
+        offsprings = jax.vmap(self._mutation_function_ascii, in_axes=(0, 0, 0, None, 0))(parents, returns, trajectories, emitter_state, random_keys)
         
         
         
@@ -809,13 +809,13 @@ class MCPGEmitter_1(Emitter):
     @partial(jax.jit, static_argnames=("self",))
     def state_update(
         self,
-        emitter_state: MCPGEmitterState,
+        emitter_state: ASCIIEmitterState,
         repertoire: Optional[Repertoire],
         genotypes: Optional[Genotype],
         fitnesses: Optional[Fitness],
         descriptors: Optional[Descriptor],
         extra_scores: ExtraScores,
-    ) -> MCPGEmitterState:
+    ) -> ASCIIEmitterState:
         """Update the emitter state.
         """
         
@@ -851,15 +851,15 @@ class MCPGEmitter_1(Emitter):
 
 
     @partial(jax.jit, static_argnames=("self",))
-    def _mutation_function_mcpg(
+    def _mutation_function_ascii(
         self,
         policy_params,
         returns,
         trajectories,
-        emitter_state: MCPGEmitterState,
+        emitter_state: ASCIIEmitterState,
         random_key: RNGKey,
     ) -> Genotype:
-        """Mutation function for MCPG."""
+        """Mutation function for ASCII."""
 
         policy_opt_state = self._policy_opt.init(policy_params)
         
@@ -875,9 +875,9 @@ class MCPGEmitter_1(Emitter):
 
         
         def scan_train_policy(
-            carry: Tuple[MCPGEmitterState, Genotype, optax.OptState],
+            carry: Tuple[ASCIIEmitterState, Genotype, optax.OptState],
             unused: Any,
-        ) -> Tuple[Tuple[MCPGEmitterState, Genotype, optax.OptState], Any]:
+        ) -> Tuple[Tuple[ASCIIEmitterState, Genotype, optax.OptState], Any]:
             
             policy_params, policy_opt_state = carry
             
@@ -916,7 +916,7 @@ class MCPGEmitter_1(Emitter):
         standardized_returns,
         #logps,
         mask
-    ) -> Tuple[MCPGEmitterState, Genotype, optax.OptState]:
+    ) -> Tuple[ASCIIEmitterState, Genotype, optax.OptState]:
         """Train the policy.
         """
         
@@ -961,11 +961,11 @@ class MCPGEmitter_1(Emitter):
     
 
         
-class MCPGEmitter_0_not(Emitter):
+class ASCIIEmitter_0_not(Emitter):
     
     def __init__(
         self,
-        config: MCPGConfig,
+        config: ASCIIConfig,
         policy_net: nn.Module,
         env: QDEnv,
     ) -> None:
@@ -1017,7 +1017,7 @@ class MCPGEmitter_0_not(Emitter):
         fitnesses: Fitness,
         descriptors: Descriptor,
         extra_scores: ExtraScores,
-    ) -> Tuple[MCPGEmitterState, RNGKey]:
+    ) -> Tuple[ASCIIEmitterState, RNGKey]:
         """Initializes the emitter state.
         """
         obs_size = self._env.observation_size
@@ -1039,7 +1039,7 @@ class MCPGEmitter_0_not(Emitter):
 
         
         random_key, subkey = jax.random.split(random_key)
-        emitter_state = MCPGEmitterState(
+        emitter_state = ASCIIEmitterState(
             buffer_state=buffer_state,
             random_key=subkey,
         )
@@ -1050,10 +1050,10 @@ class MCPGEmitter_0_not(Emitter):
     def emit(
         self,
         repertoire: Repertoire,
-        emitter_state: MCPGEmitterState,
+        emitter_state: ASCIIEmitterState,
         random_key: RNGKey,
     ) -> Tuple[Genotype, RNGKey]:
-        """Do a step of MCPG emission.
+        """Do a step of ASCII emission.
         """
         
         no_agents = self._config.no_agents
@@ -1067,7 +1067,7 @@ class MCPGEmitter_0_not(Emitter):
             num_samples=no_agents,
         )
         
-        offsprings_mcpg = self.emit_mcpg(emitter_state, parents, returns, random_keys[:no_agents])
+        offsprings_ascii = self.emit_ascii(emitter_state, parents, returns, random_keys[:no_agents])
         #jax.debug.breakpoint()
         #new_params = concatenate_params(offsprings_mcpg)
         #mean_new = jnp.mean(new_params)
@@ -1086,26 +1086,26 @@ class MCPGEmitter_0_not(Emitter):
         #jax.debug.breakpoint()
         
         #return offsprings_mcpg, {'update_magns_pg' : update_magnitudes}, random_keys[-2]
-        return offsprings_mcpg, {}, random_keys[-2]
+        return offsprings_ascii, {}, random_keys[-2]
     
     @partial(jax.jit, static_argnames=("self",))
     def emit_mcpg(
         self,
-        emitter_state: MCPGEmitterState,
+        emitter_state: ASCIIEmitterState,
         parents: Genotype,
         returns: Any,
         random_keys: ArrayTree,
     ) -> Genotype:
-        """Emit the offsprings generated through MCPG mutation.
+        """Emit the offsprings generated through ASCII mutation.
         """
         '''
         mutation_fn = partial(
-            self._mutation_function_mcpg,
+            self._mutation_function_ascii,
             emitter_state=emitter_state,
         )
         '''
         
-        offsprings = jax.vmap(self._mutation_function_mcpg, in_axes=(0, 0, None, 0))(parents, returns, emitter_state, random_keys)
+        offsprings = jax.vmap(self._mutation_function_ascii, in_axes=(0, 0, None, 0))(parents, returns, emitter_state, random_keys)
         
         
         
@@ -1114,13 +1114,13 @@ class MCPGEmitter_0_not(Emitter):
     @partial(jax.jit, static_argnames=("self",))
     def state_update(
         self,
-        emitter_state: MCPGEmitterState,
+        emitter_state: ASCIIEmitterState,
         repertoire: Optional[Repertoire],
         genotypes: Optional[Genotype],
         fitnesses: Optional[Fitness],
         descriptors: Optional[Descriptor],
         extra_scores: ExtraScores,
-    ) -> MCPGEmitterState:
+    ) -> ASCIIEmitterState:
         """Update the emitter state.
         """
         
@@ -1156,14 +1156,14 @@ class MCPGEmitter_0_not(Emitter):
 
 
     @partial(jax.jit, static_argnames=("self",))
-    def _mutation_function_mcpg(
+    def _mutation_function_ascii(
         self,
         policy_params,
         returns,
-        emitter_state: MCPGEmitterState,
+        emitter_state: ASCIIEmitterState,
         random_key: RNGKey,
     ) -> Genotype:
-        """Mutation function for MCPG."""
+        """Mutation function for ASCII."""
 
         policy_opt_state = self._policy_opt.init(policy_params)
         
@@ -1179,9 +1179,9 @@ class MCPGEmitter_0_not(Emitter):
 
         
         def scan_train_policy(
-            carry: Tuple[MCPGEmitterState, Genotype, optax.OptState],
+            carry: Tuple[ASCIIEmitterState, Genotype, optax.OptState],
             unused: Any,
-        ) -> Tuple[Tuple[MCPGEmitterState, Genotype, optax.OptState], Any]:
+        ) -> Tuple[Tuple[ASCIIEmitterState, Genotype, optax.OptState], Any]:
             
             policy_params, policy_opt_state = carry
             
@@ -1220,7 +1220,7 @@ class MCPGEmitter_0_not(Emitter):
         standardized_returns,
         logps,
         mask
-    ) -> Tuple[MCPGEmitterState, Genotype, optax.OptState]:
+    ) -> Tuple[ASCIIEmitterState, Genotype, optax.OptState]:
         """Train the policy.
         """
         
@@ -1259,11 +1259,11 @@ class MCPGEmitter_0_not(Emitter):
 
 
 
-class MCPGEmitter_1_not(Emitter):
+class ASCIIEmitter_1_not(Emitter):
     
     def __init__(
         self,
-        config: MCPGConfig,
+        config: ASCIIConfig,
         policy_net: nn.Module,
         env: QDEnv,
     ) -> None:
@@ -1315,7 +1315,7 @@ class MCPGEmitter_1_not(Emitter):
         fitnesses: Fitness,
         descriptors: Descriptor,
         extra_scores: ExtraScores,
-    ) -> Tuple[MCPGEmitterState, RNGKey]:
+    ) -> Tuple[ASCIIEmitterState, RNGKey]:
         """Initializes the emitter state.
         """
         obs_size = self._env.observation_size
@@ -1337,7 +1337,7 @@ class MCPGEmitter_1_not(Emitter):
 
         
         random_key, subkey = jax.random.split(random_key)
-        emitter_state = MCPGEmitterState(
+        emitter_state = ASCIIEmitterState(
             buffer_state=buffer_state,
             random_key=subkey,
         )
@@ -1348,10 +1348,10 @@ class MCPGEmitter_1_not(Emitter):
     def emit(
         self,
         repertoire: Repertoire,
-        emitter_state: MCPGEmitterState,
+        emitter_state: ASCIIEmitterState,
         random_key: RNGKey,
     ) -> Tuple[Genotype, RNGKey]:
-        """Do a step of MCPG emission.
+        """Do a step of ASCII emission.
         """
         
         no_agents = self._config.no_agents
@@ -1365,7 +1365,7 @@ class MCPGEmitter_1_not(Emitter):
             num_samples=no_agents,
         )
         
-        offsprings_mcpg = self.emit_mcpg(emitter_state, parents, returns, random_keys[:no_agents])
+        offsprings_ascii = self.emit_ascii(emitter_state, parents, returns, random_keys[:no_agents])
         #jax.debug.breakpoint()
         #new_params = concatenate_params(offsprings_mcpg)
         #mean_new = jnp.mean(new_params)
@@ -1384,26 +1384,26 @@ class MCPGEmitter_1_not(Emitter):
         #jax.debug.breakpoint()
         
         #return offsprings_mcpg, {'update_magns_pg' : update_magnitudes}, random_keys[-2]
-        return offsprings_mcpg, {}, random_keys[-2]
+        return offsprings_ascii, {}, random_keys[-2]
     
     @partial(jax.jit, static_argnames=("self",))
     def emit_mcpg(
         self,
-        emitter_state: MCPGEmitterState,
+        emitter_state: ASCIIEmitterState,
         parents: Genotype,
         returns: Any,
         random_keys: ArrayTree,
     ) -> Genotype:
-        """Emit the offsprings generated through MCPG mutation.
+        """Emit the offsprings generated through ASCII mutation.
         """
         '''
         mutation_fn = partial(
-            self._mutation_function_mcpg,
+            self._mutation_function_ascii,
             emitter_state=emitter_state,
         )
         '''
         
-        offsprings = jax.vmap(self._mutation_function_mcpg, in_axes=(0, 0, None, 0))(parents, returns, emitter_state, random_keys)
+        offsprings = jax.vmap(self._mutation_function_ascii, in_axes=(0, 0, None, 0))(parents, returns, emitter_state, random_keys)
         
         
         
@@ -1412,13 +1412,13 @@ class MCPGEmitter_1_not(Emitter):
     @partial(jax.jit, static_argnames=("self",))
     def state_update(
         self,
-        emitter_state: MCPGEmitterState,
+        emitter_state: ASCIIEmitterState,
         repertoire: Optional[Repertoire],
         genotypes: Optional[Genotype],
         fitnesses: Optional[Fitness],
         descriptors: Optional[Descriptor],
         extra_scores: ExtraScores,
-    ) -> MCPGEmitterState:
+    ) -> ASCIIEmitterState:
         """Update the emitter state.
         """
         
@@ -1454,14 +1454,14 @@ class MCPGEmitter_1_not(Emitter):
 
 
     @partial(jax.jit, static_argnames=("self",))
-    def _mutation_function_mcpg(
+    def _mutation_function_ascii(
         self,
         policy_params,
         returns,
-        emitter_state: MCPGEmitterState,
+        emitter_state: ASCIIEmitterState,
         random_key: RNGKey,
     ) -> Genotype:
-        """Mutation function for MCPG."""
+        """Mutation function for ASCII."""
 
         policy_opt_state = self._policy_opt.init(policy_params)
         
@@ -1477,9 +1477,9 @@ class MCPGEmitter_1_not(Emitter):
 
         
         def scan_train_policy(
-            carry: Tuple[MCPGEmitterState, Genotype, optax.OptState],
+            carry: Tuple[ASCIIEmitterState, Genotype, optax.OptState],
             unused: Any,
-        ) -> Tuple[Tuple[MCPGEmitterState, Genotype, optax.OptState], Any]:
+        ) -> Tuple[Tuple[ASCIIEmitterState, Genotype, optax.OptState], Any]:
             
             policy_params, policy_opt_state = carry
             
@@ -1518,7 +1518,7 @@ class MCPGEmitter_1_not(Emitter):
         standardized_returns,
         logps,
         mask
-    ) -> Tuple[MCPGEmitterState, Genotype, optax.OptState]:
+    ) -> Tuple[ASCIIEmitterState, Genotype, optax.OptState]:
         """Train the policy.
         """
         
@@ -1557,11 +1557,11 @@ class MCPGEmitter_1_not(Emitter):
     
     
     
-class MCPGEmitter_0_exps(Emitter):
+class ASCIIEmitter_0_exps(Emitter):
     
     def __init__(
         self,
-        config: MCPGConfig,
+        config: ASCIIConfig,
         policy_net: nn.Module,
         env: QDEnv,
     ) -> None:
@@ -1613,7 +1613,7 @@ class MCPGEmitter_0_exps(Emitter):
         fitnesses: Fitness,
         descriptors: Descriptor,
         extra_scores: ExtraScores,
-    ) -> Tuple[MCPGEmitterState, RNGKey]:
+    ) -> Tuple[ASCIIEmitterState, RNGKey]:
         """Initializes the emitter state.
         """
         obs_size = self._env.observation_size
@@ -1637,7 +1637,7 @@ class MCPGEmitter_0_exps(Emitter):
 
         
         random_key, subkey = jax.random.split(random_key)
-        emitter_state = MCPGEmitterState(
+        emitter_state = ASCIIEmitterState(
             buffer_state=buffer_state,
             random_key=subkey,
         )
@@ -1648,10 +1648,10 @@ class MCPGEmitter_0_exps(Emitter):
     def emit(
         self,
         repertoire: Repertoire,
-        emitter_state: MCPGEmitterState,
+        emitter_state: ASCIIEmitterState,
         random_key: RNGKey,
     ) -> Tuple[Genotype, RNGKey]:
-        """Do a step of MCPG emission.
+        """Do a step of ASCII emission.
         """
         
         no_agents = self._config.no_agents
@@ -1665,7 +1665,7 @@ class MCPGEmitter_0_exps(Emitter):
             num_samples=no_agents,
         )
         
-        offsprings_mcpg = self.emit_mcpg(emitter_state, parents, returns, trajectories, random_keys[:no_agents])
+        offsprings_ascii = self.emit_ascii(emitter_state, parents, returns, trajectories, random_keys[:no_agents])
         #jax.debug.breakpoint()
         #new_params = concatenate_params(offsprings_mcpg)
         #mean_new = jnp.mean(new_params)
@@ -1684,27 +1684,27 @@ class MCPGEmitter_0_exps(Emitter):
         #jax.debug.breakpoint()
         
         #return offsprings_mcpg, {'update_magns_pg' : update_magnitudes}, random_keys[-2]
-        return offsprings_mcpg, {}, random_keys[-2]
+        return offsprings_ascii, {}, random_keys[-2]
     
     @partial(jax.jit, static_argnames=("self",))
     def emit_mcpg(
         self,
-        emitter_state: MCPGEmitterState,
+        emitter_state: ASCIIEmitterState,
         parents: Genotype,
         returns: Any,
         trajectories: Any,
         random_keys: ArrayTree,
     ) -> Genotype:
-        """Emit the offsprings generated through MCPG mutation.
+        """Emit the offsprings generated through ASCII mutation.
         """
         '''
         mutation_fn = partial(
-            self._mutation_function_mcpg,
+            self._mutation_function_ascii,
             emitter_state=emitter_state,
         )
         '''
         
-        offsprings = jax.vmap(self._mutation_function_mcpg, in_axes=(0, 0, 0, None, 0))(parents, returns, trajectories, emitter_state, random_keys)
+        offsprings = jax.vmap(self._mutation_function_ascii, in_axes=(0, 0, 0, None, 0))(parents, returns, trajectories, emitter_state, random_keys)
         
         
         
@@ -1713,13 +1713,13 @@ class MCPGEmitter_0_exps(Emitter):
     @partial(jax.jit, static_argnames=("self",))
     def state_update(
         self,
-        emitter_state: MCPGEmitterState,
+        emitter_state: ASCIIEmitterState,
         repertoire: Optional[Repertoire],
         genotypes: Optional[Genotype],
         fitnesses: Optional[Fitness],
         descriptors: Optional[Descriptor],
         extra_scores: ExtraScores,
-    ) -> MCPGEmitterState:
+    ) -> ASCIIEmitterState:
         """Update the emitter state.
         """
         
@@ -1795,15 +1795,15 @@ class MCPGEmitter_0_exps(Emitter):
 
 
     @partial(jax.jit, static_argnames=("self",))
-    def _mutation_function_mcpg(
+    def _mutation_function_ascii(
         self,
         policy_params,
         returns,
         trajectories,
-        emitter_state: MCPGEmitterState,
+        emitter_state: ASCIIEmitterState,
         random_key: RNGKey,
     ) -> Genotype:
-        """Mutation function for MCPG."""
+        """Mutation function for ASCII."""
 
         policy_opt_state = self._policy_opt.init(policy_params)
         
@@ -1819,9 +1819,9 @@ class MCPGEmitter_0_exps(Emitter):
 
         
         def scan_train_policy(
-            carry: Tuple[MCPGEmitterState, Genotype, optax.OptState],
+            carry: Tuple[ASCIIEmitterState, Genotype, optax.OptState],
             unused: Any,
-        ) -> Tuple[Tuple[MCPGEmitterState, Genotype, optax.OptState], Any]:
+        ) -> Tuple[Tuple[ASCIIEmitterState, Genotype, optax.OptState], Any]:
             
             policy_params, policy_opt_state = carry
             
@@ -1860,7 +1860,7 @@ class MCPGEmitter_0_exps(Emitter):
         standardized_returns,
         logps,
         mask
-    ) -> Tuple[MCPGEmitterState, Genotype, optax.OptState]:
+    ) -> Tuple[ASCIIEmitterState, Genotype, optax.OptState]:
         """Train the policy.
         """
         
