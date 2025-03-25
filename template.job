@@ -1,9 +1,0 @@
-#!/usr/bin/env bash
-
-#PBS -N {{ job_name }}
-#PBS -l walltime={{ walltime }}
-#PBS -l select={{ select }}
-{{ pbs_array }}
-
-# The configs array and functions are appended by the hpc.sh script.
-

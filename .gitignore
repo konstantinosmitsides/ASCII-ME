@@ -207,8 +207,8 @@ hpc.sh
 parse_yaml_old.sh
 parse_yaml.sh
 
-template_old.sh
-template.sh
+template_old.job
+template.job
 
 testing_hpc.sh
 
