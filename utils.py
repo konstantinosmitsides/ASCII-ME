@@ -199,42 +199,23 @@ def get_repertoire(run_dir):
     # Return repertoire
     return MapElitesRepertoire.load(reconstruction_fn=reconstruction_fn, path=str(run_dir) + "/repertoire/")
 
-def get_df(results_dir, episode_length):
+def get_df(results_dir):
     metrics_list = []
     for env_dir in results_dir.iterdir():
-        if env_dir.is_file() or env_dir.name not in ["ant_omni_250", "anttrap_omni_250", "humanoid_omni", "walker2d_uni_250","walker2d_uni_1000", "halfcheetah_uni", "ant_uni_250", "ant_uni_1000", "hopper_uni_250"]: #, "hopper_uni_1000"]:
+        if env_dir.is_file() or env_dir.name not in ["ant_omni", "anttrap_omni", "walker2d_uni","ant_uni", "hopper_uni"]:
             continue        
             
-        if env_dir.name[-3:] != str(episode_length)[-3:]:
-            continue
         
         print(env_dir.name)
         for algo_dir in env_dir.iterdir():
             for run_dir in algo_dir.iterdir():
-                #if run_dir.name[:10] == "2024-08-24":
-                #    continue
-                
-                
                 
                 # Get config and metrics
                 
                 config = get_config(run_dir)
                 metrics = get_metrics(run_dir)
                 
-                #if config.algo.name == "pga_me":
-                #    if env_dir.name not in ["ant_uni_1000", "ant_uni_250"]:
-                        #print('continue')
-                #        continue
-                    
-                #if config.algo.name == "memes":
-                #    if run_dir.name != "yolo":
-                #        continue
-                
-                #if config.algo.name == "dcg_me":
-                #    if run_dir.name != "2024-08-30_190606_169737":
-                #        continue
-                # Env
-                #metrics["env"] = f"{config.env.name}_{episode_length}"
+
                 metrics["env"] = env_dir.name
                 
 
@@ -249,33 +230,17 @@ def get_df(results_dir, episode_length):
                     metrics["batch_size"] = config.algo.env_batch_size
 
 
-                if config.algo.name == "dcg_me" or config.algo.name == "pga_me":
+                if config.algo.name == "dcrl_me" or config.algo.name == "pga_me":
                     metrics["num_critic_training_steps"] = config.algo.num_critic_training_steps
                     metrics["num_pg_training_steps"] = config.algo.num_pg_training_steps
                     metrics["training_batch_size"] = config.algo.batch_size
-                    #metrics["ga_batch_size"] = config.algo.ga_batch_size
                     
-                if config.algo.name == "mcpg_me":
+                if config.algo.name == "ascii_me":
                     metrics["proportion_mutation_ga"] = config.algo.proportion_mutation_ga
                     metrics["no_epochs"] = config.algo.no_epochs
                     metrics['greedy'] = config.algo.greedy
-                    
-                if config.algo.name == "me_2":
-                    metrics["iso_sigma_2"] = config.algo.iso_sigma_2
-                    metrics["line_sigma_2"] = config.algo.line_sigma_2
-                    
-                if config.algo.name == "mcpg_me_fixed":
-                    metrics["init"] = config.init
-                    metrics["greedy"] = config.algo.greedy
-                    metrics["cos_sim"] = config.algo.cosine_similarity
-                    metrics["no_epochs"] = config.algo.no_epochs
-                    metrics["proportion_mutation_ga"] = config.algo.proportion_mutation_ga
-                    metrics["clip_param"] = config.algo.clip_param
-                    metrics["learning_rate"] = config.algo.learning_rate
-                    metrics["std"] = config.algo.std
-                    #metrics["iterations"] = config.batch_size
-                    
-                #metrics['gpu'] = config.HPC
+
+
 
                 # Run
                 metrics["run"] = run_dir.name
@@ -284,13 +249,8 @@ def get_df(results_dir, episode_length):
 
                 if config.algo.name == "ppga":
                     metrics["num_evaluations"] = metrics["evaluation"]
-                elif config.algo.name == "me_es":
-                    metrics["num_evaluations"] = metrics["iteration"] * 1050
-                elif config.algo.name == "dcg_me_gecco":
-                    metrics["num_evaluations"] = metrics["iteration"] * (config.batch_size + config.algo.actor_batch_size)
                 elif config.algo.name == "memes":
                     metrics["num_evaluations"] = metrics["iteration"] * ((config.batch_size * config.algo.sample_number * config.algo.num_in_optimizer_steps) + config.batch_size)
-                    #print(metrics["num_evaluations"])
                 else:
                     metrics["num_evaluations"] = metrics["iteration"] * config.batch_size
 

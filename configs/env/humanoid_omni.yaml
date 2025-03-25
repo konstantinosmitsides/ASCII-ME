@@ -1,7 +1,0 @@
-name: humanoid_omni
-version: v1
-backend: spring
-episode_length: 1000
-min_bd: -10.
-max_bd: 10.
-exclude_current_positions_from_observation: False

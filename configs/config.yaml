@@ -2,7 +2,7 @@ hydra:
   job:
     chdir: True
   run:
-    dir: ./output/${env.name}_${env.episode_length}/${algo.name}/${now:%Y-%m-%d_%H%M%S_%f}
+    dir: ./output/${env.name}/${algo.name}/${now:%Y-%m-%d_%H%M%S_%f}
 
 defaults:
   - _self_

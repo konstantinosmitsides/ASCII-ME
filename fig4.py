@@ -9,87 +9,52 @@ import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.ticker import ScalarFormatter, PercentFormatter
 import seaborn as sns
-import matplotlib.patches as mpatches
-import matplotlib.lines as mlines
-
 
 from utils import get_df
 
 
 # Define env and algo names
 ENV_LIST = [
-    # "ant_omni_250",
-    # "anttrap_omni_250",
-    #"humanoid_omni",
-    "hopper_uni_250",
-    "walker2d_uni_250",
-    #"walker2d_uni_1000",
-    #"halfcheetah_uni",
-    "ant_uni_250",
-    "anttrap_omni_250",
-    "ant_omni_250",
-
-    #"hopper_uni_1000",
-    #"ant_uni_1000",
-    #"humanoid_uni",
+    "hopper_uni",
+    "walker2d_uni",
+    "ant_uni",
+    "anttrap_omni",
+    "ant_omni",
 ]
+
 ENV_DICT = {
-    "ant_omni_250": " Ant Omni ",
-    "anttrap_omni_250": "AntTrap Omni",
+    "ant_omni": " Ant Omni ",
+    "anttrap_omni": "AntTrap Omni",
     "humanoid_omni": "Humanoid Omni",
-    "walker2d_uni_250": "Walker Uni",
-    "walker2d_uni_1000": "Walker Uni",
-    "halfcheetah_uni": "HalfCheetah Uni",
-    "ant_uni_250": "   Ant Uni   ",
-    "ant_uni_1000": "   Ant Uni   ",
-    "humanoid_uni": "Humanoid Uni",
-    "hopper_uni_250": "Hopper Uni",
-    "hopper_uni_1000": "Hopper Uni",
+    "walker2d_uni": "Walker Uni",
+    "ant_uni": "   Ant Uni   ",
+    "hopper_uni": "Hopper Uni",
 }
 
-BATCH_LIST = [
-    1024,
-    4096,
-    16384,
-    32768,
-]
 
 ALGO_LIST = [
-    'mcpg_me_ga_0_greedy_0',
-    'mcpg_me_ga_25_greedy_0',
-    'mcpg_me',
-    # "mcpg_me_ga_05_greedy_1",
-    'mcpg_me_ga_75_greedy_0',
-    'mcpg_me_ga_1_greedy_0',
-    # 'mcpg_me_1',
-    #"pga_me",
+    "ascii_me",
+    "dcrl_me",
+    "pga_me",
+    "me",
 ]
-
 
 
 ALGO_DICT = {
-    "dcg_me": "DCRL",
-    "dcg_me_": "DCRL",
-    "dcg_me_gecco": "DCG-MAP-Elites GECCO",
-    "pga_me": "PGA-MAP-Elites",
-    "qd_pg": "QD-PG",
-    "me": "MAP-Elites",
-    "me_es": "MAP-Elites-ES",
-    #"mcpg_me": "50% Iso+LineDD\n(ASCII-ME)",
-    "mcpg_me": "ASCII-ME",
-    #"mcpg_me": "Buffer\nSampling",
-    "mcpg_me_ga_0_greedy_0": "0% Iso+LineDD",
-    "mcpg_me_ga_25_greedy_0": "25% Iso+LineDD",
-    "mcpg_me_ga_75_greedy_0": "75% Iso+LineDD",
-    "mcpg_me_ga_1_greedy_0": "100% Iso+LineDD",
-    "mcpg_me_ga_05_greedy_1": "ASCII-ME (Archive)",
-    "memes": "MEMES",
-    "ppga" : "PPGA",
-    "mcpg_only": "MCPG-Only",
-    "mcpg_only_05": "MCPG-Only (0.5)",
-    "mcpg_only_1": "MCPG-Only (1)",
-    "mcpg_me_05": "MCPG-ME (0.5)",
-    "mcpg_me_1": "MCPG-ME (1)",
+    "ascii_me": "ASCII-ME",
+    "dcrl_me": "DCRL-ME",
+    "pga_me": "PGA-ME",
+    "me": "ME",
+}
+
+EMITTER_LIST = {
+    "ascii_me": ["ga_offspring_added", "qpg_ai_offspring_added"],
+    "dcrl_me": ["ga_offspring_added", "qpg_ai_offspring_added"],
+    "pga_me": ["ga_offspring_added", "qpg_ai_offspring_added"],
+}
+EMITTER_DICT = {
+    "ga_offspring_added": "Iso+LineDD",
+    "qpg_ai_offspring_added": "PG + AI",
 }
 
 XLABEL = "Evaluations"
@@ -98,126 +63,140 @@ def filter(df_row):
     if df_row["algo"] == "pga_me":
         if df_row["batch_size"] != 1024:
             return 
+
+    if df_row["algo"] == "me":
+        if df_row["batch_size"] != 8192:
+            return 
+        
     if df_row["algo"] == "ppga":
         if df_row["batch_size"] != 6000:
             return 
+        
     if df_row["algo"] == "memes":
         if df_row["batch_size"] != 8192:
             return 
-    if df_row["algo"] == "mcpg_me":
+        
+    if df_row["algo"] == "dcrl_me":
+        if df_row["batch_size"] != 2048:
+            return 
+        
+    if df_row["algo"] == "ascii_me":
         if df_row["batch_size"] != 4096:
             return 
-    
-    if df_row["algo"] == "mcpg_me":
-        if df_row["proportion_mutation_ga"] == 0 and df_row["greedy"] == 0:
-            return "mcpg_me_ga_0_greedy_0"
         
-    if df_row["algo"] == "mcpg_me":
-        if df_row["proportion_mutation_ga"] == 0.25 and df_row["greedy"] == 0:
-            return "mcpg_me_ga_25_greedy_0"
 
-    if df_row["algo"] == "mcpg_me":
-        if df_row["proportion_mutation_ga"] == 0.75 and df_row["greedy"] == 0:
-            return "mcpg_me_ga_75_greedy_0"
         
-    if df_row["algo"] == "mcpg_me":
-        if df_row["proportion_mutation_ga"] == 1 and df_row["greedy"] == 0:
-            return "mcpg_me_ga_1_greedy_0"
+    if df_row["algo"] == "ascii_me":
+        if df_row["proportion_mutation_ga"] == 0:
+            return "ascii_100"
+    if df_row["algo"] == "ascii_me":
+        if df_row["proportion_mutation_ga"] == 0.25:
+            return "ascii_75"
+        
+    if df_row["algo"] == "ascii_me":
+        if df_row["proportion_mutation_ga"] == 0.75:
+            return "ascii_25"
 
+    if df_row["algo"] == "ascii_me":
+        if df_row["proportion_mutation_ga"] == 1:
+            return "ascii_0"
 
-    if df_row["algo"] == "mcpg_me":
-        if df_row["proportion_mutation_ga"] == 0 and df_row["greedy"] == 0.5:
-            return "mcpg_me_ga_0_greedy_05"
-    if df_row["algo"] == "mcpg_me":
-        if df_row["proportion_mutation_ga"] == 0 and df_row["greedy"] == 1:
-            return "mcpg_me_ga_0_greedy_1"
-    if df_row["algo"] == "mcpg_me":
-        if df_row["proportion_mutation_ga"] == 0.5 and df_row["greedy"] == 0.5:
-            return "mcpg_me_ga_05_greedy_05"
-    if df_row["algo"] == "mcpg_me":
-        if df_row["proportion_mutation_ga"] == 0.5 and df_row["greedy"] == 1:
-            return "mcpg_me_ga_05_greedy_1"
+        
+
     return df_row["algo"]
-
 
 def customize_axis(ax):
     # Remove spines
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
 
-    # Remove ticks
-    # ax.tick_params(axis="y", length=0)
-
     # Add grid
     ax.grid(which="major", axis="y", color="0.9")
+    # Apply scientific notation to y-axis
+    formatter = ScalarFormatter(useMathText=True)
+    formatter.set_scientific(True)
+    formatter.set_powerlimits((0, 0))
+    ax.yaxis.set_major_formatter(formatter)
     return ax
 
 
-def plot(summary_df):
+def plot(df):
+    # Create subplots
+    nrows = len(EMITTER_LIST[ALGO_LIST[1]])
+    fig, axes = plt.subplots(nrows=nrows, ncols=len(ENV_LIST), sharex=True, squeeze=False, figsize=(25 * 0.8, 7 * 0.7))
 
-    fig, axes = plt.subplots(nrows=1, ncols=1, sharex='col', figsize=(10, 5 * 0.7))
-    color_palette = sns.color_palette("viridis", len(ALGO_LIST))
+    # Create formatter
+    formatter = ScalarFormatter(useMathText=True)
+    formatter.set_scientific(True)
+    formatter.set_powerlimits((0, 0))
 
-    #y_labels = ["QD Score after 1M evaluations"]
+    # Flag to handle legend retrieval only once
+    retrieved_legend = False
+    handles, labels = None, None
 
-    for col in range(1):
-        for row in range(1):
-            ax = axes
-            
-            # Set title for each subplot
-            # if row == 0:
-            #     ax.set_title(f"{y_labels[col]}")
-            
-            # Formatter for the x-axis
-            ax.xaxis.set_major_formatter(ScalarFormatter(useMathText=True))
-            ax.xaxis.get_major_formatter().set_scientific(True)
-            ax.xaxis.get_major_formatter().set_powerlimits((0, 0))
+    for col, env in enumerate(ENV_LIST):
+        print(env)
+        axes[0, col].set_title(ENV_DICT[env])
+        axes[nrows-1, col].set_xlabel(XLABEL)
+        axes[nrows-1, col].xaxis.set_major_formatter(formatter)
 
-            ax.yaxis.set_major_formatter(ScalarFormatter(useMathText=True))
-            ax.yaxis.get_major_formatter().set_scientific(True)
-            ax.yaxis.get_major_formatter().set_powerlimits((0, 0))
+        # Filter df for the current env
+        df_plot = df[(df["env"] == env)]
 
-            # Get df for the current env
-            df_plot = summary_df
-            
-            if col == 0:
-                sns.barplot(
+        for i, emitter in enumerate(EMITTER_LIST[ALGO_LIST[1]]):
+            # Only let the very first subplot create a legend
+            if not retrieved_legend and i == 0 and col == 0:
+                ax = sns.lineplot(
                     data=df_plot,
-                    x="env",
-                    y="qd_score",
+                    x="num_evaluations",
+                    y=emitter,
                     hue="algo",
                     hue_order=ALGO_LIST,
                     estimator=np.median,
                     errorbar=lambda x: (np.quantile(x, 0.25), np.quantile(x, 0.75)),
-                    ax=ax,
-                    palette=color_palette,
-                    legend=False,
-                    dodge=True,
-                    order=ENV_LIST,  # Changed from ALGO_LIST to ENV_LIST
+                    ax=axes[i, col],
                 )
-                ax.set_ylabel(f"QD Score")
+                handles, labels = axes[i, col].get_legend_handles_labels()
+                # Remove the local legend after retrieving handles and labels
+                axes[i, col].get_legend().remove()
+                retrieved_legend = True
+            else:
+                # For all other plots, disable the local legend
+                ax = sns.lineplot(
+                    data=df_plot,
+                    x="num_evaluations",
+                    y=emitter,
+                    hue="algo",
+                    hue_order=ALGO_LIST,
+                    estimator=np.median,
+                    errorbar=lambda x: (np.quantile(x, 0.25), np.quantile(x, 0.75)),
+                    legend=False,
+                    ax=axes[i, col],
+                )
 
-            ax.set_xticklabels([ENV_DICT.get(env, env) for env in ENV_LIST], ha="center")
-            ax.set_xlabel(None)
-                
-            # Customize the axis aesthetics
-            customize_axis(ax)
-            ax.set_axisbelow(True)
-        
+            if col == 0:
+                label = EMITTER_DICT.get(emitter, None)
+                if label is not None:
+                    axes[i, col].set_ylabel("Elites for \n{}".format(label))
+            else:
+                axes[i, col].set_ylabel(None)
 
-        # Update legend placement
-        colors = sns.color_palette(palette=color_palette, n_colors=len(ALGO_LIST))
-        patches = [mlines.Line2D([], [], color=colors[i], label=ALGO_DICT.get(algo, algo), linewidth=2.2, linestyle='-') for i, algo in enumerate(ALGO_LIST)]
-        # Place legend to the right of the figure
-        fig.legend(handles=patches, loc='center left', bbox_to_anchor=(1.02, 0.5), frameon=False)    
-    
-        fig.tight_layout()
+            # Customize axis
+            customize_axis(axes[i, col])
 
-    # Adjust the right margin to prevent legend cutoff
-    #plt.subplots_adjust(right=0.78)
+    # Map the original labels (which are algo names) through ALGO_DICT
+    mapped_labels = [ALGO_DICT.get(l, l) for l in labels]
+
+    # Create a single global legend at the bottom
+    fig.legend(handles, mapped_labels, loc="lower center", bbox_to_anchor=(0.5, -0.04),
+               ncols=len(ALGO_LIST), frameon=False)
+
+    # Aesthetic
+    fig.align_ylabels(axes)
+    fig.tight_layout()
 
     # Save plot
-    fig.savefig("fig4/output/GA_ablation_test.png", bbox_inches="tight")
+    fig.savefig("output/fig4.png", bbox_inches="tight")
     plt.close()
 
 
@@ -228,38 +207,27 @@ if __name__ == "__main__":
     plt.rc("font", size=16)
 
     # Create the DataFrame
-    results_dir = Path("fig4/output/")
-    #results_dir = Path("ablation/output/")
-    #print(results_dir)
-    
+    results_dir = Path("output/")
+        
     EPISODE_LENGTH = 250
 
     df = get_df(results_dir, EPISODE_LENGTH)
 
-    # Filter
     df['algo'] = df.apply(filter, axis=1)
+
+
+    # Sum PG and AI emitters
+    df['ai_offspring_added'] = df['ai_offspring_added'].fillna(0)
+    df["qpg_ai_offspring_added"] = df["qpg_offspring_added"] + df["ai_offspring_added"]
+
+    # Get cumulative sum of elites
+    for emitter in EMITTER_DICT:
+        df[emitter] = df.groupby(['env', 'algo', 'run'])[emitter].cumsum()
+
+    # Filter
     df = df[df["algo"].isin(ALGO_LIST)]
-    df = df[df["num_evaluations"] <= 1_005_000]
-    
-    idx = df.groupby(["env", "algo", "run"])["iteration"].idxmax()
-
-    df_last_iteration = df.loc[idx]
-
-    # Extract only the relevant columns for easier readability
-    summary_df = df_last_iteration[['env', 'algo', 'qd_score']]
-    #summary_df = summary_df[summary_df["batch_size"].isin(BATCH_LIST)]
-    
-    #df['env_'] = df.apply(filter_gpu_variants, axis=1)
+    df = df[df["num_evaluations"] <= 1_001_400]
 
     # Plot
-    #plot(df)
-    
-    #plot_(df)
-    
-    plot(summary_df)
-
-    # Plot
-    #plot(df)
-    
-    
+    plot(df)
     
