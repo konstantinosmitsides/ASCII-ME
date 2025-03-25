@@ -13,8 +13,8 @@ def main(config: Config) -> None:
         import main_me as main
     elif config.algo.name == "pga_me":
         import main_pga_me as main
-    elif config.algo.name == "dcg_me":
-        import main_dcg_me as main
+    elif config.algo.name == "dcrl_me":
+        import main_dcrl_me as main
     elif config.algo.name == "ascii_me":
         import main_ascii_me as main
     elif config.algo.name == "memes":

@@ -1,4 +1,4 @@
-name: dcg_me
+name: dcrl_me
 
 ga_batch_size: 128
 qpg_batch_size: 64
