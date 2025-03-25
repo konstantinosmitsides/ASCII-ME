@@ -198,3 +198,19 @@ new_data_eff/
 baselines/
 
 log.txt
+
+apptainer/hpc.yaml
+
+hpc_old.sh
+hpc.sh
+
+parse_yaml_old.sh
+parse_yaml.sh
+
+template_old.sh
+template.sh
+
+testing_hpc.sh
+
+shell_container.sh
+
