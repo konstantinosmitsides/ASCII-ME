@@ -27,7 +27,6 @@ from hydra.core.config_store import ConfigStore
 from omegaconf import OmegaConf
 import wandb
 from utils import Config, get_env
-from set_up_brax import get_reward_offset_brax
 from qdax.utils.sampling import sampling 
 from typing import Any, Dict, Tuple, List, Callable
 

@@ -26,7 +26,6 @@ from qdax.core.neuroevolution.buffers.buffer import QDTransition
 from qdax.core.neuroevolution.networks.networks import MLP
 from qdax.utils.metrics import CSVLogger, default_qd_metrics
 from qdax.utils.plotting import plot_map_elites_results, plot_2d_map_elites_repertoire
-from set_up_brax import get_reward_offset_brax
 from qdax.utils.sampling import sampling 
 from qdax.types import RNGKey, Genotype
 from typing import Any, Dict, Tuple, List, Callable
