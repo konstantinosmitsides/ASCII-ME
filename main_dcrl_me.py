@@ -41,7 +41,7 @@ from qdax.utils.sampling import sampling
 
 
 
-@hydra.main(version_base="1.2", config_path="configs/", config_name="dcg_me")
+@hydra.main(version_base="1.2", config_path="configs/", config_name="dcrl_me")
 def main(config: Config) -> None:
     #wandb.login(key="ab476069b53a15ad74ff1845e8dee5091d241297")
     #wandb.init(

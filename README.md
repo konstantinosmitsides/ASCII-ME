@@ -88,6 +88,6 @@ Once all the experiments are completed, any figures from the paper can be replic
 ## p-values, scalability scores, coefficients of variation, and relative differences
 
 Once all the experiments are completed, all the values used in the `Results & Analysis` section in the paper can be replicated with the following scripts:
-- p-values & relative differences: `p-value_functs.ipynb`
-- scalability scores: `scalability_scores.ipynb`
-- coefficients of variation: `results_analysis.ipynb`
+- p-values & relative differences: `analysis_p_values.ipynb`
+- scalability scores: `analysis_scal_scores.ipynb`
+- coefficients of variation: `analysis_cv.ipynb`
