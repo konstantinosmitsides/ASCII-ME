@@ -16,6 +16,7 @@ from baselines.PPGA.envs.brax_custom.brax_env import make_vec_env_brax_ppga
 from baselines.PPGA.utils.utilities import config_wandb, log
 
 import hydra
+import jax
 
 warnings.filterwarnings("ignore", ".*truncated to dtype int32.*")
 
@@ -40,6 +41,7 @@ def main(hydra_config):
 
     cfg.minibatch_size = int(cfg.batch_size // cfg.num_minibatches)
     cfg.obs_shape = vec_env.single_observation_space.shape
+    jax.debug.print("SHAPE: {}", cfg.obs_shape)
     cfg.action_shape = vec_env.single_action_space.shape
 
     cfg.bd_min = vec_env.behavior_descriptor_limits[0][0]
