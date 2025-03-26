@@ -14,6 +14,5 @@ discount_rate: 0.99
 clip_param: 0.2
 activation: tanh
 no_neurons: 64
-greedy: 0
 cosine_similarity: True
 std: 2

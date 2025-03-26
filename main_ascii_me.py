@@ -1,18 +1,18 @@
+"""
+Implementation of the ASCII-ME algorithm for Quality-Diversity optimization.
+
+This script combines reinforcement learning policy gradient methods with
+MAP-Elites for quality-diversity optimization, using JAX for efficient computation.
+"""
+
 import os
-
-#os.environ['MPLCONFIGDIR'] = '/tmp/matplotlib'
-#os.environ['WANDB_CACHE_DIR'] = '/tmp/wandb_cache'
-#os.environ['JAX_LOG_COMPILATION'] = '1'
-
-#import logging
 import time
 from dataclasses import dataclass
 from functools import partial
 from math import floor
 from typing import Callable
 import pickle
-#from flax import serialization
-#logging.basicConfig(level=logging.DEBUG)
+
 import hydra
 from omegaconf import OmegaConf
 import jax
@@ -23,48 +23,41 @@ from hydra.core.config_store import ConfigStore
 from qdax.core.map_elites__ import MAPElites
 from qdax.types import RNGKey
 from qdax.utils.sampling import sampling 
-from qdax.core.containers.mapelites_repertoire_ import compute_cvt_centroids, MapElitesRepertoire
+from qdax.core.containers.mapelites_repertoire_ import compute_cvt_centroids
 from qdax.core.neuroevolution.networks.networks import MLPMCPG
 from qdax.core.emitters.ascii_me_emitter import ASCIIMEConfig, ASCIIMEEmitter
-from qdax.core.neuroevolution.buffers.buffer import QDTransition  #, QDMCTransition
+from qdax.core.neuroevolution.buffers.buffer import QDTransition 
 from qdax.environments_v1 import behavior_descriptor_extractor
 from qdax.tasks.brax_envs_advanced_baseline_time_step import reset_based_scoring_function_brax_envs as scoring_function
 from utils import Config, get_env
 from qdax.core.emitters.mutation_operators import isoline_variation
-#import wandb
 from qdax.utils.metrics import CSVLogger, default_qd_metrics
-#from qdax.utils.plotting import plot_2d_map_elites_repertoire
 import matplotlib.pyplot as plt
-#jax.config.update("jax_debug_nans", True)
 
-
+# Constants
 EPS = 1e-8
 
-
-
-
-
-
-
-
-@hydra.main(version_base="1.2", config_path="configs", config_name="mcpg_me")
+@hydra.main(version_base="1.2", config_path="configs", config_name="ascii_me")
 def main(config: Config) -> None:
-    #profiler_dir = "Memory_Investigation"
-    #os.makedirs(profiler_dir, exist_ok=True)
-    # wandb.login(key="ab476069b53a15ad74ff1845e8dee5091d241297")
-    # wandb.init(
-    #    project="me-mcpg",
-    #    name=config.algo.name,
-    #    config=OmegaConf.to_container(config, resolve=True),
-    # )
-    # Init a random key
+    """
+    Main function to run the ASCII-ME algorithm.
+    
+    This function initializes the environment, policy network, and MAP-Elites algorithm,
+    then runs the main training loop to build a diverse repertoire of policies.
+    
+    Args:
+        config: Configuration object containing all parameters for the experiment
+    """
+    
+    # --------------------- INITIALIZATION ---------------------
+    # Initialize random key for reproducibility
     random_key = jax.random.PRNGKey(config.seed)
 
-    # Init environment
+    # Initialize environment
     env = get_env(config)
     reset_fn = jax.jit(env.reset)
 
-    # Compute the centroids
+    # Compute the centroids for MAP-Elites grid
     centroids, random_key = compute_cvt_centroids(
         num_descriptors=env.behavior_descriptor_length,
         num_init_cvt_samples=config.num_init_cvt_samples,
@@ -73,11 +66,9 @@ def main(config: Config) -> None:
         maxval=config.env.max_bd,
         random_key=random_key,
     )
-    # Init policy network
-
     
-
-    
+    # --------------------- POLICY NETWORK ---------------------
+    # Initialize policy network based on configuration
     if config.init == "uniform":
         policy_network = MLPMCPG(
             action_dim=env.action_size,
@@ -86,33 +77,39 @@ def main(config: Config) -> None:
             kernel_init=jax.nn.initializers.lecun_uniform(),
             final_init=jax.nn.initializers.lecun_uniform(),
         )
-        
     else:
         policy_network = MLPMCPG(
             action_dim=env.action_size,
             activation=config.algo.activation,
             no_neurons=config.algo.no_neurons,
-            std = config.algo.std,
+            std=config.algo.std,
         )
     
-    # Init population of controllers
-    
-    # maybe consider adding two random keys for each policy
+    # Initialize population of controllers
     random_key, subkey = jax.random.split(random_key)
     keys = jax.random.split(subkey, num=config.batch_size)
     fake_batch_obs = jnp.zeros(shape=(config.batch_size, env.observation_size))
     init_params = jax.vmap(policy_network.init)(keys, fake_batch_obs)
 
+    # Log parameter count for information
     param_count = sum(x[0].size for x in jax.tree_util.tree_leaves(init_params))
     print("Number of parameters in policy_network: ", param_count)
 
-    # Define the fonction to play a step with the policy in the environment
+    # --------------------- ENVIRONMENT INTERACTION FUNCTIONS ---------------------
     @jax.jit
     def play_step_fn(env_state, policy_params, random_key):
-        #random_key, subkey = jax.random.split(random_key)
+        """
+        Function to execute a single step in the environment using the policy.
+        
+        Args:
+            env_state: Current environment state
+            policy_params: Parameters of the policy network
+            random_key: JAX random key
+            
+        Returns:
+            Tuple containing (next_state, policy_params, random_key) and transition data
+        """
         _, action = policy_network.apply(policy_params, env_state.obs)
-        #logp = pi.log_prob(action) 
-        #logp = policy_network.apply(policy_params, env_state.obs, actions, method=policy_network.logp)
         state_desc = env_state.info["state_descriptor"]
         next_state = env.step(env_state, action)
 
@@ -125,47 +122,32 @@ def main(config: Config) -> None:
             actions=action,
             state_desc=state_desc,
             next_state_desc=next_state.info["state_descriptor"],
-            #logp=logp,
         )
 
         return (next_state, policy_params, random_key), transition
 
-
-    
-    # def get_av_upd_magn(metrics):
-    #     split = jnp.cumsum(jnp.array([emitter.batch_size for emitter in map_elites._emitter.emitters]))
-    #     is_offspring_split = jnp.split(metrics["is_offspring_added"], split, axis=-1)[:-1]
-    #     upd_magns_split = jnp.split(metrics["update_magns"], split, axis=-1)[:-1]
-    #     if config.algo.proportion_mutation_ga == 0:
-    #         filtered_upd_magns = upd_magns_split[0][is_offspring_split[0]]
-    #         return (jnp.array([0]), jnp.mean(filtered_upd_magns))
-        
-    #     elif config.algo.proportion_mutation_ga == 1:
-    #         filtered_upd_magns = upd_magns_split[0][is_offspring_split[0]]
-    #         return (jnp.mean(filtered_upd_magns), jnp.array([0]))
-    #     else:
-    #         filtered_upd_magns_pg = upd_magns_split[0][is_offspring_split[0]]
-    #         filtered_upd_magns_ga = upd_magns_split[1][is_offspring_split[1]]
-    #         return (jnp.mean(filtered_upd_magns_ga), jnp.mean(filtered_upd_magns_pg))
-            
-        
-        
-    
-
     def get_n_offspring_added(metrics):
+        """
+        Count the number of offspring added by different mutation methods.
+        
+        Args:
+            metrics: Dictionary of metrics from the MAP-Elites algorithm
+            
+        Returns:
+            Tuple containing counts of GA and QPG offspring added
+        """
         split = jnp.cumsum(jnp.array([emitter.batch_size for emitter in map_elites._emitter.emitters]))
         split = jnp.split(metrics["is_offspring_added"], split, axis=-1)[:-1]
+        
         if config.algo.proportion_mutation_ga == 0:
-            return (jnp.array([0]) , jnp.sum(split[0], axis=-1))
+            return (jnp.array([0]), jnp.sum(split[0], axis=-1))
         elif config.algo.proportion_mutation_ga == 1:
             return (jnp.sum(split[0], axis=-1), jnp.array([0]))
         else:
             return (jnp.sum(split[1], axis=-1), jnp.sum(split[0], axis=-1))
 
-
-
-
-    # Prepare the scoring function
+    # --------------------- SCORING AND METRICS ---------------------
+    # Prepare the scoring function for evaluating policies
     bd_extraction_fn = behavior_descriptor_extractor[config.env.name]
     scoring_fn = partial(
         scoring_function,
@@ -174,111 +156,17 @@ def main(config: Config) -> None:
         play_step_fn=play_step_fn,
         behavior_descriptor_extractor=bd_extraction_fn,
     )
-
-    
-#     me_scoring_fn = partial(
-#     sampling,
-#     scoring_fn=scoring_fn,
-#     num_samples=config.num_samples,
-# )
-
-    # @jax.jit
-    # def evaluate_repertoire(random_key, repertoire):
-    #     repertoire_empty = repertoire.fitnesses == -jnp.inf
-
-    #     fitnesses, descriptors, extra_scores, random_key = scoring_fn(
-    #         repertoire.genotypes, random_key
-    #     )
-
-    #     # Compute repertoire QD score
-    #     qd_score = jnp.sum((1.0 - repertoire_empty) * fitnesses).astype(float)
-    #     #qd_score += reward_offset * config.env.episode_length * jnp.sum(1.0 - repertoire_empty)
-
-    #     # Compute repertoire desc error mean
-    #     error = jnp.linalg.norm(repertoire.descriptors - descriptors, axis=1)
-    #     dem = (jnp.sum((1.0 - repertoire_empty) * error) / jnp.sum(1.0 - repertoire_empty)).astype(float)
-
-    #     return random_key, qd_score, dem
-    
-    
-    
-    
-    # def recreate_repertoire(
-    #     repertoire: MapElitesRepertoire,
-    #     centroids: jnp.ndarray,
-    #     metrics_fn: Callable,
-    #     random_key: RNGKey,
-    # ) -> MapElitesRepertoire:
-        
-    #     (
-    #         old_qd_score,
-    #         old_max_fitness,
-    #         old_coverage
-    #     ) = metrics_fn(repertoire).values()
-    #     fitnesses, descriptors, extra_scores, random_key = me_scoring_fn(
-    #         repertoire.genotypes, random_key
-    #     )
-    #     new_repertoire = MapElitesRepertoire.init(
-    #         genotypes=repertoire.genotypes,
-    #         fitnesses=fitnesses,
-    #         descriptors=descriptors,
-    #         centroids=centroids,
-    #         extra_scores=extra_scores,
-    #     )
-        
-    #     (
-    #         new_qd_score,
-    #         new_max_fitness,
-    #         new_coverage,
-    #     ) = metrics_fn(new_repertoire).values()
-        
-        
-    #     def calculate_percentage_difference(old, new):
-    #         return (abs(new - old) / ((new + old) / 2)) * 100
-
-    #     qd_score_difference = calculate_percentage_difference(old_qd_score, new_qd_score)
-    #     max_fitness_difference = calculate_percentage_difference(old_max_fitness, new_max_fitness)
-    #     coverage_difference = calculate_percentage_difference(old_coverage, new_coverage)
-        
-    #     # Save scores and percentage differences to a file
-    #     with open("./recreated_scores.txt", "w") as file:
-    #         file.write(f"Old QD Score: {old_qd_score}\n")
-    #         file.write(f"New QD Score: {new_qd_score}\n")
-    #         file.write(f"QD Score Percentage Difference: {qd_score_difference}%\n")
-    #         file.write(f"Old Max Fitness: {old_max_fitness}\n")
-    #         file.write(f"New Max Fitness: {new_max_fitness}\n")
-    #         file.write(f"Max Fitness Percentage Difference: {max_fitness_difference}%\n")
-    #         file.write(f"Old Coverage: {old_coverage}\n")
-    #         file.write(f"New Coverage: {new_coverage}\n")
-    #         file.write(f"Coverage Percentage Difference: {coverage_difference}%\n")
-            
-    #     if env.behavior_descriptor_length == 2:
-            
-    #         fig, _ = plot_2d_map_elites_repertoire(
-    #             centroids=new_repertoire.centroids,
-    #             repertoire_fitnesses=new_repertoire.fitnesses,
-    #             minval=config.env.min_bd,
-    #             maxval=config.env.max_bd,
-    #             repertoire_descriptors=new_repertoire.descriptors,
-    #         )
-            
-    #         fig.savefig("./recreated_repertoire_plot.png")
-        
-         
-
-    # Get minimum reward value to make sure qd_score are positive
     
     reward_offset = 0
 
-
-    # Define a metrics function
+    # Define metrics function for evaluating the quality-diversity performance
     metrics_function = partial(
         default_qd_metrics,
         qd_offset=reward_offset * config.env.episode_length,
     )
 
-    # Define the PG-emitter config
-    
+    # --------------------- EMITTER CONFIGURATION ---------------------
+    # Configure the ASCII-ME emitter
     ascii_me_config = ASCIIMEConfig(
         proportion_mutation_ga=config.algo.proportion_mutation_ga,
         no_agents=config.batch_size,
@@ -287,61 +175,69 @@ def main(config: Config) -> None:
         learning_rate=config.algo.learning_rate,
         clip_param=config.algo.clip_param,
         discount_rate=config.algo.discount_rate,
-        greedy=config.algo.greedy,
         cosine_similarity=config.algo.cosine_similarity,
         std=config.algo.std,
     )
     
+    # Define the variation function for mutation
     variation_fn = partial(
-        isoline_variation, iso_sigma=config.algo.iso_sigma, line_sigma=config.algo.line_sigma
+        isoline_variation, 
+        iso_sigma=config.algo.iso_sigma, 
+        line_sigma=config.algo.line_sigma
     )
     
+    # Create the ASCII-ME emitter
     ascii_me_emitter = ASCIIMEEmitter(
         config=ascii_me_config,
         policy_network=policy_network,
         env=env,
         variation_fn=variation_fn,
-        )
+    )
     
-
-
-    # Instantiate MAP Elites
+    # --------------------- MAP-ELITES SETUP ---------------------
+    # Instantiate MAP-Elites algorithm
     map_elites = MAPElites(
         scoring_function=scoring_fn,
         emitter=ascii_me_emitter,
         metrics_function=metrics_function,
     )
 
-    # compute initial repertoire
+    # Initialize repertoire with random policies
     repertoire, emitter_state, random_key = map_elites.init(init_params, centroids, random_key)
 
+    # --------------------- LOGGING SETUP ---------------------
     log_period = 10
     num_loops = int(config.num_iterations / log_period)
 
+    # Initialize metrics dictionary
     metrics = dict.fromkeys(
         [
             "iteration", 
             "qd_score", 
             "coverage", 
-            "max_fitness", 
-            #"qd_score_repertoire", 
-            #"dem_repertoire", 
+            "max_fitness",  
             "time", 
             "evaluation", 
             "ga_offspring_added", 
             "qpg_offspring_added"
-            #"upd_magn_pg",
-            #"upd_magn_ga"
-            ], 
+        ], 
         jnp.array([])
-        )
+    )
+    
+    # Setup CSV logger
     csv_logger = CSVLogger(
         "./log.csv",
         header=list(metrics.keys())
     )
     
-    
     def plot_metrics_vs_iterations(metrics, log_period):
+        """
+        Plot metrics over iterations and save figures.
+        
+        Args:
+            metrics: Dictionary of metrics
+            log_period: Logging frequency
+        """
         iterations = jnp.arange(1, 1 + len(metrics["time"]), dtype=jnp.int32)
 
         for metric_name, metric_values in metrics.items():
@@ -356,22 +252,17 @@ def main(config: Config) -> None:
             plt.savefig(f"./Plots/{metric_name}_vs_iterations.png")
             plt.close()
     
-    
-    
-    # Main loop
+    # --------------------- MAIN TRAINING LOOP ---------------------
     map_elites_scan_update = map_elites.scan_update
     eval_num = config.batch_size 
-    #print(f"Number of evaluations per iteration: {eval_num}")
-
     metrics_file_path = "./metrics_incremental.pickle"
 
     cumulative_time = 0
-    i = 0
-    while cumulative_time < 1000:
-    #for i in range(num_loops):
-        #print(f"Loop {i+1}/{num_loops}")
+    for i in range(num_loops):
+        # Time each loop iteration
         start_time = time.time()
         
+        # Run MAP-Elites for log_period iterations
         (repertoire, emitter_state, random_key,), current_metrics = jax.lax.scan(
             map_elites_scan_update,
             (repertoire, emitter_state, random_key),
@@ -381,40 +272,31 @@ def main(config: Config) -> None:
         timelapse = time.time() - start_time
         cumulative_time += timelapse
 
-        # Metrics
-        #random_key, qd_score_repertoire, dem_repertoire = evaluate_repertoire(random_key, repertoire)
-
+        # Update metrics with iteration information
         current_metrics["iteration"] = jnp.arange(1+log_period*i, 1+log_period*(i+1), dtype=jnp.int32)
         current_metrics["evaluation"] = jnp.arange(1+log_period*eval_num*i, 1+log_period*eval_num*(i+1), dtype=jnp.int32)
         current_metrics["time"] = jnp.repeat(cumulative_time, log_period)
-        #current_metrics["qd_score_repertoire"] = jnp.repeat(qd_score_repertoire, log_period)
-        #current_metrics["dem_repertoire"] = jnp.repeat(dem_repertoire, log_period)
         current_metrics["ga_offspring_added"], current_metrics["qpg_offspring_added"] = get_n_offspring_added(current_metrics)
-        #current_metrics["upd_magn_ga"], current_metrics["upd_magn_pg"] = get_av_upd_magn(current_metrics)
-        #del current_metrics["update_magns"]
         
+        # Clean up metrics
         del current_metrics["is_offspring_added"]
         current_metrics_cpu = jax.tree_util.tree_map(lambda x: np.array(x), current_metrics)
 
+        # Save incremental metrics to file
         with open(metrics_file_path, "ab") as f:
             pickle.dump(current_metrics_cpu, f)
 
-
-        # Log
+        # Log metrics for this iteration
         log_metrics = jax.tree_util.tree_map(lambda metric: metric[-1], current_metrics_cpu)
         log_metrics["qpg_offspring_added"] = np.sum(current_metrics["qpg_offspring_added"])
         log_metrics["ga_offspring_added"] = np.sum(current_metrics["ga_offspring_added"])
         csv_logger.log(log_metrics)
 
-        i += 1
-        #wandb.log(log_metrics)
-
-
-    # At the end, if you need one single combined structure, 
-    # you can reload all increments and combine them:
+    # --------------------- FINAL METRICS PROCESSING ---------------------
+    # Combine all incremental metrics into a single structure
     all_metrics = {}
     with open(metrics_file_path, "rb") as f:
-        # Since we appended multiple chunks, read them all back
+        # Read all chunks of metrics
         metrics_list = []
         try:
             while True:
@@ -424,34 +306,16 @@ def main(config: Config) -> None:
             pass
 
     # Combine all metrics arrays across the loaded chunks
-    # This assumes all chunks have the same keys and shapes along axis=0
     for key in metrics_list[0].keys():
         all_metrics[key] = np.concatenate([m[key] for m in metrics_list], axis=0)
 
-    # Now `all_metrics` contains all combined metrics
+    # Save combined metrics
     with open("./metrics.pickle", "wb") as metrics_file:
         pickle.dump(all_metrics, metrics_file)
 
-    # Repertoire
-    os.mkdir("./repertoire/")
-    #os.mkdir("./Plots/")
+    # Save final repertoire
+    os.makedirs("./repertoire/", exist_ok=True)
     repertoire.save(path="./repertoire/")
-
-    #plot_metrics_vs_iterations(metrics, log_period)
-
-
-    # Plot
-    '''
-    if env.behavior_descriptor_length == 2:
-        env_steps = jnp.arange(config.num_iterations) * config.env.episode_length * config.batch_size
-        fig, _ = plot_map_elites_results(env_steps=env_steps, metrics=metrics, repertoire=repertoire, min_bd=config.env.min_bd, max_bd=config.env.max_bd)
-        fig.savefig("./Plots/repertoire_plot.png")
-    '''
-        
-    #recreate_repertoire(repertoire, centroids, metrics_function, random_key)
-        
-    
-
 
 if __name__ == "__main__":
     cs = ConfigStore.instance()

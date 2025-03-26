@@ -1,4 +1,9 @@
-"""Core components of the MAP-Elites algorithm."""
+"""
+Core components of the MAP-Elites algorithm.
+
+MAP-Elites is a Quality-Diversity (QD) algorithm that maintains a collection of 
+high-performing solutions across a repertoire of behaviors defined by descriptors.
+"""
 from __future__ import annotations
 
 from functools import partial
@@ -21,21 +26,21 @@ from qdax.types import (
 
 
 class MAPElites:
-    """Core elements of the MAP-Elites algorithm.
+    """Core implementation of the MAP-Elites algorithm.
 
-    Note: Although very similar to the GeneticAlgorithm, we decided to keep the
-    MAPElites class independant of the GeneticAlgorithm class at the moment to keep
-    elements explicit.
+    MAP-Elites maintains a collection of diverse, high-performing solutions organized
+    by their behavioral characteristics. The algorithm uses emitters to generate new
+    candidate solutions and evaluates them based on both performance (fitness) and 
+    behavioral characteristics (descriptors).
 
     Args:
-        scoring_function: a function that takes a batch of genotypes and compute    # evaluate fitness & descriptor
-            their fitnesses and descriptors
-        emitter: an emitter is used to suggest offsprings given a MAPELites         # select sols? & update them
-            repertoire. It has two compulsory functions. A function that takes
-            emits a new population, and a function that update the internal state
-            of the emitter.
-        metrics_function: a function that takes a MAP-Elites repertoire and compute  # evaluate the MAP-Elites repertoire
-            any useful metric to track its evolution
+        scoring_function: Function that evaluates genotypes to determine their
+            fitness scores and behavioral descriptors.
+        emitter: Strategy for generating new candidate solutions from the current
+            repertoire. Handles both creation of new solutions and updating internal
+            state based on evaluation results.
+        metrics_function: Function that computes metrics to track the evolution and
+            performance of the repertoire.
     """
 
     def __init__(
@@ -58,28 +63,30 @@ class MAPElites:
         random_key: RNGKey,
     ) -> Tuple[MapElitesRepertoire, Optional[EmitterState], RNGKey]:
         """
-        Initialize a Map-Elites repertoire with an initial population of genotypes.
-        Requires the definition of centroids that can be computed with any method
-        such as CVT or Euclidean mapping.
+        Initialize a MAP-Elites repertoire with an initial population of genotypes.
+
+        This method evaluates the initial genotypes, creates a repertoire organized
+        around the provided centroids, and initializes the emitter state.
 
         Args:
-            genotypes: initial genotypes, pytree in which leaves
-                have shape (batch_size, num_features)
-            centroids: tesselation centroids of shape (batch_size, num_descriptors)
-            random_key: a random key used for stochastic operations.
+            genotypes: Initial population of solutions, where each leaf in the pytree
+                has shape (batch_size, num_features).
+            centroids: Tessellation centroids defining the behavioral space partitioning,
+                with shape (num_centroids, num_descriptors).
+            random_key: JAX PRNG key for stochastic operations.
 
         Returns:
-            An initialized MAP-Elite repertoire with the initial state of the emitter,
-            and a random key.
+            A tuple containing:
+            - An initialized MAP-Elites repertoire
+            - The initial state of the emitter
+            - An updated random key
         """
-        # score initial genotypes      
+        # Score initial genotypes to get fitness and descriptors
         fitnesses, descriptors, extra_scores, random_key = self._scoring_function(
             genotypes, random_key
         )
-        
-        #print(extra_scores["transitions"])
 
-        # init the repertoire
+        # Initialize the repertoire with initial genotypes and evaluations
         repertoire = MapElitesRepertoire.init(
             genotypes=genotypes,
             fitnesses=fitnesses,
@@ -88,19 +95,7 @@ class MAPElites:
             extra_scores=extra_scores,
         )
 
-        # get initial state of the emitter
-        '''
-        emitter_state, random_key = self._emitter.init(
-            random_key=random_key,
-            repertoire=repertoire,
-            genotypes=genotypes,
-            fitnesses=fitnesses,
-            descriptors=descriptors,
-            extra_scores=extra_scores,
-        )
-        '''
-        
-        
+        # Initialize the emitter state
         emitter_state, random_key = self._emitter.init(
             random_key=random_key,
             repertoire=repertoire,
@@ -110,13 +105,14 @@ class MAPElites:
             extra_scores=extra_scores,
         )
         
+        # Update the emitter state with initial data
         emitter_state = self._emitter.state_update(
             emitter_state=emitter_state,
             repertoire=repertoire,
             genotypes=genotypes,
             fitnesses=fitnesses,
             descriptors=descriptors,
-            extra_scores={**extra_scores}#, **extra_info},
+            extra_scores=extra_scores,
         )
 
         return repertoire, emitter_state, random_key
@@ -129,60 +125,55 @@ class MAPElites:
         random_key: RNGKey,
     ) -> Tuple[MapElitesRepertoire, Optional[EmitterState], Metrics, RNGKey]:
         """
-        Performs one iteration of the MAP-Elites algorithm.
-        1. A batch of genotypes is sampled in the repertoire and the genotypes
-            are copied.
-        2. The copies are mutated and crossed-over
-        3. The obtained offsprings are scored and then added to the repertoire.
+        Perform one iteration of the MAP-Elites algorithm.
 
+        The update process follows these steps:
+        1. Generate new candidate solutions (offspring) using the emitter
+        2. Evaluate the offspring to determine fitness and descriptors
+        3. Add successful candidates to the repertoire
+        4. Update the emitter state based on evaluation results
+        5. Compute metrics on the updated repertoire
 
         Args:
-            repertoire: the MAP-Elites repertoire
-            emitter_state: state of the emitter
-            random_key: a jax PRNG random key
+            repertoire: Current MAP-Elites repertoire
+            emitter_state: Current state of the emitter
+            random_key: JAX PRNG key for stochastic operations
 
         Returns:
-            the updated MAP-Elites repertoire
-            the updated (if needed) emitter state
-            metrics about the updated repertoire
-            a new jax PRNG key
+            A tuple containing:
+            - The updated MAP-Elites repertoire
+            - The updated emitter state
+            - Metrics about the repertoire and update
+            - An updated random key
         """
-        # generate offsprings with the emitter
-        '''
-        genotypes, extra_info, random_key = self._emitter.emit(
-            repertoire, emitter_state, random_key
-        )
-        '''
-        genotypes, upd_magns, random_key = self._emitter.emit(
+        # Generate offspring using the emitter
+        genotypes, update_info, random_key = self._emitter.emit(
             repertoire, emitter_state, random_key
         )
 
-        # scores the offsprings
+        # Evaluate the offspring
         fitnesses, descriptors, extra_scores, random_key = self._scoring_function(
             genotypes, random_key
         )
-        #jax.debug.print("dones : {}", extra_scores['transitions'].dones)
 
-        # add genotypes in the repertoire
-        repertoire, is_offspring_added = repertoire.add(genotypes, descriptors, fitnesses, extra_scores)
-        #jax.debug.breakpoint()
+        # Add evaluated offspring to the repertoire
+        repertoire, is_offspring_added = repertoire.add(
+            genotypes, descriptors, fitnesses, extra_scores
+        )
 
-        # update emitter state after scoring is made
+        # Update emitter state based on evaluation results
         emitter_state = self._emitter.state_update(
             emitter_state=emitter_state,
             repertoire=repertoire,
             genotypes=genotypes,
             fitnesses=fitnesses,
             descriptors=descriptors,
-            extra_scores={**extra_scores}#, **extra_info},
+            extra_scores=extra_scores,
         )
-        #upd_magns_array = jnp.concatenate([upd_magns["update_magns_pg"], upd_magns["update_magns_ga"]])
 
-        # update the metrics
+        # Compute metrics on the updated repertoire
         metrics = self._metrics_function(repertoire)
         metrics["is_offspring_added"] = is_offspring_added
-        #metrics["update_magns"] = upd_magns_array
-        #jax.debug.breakpoint()
 
         return repertoire, emitter_state, metrics, random_key
 
@@ -192,19 +183,23 @@ class MAPElites:
         carry: Tuple[MapElitesRepertoire, Optional[EmitterState], RNGKey],
         unused: Any,
     ) -> Tuple[Tuple[MapElitesRepertoire, Optional[EmitterState], RNGKey], Metrics]:
-        """Rewrites the update function in a way that makes it compatible with the
-        jax.lax.scan primitive.
+        """
+        Update function compatible with JAX's lax.scan for efficient iteration.
+
+        This function reformats the update method to work with JAX's scan primitive,
+        enabling more efficient multiple updates through JIT compilation.
 
         Args:
-            carry: a tuple containing the repertoire, the emitter state and a
-                random key.
-            unused: unused element, necessary to respect jax.lax.scan API.
+            carry: A tuple containing (repertoire, emitter_state, random_key)
+            unused: Unused element required by the lax.scan API
 
         Returns:
-            The updated repertoire and emitter state, with a new random key and metrics.
+            A tuple containing:
+            - The updated carry tuple (repertoire, emitter_state, random_key)
+            - Metrics from the current update
         """
         repertoire, emitter_state, random_key = carry
-        (repertoire, emitter_state, metrics, random_key,) = self.update(
+        repertoire, emitter_state, metrics, random_key = self.update(
             repertoire,
             emitter_state,
             random_key,
