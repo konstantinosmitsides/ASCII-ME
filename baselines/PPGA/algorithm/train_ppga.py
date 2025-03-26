@@ -356,11 +356,12 @@ def train_ppga(cfg, vec_env, vec_env_eval):
     # main loop
 
     cumulative_time = 0
-    itr = 0
-    while cumulative_time < 1500:
-        itr += 1
+    # itr = 0
+    # while cumulative_time < 1500:
+        # itr += 1
+        
+    for itr in range(starting_iter, itrs + 1):
         start_time = time.time()
-    #for itr in range(starting_iter, itrs + 1):
         # Current solution point. returns a single sol per emitter
         solution_batch = scheduler.ask_dqd()
         mean_agent = Actor(obs_shape, action_shape, cfg.normalize_obs, cfg.normalize_returns).deserialize(
