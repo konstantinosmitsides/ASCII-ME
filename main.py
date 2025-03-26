@@ -19,6 +19,8 @@ def main(config: Config) -> None:
         import main_ascii_me as main
     elif config.algo.name == "memes":
         import main_memes as main
+    elif config.algo.name == "ppga":
+        import main_ppga as main
             
     else:
         raise NotImplementedError

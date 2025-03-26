@@ -1,6 +1,7 @@
 import os
 
 os.environ["XLA_PYTHON_CLIENT_PREALLOCATE"] = "false"
+os.environ["WANDB_DISABLED"] = "true"
 
 import torch
 
@@ -19,7 +20,7 @@ import hydra
 warnings.filterwarnings("ignore", ".*truncated to dtype int32.*")
 
 
-@hydra.main(version_base="1.2", config_path="configs/")
+@hydra.main(version_base="1.2", config_path="configs/", config_name="ppga")
 def main(hydra_config):
     # Verify config
     cfg = PPGAConfig.create(hydra_config)
@@ -27,8 +28,12 @@ def main(hydra_config):
 
     cfg.num_emitters = 1
 
-    vec_env = make_vec_env_brax_ppga(task_name=hydra_config.task, feat_name=hydra_config.feat, batch_size=cfg.env_batch_size,
-                                     seed=cfg.seed, backend=cfg.backend, clip_obs_rew=cfg.clip_obs_rew, episode_length=hydra_config.algo.episode_length)
+    vec_env = make_vec_env_brax_ppga(task_name=hydra_config.env.name, batch_size=cfg.env_batch_size,
+                                     seed=cfg.seed, backend=hydra_config.env.backend, clip_obs_rew=cfg.clip_obs_rew, episode_length=hydra_config.env.episode_length)
+    
+
+    vec_env_eval = make_vec_env_brax_ppga(task_name=hydra_config.env.name, batch_size=3000,
+                                    seed=cfg.seed, backend=hydra_config.env.backend, clip_obs_rew=cfg.clip_obs_rew, episode_length=hydra_config.env.episode_length)
 
     cfg.batch_size = int(cfg.env_batch_size * cfg.rollout_length)
     cfg.num_envs = int(cfg.env_batch_size)
@@ -55,7 +60,7 @@ def main(hydra_config):
                     'checkpoint. If you plan to restart this experiment from a checkpoint or wish to have the added '
                     'safety of recovering from a potential crash, it is recommended that you enable save_scheduler.')
 
-    train_ppga(cfg, vec_env)
+    train_ppga(cfg, vec_env, vec_env_eval)
 
 
 if __name__ == "__main__":
