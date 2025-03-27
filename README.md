@@ -16,7 +16,7 @@ All experiments can be reproduced within a containerized environment, ensuring r
 MAP-Elites (Multi-dimensional Archive of Phenotypic Elites) is a quality-diversity algorithm that creates a collection of high-performing solutions that differ according to features defined by the user. 
 
 The ASCII-ME method employs two distinct variation operators within the standard MAP-Elites loop: 
-- **Iso+LineDD**, which mutates a parent genotype based on that
+- **Iso+LineDD (GA)**, which mutates a parent genotype based on that
 of a randomly selected elite. 
 - **ASCII**, which interpolates
 between the parent's behavior and another behavior sampled
@@ -76,7 +76,7 @@ The configurations for all algorithms and all environments can be found in the `
 python main.py env=ant_uni algo=pga_me seed=$RANDOM num_iterations=4000 algo.num_critic_training_steps=5000
 ```
 
-To facilitate the replication of all experiments, you can run the bash script `launch_experiments.sh`. This script will run one seed for each algorithm and each environment. Bear in mind, that in the paper, we replicated all experiments with 20 random seeds, so you would need to run `launch_experiments.sh` 20 times to replicate the results. Please note that your results may vary slightly from those reported in the paper due to hardware differences, particularly GPU specifications. However, the overall trends and comparative performance should remain consistent.
+To facilitate the replication of all experiments, you can run the bash script `launch_experiments.sh`. This script will run one seed for each configuration. Bear in mind, that in the paper, we replicated all experiments with 20 random seeds, so you would need to run `launch_experiments.sh` 20 times to replicate the results. Please note that your results may vary slightly from those reported in the paper due to hardware differences, particularly GPU specifications. However, the overall trends and comparative performance should remain consistent.
 
 ## Figures
 
