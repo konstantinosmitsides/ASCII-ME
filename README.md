@@ -13,20 +13,22 @@ All experiments can be reproduced within a containerized environment, ensuring r
   <em>High-Level Illustration of the ASCII-ME algorithm</em>
 </p>
 
+MAP-Elites (Multi-dimensional Archive of Phenotypic Elites) is a quality-diversity algorithm that creates a collection of high-performing solutions that differ according to features defined by the user. 
+
 The ASCII-ME method employs two distinct variation operators within the standard MAP-Elites loop: 
 - **Iso+LineDD**, which mutates a parent genotype based on that
 of a randomly selected elite. 
 - **ASCII**, which interpolates
-between the parent’s behavior and another behavior sampled
+between the parent's behavior and another behavior sampled
 from the buffer, using performance metrics encapsulated in
-𝒁. The behavioral changes are then mapped to the genotypic
-space by 𝑱 to mutate the parent genotype.
+𝒁 (performance matrix). The behavioral changes are then mapped to the genotypic
+space by 𝑱 (Jacobian matrix) to mutate the parent genotype.
 
 **ASCII-ME** is the first Policy Gradient Quality Diversity algorithm that does not rely on Actor-Critic methods, yet capable of evolving Deep Neural Network policies with thousands of parameters at competitive sample and runtime efficiency. This, combined with its strong scalability on a single GPU, underscores the potential of this promising new framework for non Actor-Critic Policy Gradient Quality Diversity methods.
 
 ### Baselines
 
-The repository containers the code to run the following algorithms:
+The repository contains the code to run the following algorithms:
 - [_ASCII-ME_](https://arxiv.org/abs/2501.18723)
 - [_DCRL-ME_](https://arxiv.org/abs/2401.08632)
 - [_PGA-ME_](https://dl.acm.org/doi/10.1145/3449639.3459304)
@@ -36,7 +38,7 @@ The repository containers the code to run the following algorithms:
 
 ## Installation
 
-We provide an Apptainer definition file `apptainaer/container.def`, that enables to create a containerized environment in whcih all the experiments and figures can be reproduced.
+We provide an Apptainer definition file `apptainer/container.def`, that enables to create a containerized environment in which all the experiments and figures can be reproduced.
 
 First, clone the repository:
 ```bash
@@ -67,14 +69,14 @@ For example, to run ASCII-ME on Walker2d Uni:
 python main.py env=walker2d_uni algo=ascii_me seed=$RANDOM
 ```
 
-During training, the mterics are logged in the `output/` directory.
+During training, the metrics are logged in the `output/` directory.
 
 The configurations for all algorithms and all environments can be found in the `configs/` directory. Alternatively, they can be modified directly in the command line. For example, to increase `num_iterations` to 4000 and `num_critic_training_steps` to 5000 in PGA-ME, you can run:
 ```bash
 python main.py env=ant_uni algo=pga_me seed=$RANDOM num_iterations=4000 algo.num_critic_training_steps=5000
 ```
 
-To facilitate the replication of all experiments, you can run the bash script `launch_experiments.sh`. This script will run one seed for each algorithm and each environment. Bear in mind, that in the paper, we replicated all experiments with 20 random seeds, so you would need to run `launch_experiments.sh` 20 times to replicate the results.
+To facilitate the replication of all experiments, you can run the bash script `launch_experiments.sh`. This script will run one seed for each algorithm and each environment. Bear in mind, that in the paper, we replicated all experiments with 20 random seeds, so you would need to run `launch_experiments.sh` 20 times to replicate the results. Please note that your results may vary slightly from those reported in the paper due to hardware differences, particularly GPU specifications. However, the overall trends and comparative performance should remain consistent.
 
 ## Figures
 
