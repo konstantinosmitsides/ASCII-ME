@@ -1,13 +1,20 @@
 Bootstrap: docker
 From: ubuntu:22.04
 
+%arguments
+    commit=main
+
+%labels
+	Author konstantinos.mitsides23@imperial.ac.uk
+
 %help
-	MCPG-ME
+	ASCII-ME GECCO 2025
 
 %environment
 	# System
 	export TZ=Europe/London
 	export OPENBLAS_NUM_THREADS=1
+	# export CUDA_VISIBLE_DEVICES=1
 
 	# Activate virtual environment permanently
 	export VIRTUAL_ENV="/venv"
@@ -18,7 +25,6 @@ From: ubuntu:22.04
 	export PYTHONPATH="/workspace/src"
 
 %post
-	echo "export WANDB_API_KEY=$WANDB_API_KEY" >> $APPTAINER_ENVIRONMENT
 	export DEBIAN_FRONTEND=noninteractive
 
 	# Update and install required libraries
@@ -39,8 +45,8 @@ From: ubuntu:22.04
 	mkdir /workspace/ && cd /workspace/
 
 	# Clone repository to /src/
-	git clone https://{{ gitlab_user }}:{{ gitlab_token }}@gitlab.doc.ic.ac.uk/AIRL/research_projects/konstantinos_mitsides/me-with-sample-based-drl.git src/ && cd src/
-	git checkout {{ commit }}  
+	git clone https://github.com/konstantinosmitsides/ASCII-ME.git src/ && cd src/
+	git checkout ${commit}  
 
 	# Install requirements
 	pip install -r requirements.txt

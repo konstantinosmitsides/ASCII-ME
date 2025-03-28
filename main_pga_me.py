@@ -1,8 +1,5 @@
 import os
 
-# Set environment variables to redirect cache directories
-os.environ['MPLCONFIGDIR'] = '/tmp/matplotlib'
-os.environ['WANDB_CACHE_DIR'] = '/tmp/wandb_cache'
 
 from typing import Tuple
 from dataclasses import dataclass
@@ -46,12 +43,6 @@ from jax.lib import xla_bridge
 
 @hydra.main(version_base="1.2", config_path="configs/", config_name="pga_me")
 def main(config: Config) -> None:
-    #wandb.login(key="ab476069b53a15ad74ff1845e8dee5091d241297")
-    #wandb.init(
-    #    project="me-mcpg",
-    #    name=config.algo.name,
-    #    config=OmegaConf.to_container(config, resolve=True),
-    #)
     # Init a random key
     random_key = jax.random.PRNGKey(config.seed)
 
@@ -134,7 +125,6 @@ def main(config: Config) -> None:
 
         # Compute repertoire QD score
         qd_score = jnp.sum((1.0 - repertoire_empty) * fitnesses).astype(float)
-        #qd_score += reward_offset * config.env.episode_length * jnp.sum(1.0 - repertoire_empty)
 
         # Compute repertoire desc error mean
         error = jnp.linalg.norm(repertoire.descriptors - descriptors, axis=1)
@@ -155,8 +145,6 @@ def main(config: Config) -> None:
         qpg_offspring_added, ai_offspring_added = jnp.split(split[0], (split[0].shape[1]-1,), axis=-1)
         return (jnp.sum(split[1], axis=-1), jnp.sum(qpg_offspring_added, axis=-1), jnp.sum(ai_offspring_added, axis=-1))
 
-    # Get minimum reward value to make sure qd_score are positive
-    #reward_offset = 0
 
     def recreate_repertoire(
         repertoire: MapElitesRepertoire,
@@ -276,9 +264,6 @@ def main(config: Config) -> None:
             "qd_score", 
             "coverage", 
             "max_fitness", 
-            #"qd_score_repertoire", 
-            #"dem_repertoire", 
-            #"actor_fitness", 
             "time", 
             "evaluation", 
             "ga_offspring_added", 
@@ -328,15 +313,12 @@ def main(config: Config) -> None:
         cumulative_time += timelapse
 
         # Metrics
-        #random_key, qd_score_repertoire, dem_repertoire = evaluate_repertoire(random_key, repertoire)
-        #random_key, fitness_actor = evaluate_actor(random_key, emitter_state.emitter_states[0].actor_params)
+
 
         current_metrics["iteration"] = jnp.arange(1+log_period*i, 1+log_period*(i+1), dtype=jnp.int32)
         current_metrics["evaluation"] = jnp.arange(1+log_period*eval_num*i, 1+log_period*eval_num*(i+1), dtype=jnp.int32)
         current_metrics["time"] = jnp.repeat(cumulative_time, log_period)
-        #current_metrics["qd_score_repertoire"] = jnp.repeat(qd_score_repertoire, log_period)
-        #current_metrics["dem_repertoire"] = jnp.repeat(dem_repertoire, log_period)
-        #current_metrics["actor_fitness"] = jnp.repeat(fitness_actor, log_period)
+
         current_metrics["ga_offspring_added"], current_metrics["qpg_offspring_added"], current_metrics["ai_offspring_added"] = get_n_offspring_added(current_metrics)
         del current_metrics["is_offspring_added"]
 
@@ -352,7 +334,6 @@ def main(config: Config) -> None:
         log_metrics["ga_offspring_added"] = np.sum(current_metrics["ga_offspring_added"])
         log_metrics["ai_offspring_added"] = np.sum(current_metrics["ai_offspring_added"])
         csv_logger.log(log_metrics)
-        #wandb.log(log_metrics)
 
 
     # At the end, if you need one single combined structure, 

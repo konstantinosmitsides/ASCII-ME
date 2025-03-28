@@ -1,8 +1,5 @@
 import os
 
-# Set environment variables to redirect cache directories
-os.environ['MPLCONFIGDIR'] = '/tmp/matplotlib'
-os.environ['WANDB_CACHE_DIR'] = '/tmp/wandb_cache'
 
 from typing import Any, Dict, Tuple, List, Callable
 from dataclasses import dataclass
@@ -43,12 +40,6 @@ from qdax.utils.sampling import sampling
 
 @hydra.main(version_base="1.2", config_path="configs/", config_name="dcrl_me")
 def main(config: Config) -> None:
-    #wandb.login(key="ab476069b53a15ad74ff1845e8dee5091d241297")
-    #wandb.init(
-    #    project="me-mcpg",
-    #    name=config.algo.name,
-    #    config=OmegaConf.to_container(config, resolve=True),
-    #)
 
     assert config.batch_size == config.algo.ga_batch_size + config.algo.qpg_batch_size + config.algo.ai_batch_size
 
@@ -336,10 +327,6 @@ def main(config: Config) -> None:
          "qd_score", 
          "coverage", 
          "max_fitness", 
-         #"qd_score_repertoire", 
-         #"dem_repertoire", 
-         #"qd_score_actor", 
-         #"dem_actor", 
          "time", 
          "evaluation", 
          "ga_offspring_added", 
@@ -380,8 +367,6 @@ def main(config: Config) -> None:
     
     cumulative_time = 0
     for i in range(num_loops):
-    #i = 0
-    #while cumulative_time < 1000:
         start_time = time.time()
         (repertoire, emitter_state, random_key,), current_metrics = jax.lax.scan(
             map_elites_scan_update,
@@ -393,16 +378,9 @@ def main(config: Config) -> None:
         cumulative_time += timelapse
 
         # Metrics
-        #random_key, qd_score_repertoire, dem_repertoire = evaluate_repertoire(random_key, repertoire)
-        #random_key, qd_score_actor, dem_actor = evaluate_actor(random_key, repertoire, emitter_state.emitter_states[0].actor_params)
-
         current_metrics["iteration"] = jnp.arange(1+log_period*i, 1+log_period*(i+1), dtype=jnp.int32)
         current_metrics["evaluation"] = jnp.arange(1+log_period*eval_num*i, 1+log_period*eval_num*(i+1), dtype=jnp.int32)
         current_metrics["time"] = jnp.repeat(cumulative_time, log_period)
-        #current_metrics["qd_score_repertoire"] = jnp.repeat(qd_score_repertoire, log_period)
-        #current_metrics["dem_repertoire"] = jnp.repeat(dem_repertoire, log_period)
-        #current_metrics["qd_score_actor"] = jnp.repeat(qd_score_actor, log_period)
-        #current_metrics["dem_actor"] = jnp.repeat(dem_actor, log_period)
         current_metrics["ga_offspring_added"], current_metrics["qpg_offspring_added"], current_metrics["ai_offspring_added"] = get_n_offspring_added(current_metrics)
         del current_metrics["is_offspring_added"]
         
@@ -419,8 +397,7 @@ def main(config: Config) -> None:
         log_metrics["ga_offspring_added"] = np.sum(current_metrics["ga_offspring_added"])
         log_metrics["ai_offspring_added"] = np.sum(current_metrics["ai_offspring_added"])
         csv_logger.log(log_metrics)
-        #i += 1
-        #wandb.log(log_metrics)
+
 
     # At the end, if you need one single combined structure, 
     # you can reload all increments and combine them:
@@ -447,23 +424,13 @@ def main(config: Config) -> None:
     # Repertoire
     os.mkdir("./repertoire/")
     repertoire.save(path="./repertoire/")
-    #os.mkdir("./Plots/")
-    #repertoire.save(path="./repertoire/")
-    
-    #plot_metrics_vs_iterations(metrics, log_period)
+
 
     # Actor
     state_dict = serialization.to_state_dict(emitter_state.emitter_states[0].actor_params)
     with open("./actor.pickle", "wb") as params_file:
         pickle.dump(state_dict, params_file)
-
-    # Plot
-    #if env.behavior_descriptor_length == 2:
-        #env_steps = jnp.arange(config.num_iterations) * config.env.episode_length * config.batch_size
-        #fig, _ = plot_map_elites_results(env_steps=env_steps, metrics=metrics, repertoire=repertoire, min_bd=config.env.min_bd, max_bd=config.env.max_bd)
-        #fig.savefig("./plot.png")
-
-    #recreate_repertoire(repertoire, centroids, metrics_function, random_key)
+        
 
 if __name__ == "__main__":
     cs = ConfigStore.instance()

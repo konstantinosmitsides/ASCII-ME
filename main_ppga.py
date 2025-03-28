@@ -4,6 +4,9 @@ os.environ["XLA_PYTHON_CLIENT_PREALLOCATE"] = "false"
 os.environ["WANDB_DISABLED"] = "true"
 
 import torch
+import time
+import pickle
+import numpy as np
 
 v = torch.ones(1, device='cuda')  # init torch cuda before jax
 
@@ -14,9 +17,11 @@ import warnings
 from baselines.PPGA.algorithm.train_ppga import train_ppga
 from baselines.PPGA.envs.brax_custom.brax_env import make_vec_env_brax_ppga
 from baselines.PPGA.utils.utilities import config_wandb, log
+from qdax.utils.metrics import CSVLogger
 
 import hydra
 import jax
+import jax.numpy as jnp
 
 warnings.filterwarnings("ignore", ".*truncated to dtype int32.*")
 
@@ -47,9 +52,31 @@ def main(hydra_config):
     cfg.bd_min = vec_env.behavior_descriptor_limits[0][0]
     cfg.bd_max = vec_env.behavior_descriptor_limits[1][0]
 
-    if cfg.use_wandb:
-        config_wandb(batch_size=cfg.batch_size, total_iters=cfg.total_iterations, run_name=cfg.wandb_run_name,
-                     wandb_project="PPGA", cfg=cfg)
+    # Setup metrics dictionary
+    metrics = dict.fromkeys(
+        [
+            "iteration", 
+            "qd_score", 
+            "coverage", 
+            "max_fitness", 
+            "time", 
+            "evaluation",
+        ], 
+        jnp.array([])
+    )
+    
+    # Setup CSV logger
+    csv_logger = CSVLogger(
+        "./log.csv",
+        header=list(metrics.keys())
+    )
+    
+    # Setup directory for metrics
+    metrics_file_path = "./metrics_incremental.pickle"
+    
+    # Disable wandb
+    cfg.use_wandb = False
+    
     outdir = os.path.join(cfg.expdir, str(cfg.seed))
     cfg.outdir = outdir
     assert not os.path.exists(outdir) or cfg.load_scheduler_from_cp is not None or cfg.load_archive_from_cp is not None, \
@@ -62,7 +89,8 @@ def main(hydra_config):
                     'checkpoint. If you plan to restart this experiment from a checkpoint or wish to have the added '
                     'safety of recovering from a potential crash, it is recommended that you enable save_scheduler.')
 
-    train_ppga(cfg, vec_env, vec_env_eval)
+    # Run the training, passing the logger and metrics path
+    train_ppga(cfg, vec_env, vec_env_eval, csv_logger=csv_logger, metrics_file_path=metrics_file_path)
 
 
 if __name__ == "__main__":

@@ -35,12 +35,7 @@ from typing import Any, Dict, Tuple, List, Callable
 
 @hydra.main(version_base="1.2", config_path="configs/", config_name="me")
 def main(config: Config) -> None:
-    #wandb.login(key="ab476069b53a15ad74ff1845e8dee5091d241297")
-    #wandb.init(
-    #    project="me-mcpg",
-    #    name=config.algo.name,
-    #    config=OmegaConf.to_container(config, resolve=True),
-    #)
+
 
     # Init a random key
     random_key = jax.random.PRNGKey(config.seed)
@@ -109,7 +104,6 @@ def main(config: Config) -> None:
         behavior_descriptor_extractor=bd_extraction_fn,
     )
     
-    #reward_offset = get_reward_offset_brax(env, config.env.name)
     
     me_scoring_fn = functools.partial(
     sampling,
@@ -127,7 +121,6 @@ def main(config: Config) -> None:
 
         # Compute repertoire QD score
         qd_score = jnp.sum((1.0 - repertoire_empty) * fitnesses).astype(float)
-        #qd_score += reward_offset * config.env.episode_length * jnp.sum(1.0 - repertoire_empty)
 
 
         # Compute repertoire desc error mean
@@ -204,7 +197,6 @@ def main(config: Config) -> None:
             )
             
             fig.savefig("./recreated_repertoire_plot.png")
-    #reward_offset = get_reward_offset_brax(env, config.env.name)
     # Define a metrics function
     metrics_function = functools.partial(
         default_qd_metrics,
@@ -241,15 +233,12 @@ def main(config: Config) -> None:
             "qd_score", 
             "coverage", 
             "max_fitness", 
-            #"qd_score_repertoire", 
-            #"dem_repertoire", 
             "time", 
             "evaluation", 
             "ga_offspring_added"
             ], 
         jnp.array([])
         )
-    #metrics = dict.fromkeys(["iteration", "qd_score", "coverage", "max_fitness", "time", "evaluation"], jnp.array([]))
     csv_logger = CSVLogger(
         "./log.csv",
         header=list(metrics.keys())
@@ -273,53 +262,11 @@ def main(config: Config) -> None:
     # Main loop
     map_elites_scan_update = map_elites.scan_update
     eval_num = config.batch_size
-    #print(f"Number of evaluations per iteration: {eval_num}")
-
-    # cumulative_time = 0
-    # #for i in range(num_loops):
-    # i = 0
-    # while cumulative_time < 3000:
-    #     start_time = time.time()
-    #     (repertoire, emitter_state, random_key), current_metrics = jax.lax.scan(
-    #         map_elites_scan_update,
-    #         (repertoire, emitter_state, random_key),
-    #         (),
-    #         length=log_period,
-    #     )
-    #     timelapse = time.time() - start_time
-    #     cumulative_time += timelapse
-
-    #     # Metrics
-    #     #random_key, qd_score_repertoire, dem_repertoire = evaluate_repertoire(random_key, repertoire)
-
-    #     current_metrics["iteration"] = jnp.arange(1+log_period*i, 1+log_period*(i+1), dtype=jnp.int32)
-    #     current_metrics["evaluation"] = jnp.arange(1+log_period*eval_num*i, 1+log_period*eval_num*(i+1), dtype=jnp.int32)
-    #     current_metrics["time"] = jnp.repeat(cumulative_time, log_period)
-    #     #current_metrics["qd_score_repertoire"] = jnp.repeat(qd_score_repertoire, log_period)
-    #     #current_metrics["dem_repertoire"] = jnp.repeat(dem_repertoire, log_period)
-    #     current_metrics["ga_offspring_added"] = get_n_offspring_added(current_metrics)
-    #     del current_metrics["is_offspring_added"]
-    #     metrics = jax.tree_util.tree_map(lambda metric, current_metric: jnp.concatenate([metric, current_metric], axis=0), metrics, current_metrics)
-
-    #     # Log
-    #     log_metrics = jax.tree_util.tree_map(lambda metric: metric[-1], metrics)
-    #     log_metrics["ga_offspring_added"] = jnp.sum(current_metrics["ga_offspring_added"])
-    #     csv_logger.log(log_metrics)
-    #     i += 1
-    #     #wandb.log(log_metrics)
-
-    # # Metrics
-    # with open("./metrics.pickle", "wb") as metrics_file:
-    #     pickle.dump(metrics, metrics_file)
-
-    
 
 
     metrics_file_path = "./metrics_incremental.pickle"
 
     cumulative_time = 0
-    #i = 0
-    #while cumulative_time < 1000:
     for i in range(num_loops):
         start_time = time.time()
         (repertoire, emitter_state, random_key), current_metrics = jax.lax.scan(
@@ -350,8 +297,6 @@ def main(config: Config) -> None:
         log_metrics["ga_offspring_added"] = np.sum(current_metrics_cpu["ga_offspring_added"])
         csv_logger.log(log_metrics)
 
-        #i += 1
-
     # At the end, if you need one single combined structure, 
     # you can reload all increments and combine them:
     all_metrics = {}
@@ -376,20 +321,8 @@ def main(config: Config) -> None:
 
     # Repertoire
     os.mkdir("./repertoire/")
-    #os.mkdir("./Plots/")
     repertoire.save(path="./repertoire/")
     
-    #plot_metrics_vs_iterations(metrics, log_period)
-    
-    
-
-    # Plot
-    #if env.behavior_descriptor_length == 2:
-    #    env_steps = jnp.arange(config.num_iterations) * config.env.episode_length * config.batch_size
-    #    fig, _ = plot_map_elites_results(env_steps=env_steps, metrics=metrics, repertoire=repertoire, min_bd=config.env.min_bd, max_bd=config.env.max_bd)
-    #    fig.savefig("./Plots/repertoire_plot.png")
-
-    #recreate_repertoire(repertoire, centroids, metrics_function, random_key)
 
 if __name__ == "__main__":
     cs = ConfigStore.instance()
