@@ -1,15 +1,10 @@
 import os
 
-# Set environment variables to redirect cache directories
-os.environ['MPLCONFIGDIR'] = '/tmp/matplotlib'
-os.environ['WANDB_CACHE_DIR'] = '/tmp/wandb_cache'
-
 import logging
 import time
 from dataclasses import dataclass
 from functools import partial
 from typing import Any, Dict, Tuple
-import wandb
 import pickle
 
 import hydra
@@ -41,12 +36,6 @@ from qdax.core.neuroevolution.buffers.buffer import QDTransition
 @hydra.main(version_base="1.2", config_path="configs", config_name="memes")
 def main(config: Config) -> None:
 
-    #wandb.login(key="ab476069b53a15ad74ff1845e8dee5091d241297")
-    #wandb.init(
-    #    project="me-mcpg",
-    #    name=config.algo.name,
-    #    config=OmegaConf.to_container(config, resolve=True),
-    #)
 
     # Choose stopping criteria
     if config.num_iterations > 0 and config.algo.num_evaluations > 0:
@@ -205,12 +194,8 @@ def main(config: Config) -> None:
             "qd_score", 
             "coverage", 
             "max_fitness", 
-            #"qd_score_repertoire", 
-            #"dem_repertoire", 
             "time", 
             "evaluation", 
-            #"ga_offspring_added", 
-            #"qpg_offspring_added"
             ], 
         jnp.array([])
         )
@@ -226,11 +211,8 @@ def main(config: Config) -> None:
     eval_num = int((config.batch_size * config.algo.sample_number * config.algo.num_in_optimizer_steps) + config.batch_size)
     cumulative_time = 0
 
-    #i = 0
     
     for i in range(num_loops):
-    #while cumulative_time < 1000:
-        #print(f"Loop {i+1}/{num_loops}")
         start_time = time.time()
         
         (repertoire, emitter_state, random_key,), current_metrics = jax.lax.scan(
@@ -246,12 +228,6 @@ def main(config: Config) -> None:
         current_metrics["iteration"] = jnp.arange(1+log_period*i, 1+log_period*(i+1), dtype=jnp.int32)
         current_metrics["evaluation"] = jnp.arange(1+log_period*eval_num*i, 1+log_period*eval_num*(i+1), dtype=jnp.int32)
         current_metrics["time"] = jnp.repeat(cumulative_time, log_period)
-        #current_metrics["qd_score_repertoire"] = jnp.repeat(qd_score_repertoire, log_period)
-        #current_metrics["dem_repertoire"] = jnp.repeat(dem_repertoire, log_period)
-        #current_metrics["ga_offspring_added"], current_metrics["qpg_offspring_added"] = get_n_offspring_added(current_metrics)
-        #del current_metrics["is_offspring_added"]
-
-        #metrics = jax.tree_util.tree_map(lambda metric, current_metric: jnp.concatenate([metric, current_metric], axis=0), metrics, current_metrics)
         current_metrics_cpu = jax.tree_util.tree_map(lambda x: np.array(x), current_metrics)
 
         with open(metrics_file_path, "ab") as f:
@@ -260,12 +236,8 @@ def main(config: Config) -> None:
 
         # Log
         log_metrics = jax.tree_util.tree_map(lambda metric: metric[-1], current_metrics_cpu)
-        #log_metrics["qpg_offspring_added"] = jnp.sum(current_metrics["qpg_offspring_added"])
-        #log_metrics["ga_offspring_added"] = jnp.sum(current_metrics["ga_offspring_added"])
         csv_logger.log(log_metrics)
-        #i += 1
 
-        #wandb.log(log_metrics)
         
     # At the end, if you need one single combined structure, 
     # you can reload all increments and combine them:
@@ -291,7 +263,6 @@ def main(config: Config) -> None:
 
     # Repertoire
     os.mkdir("./repertoire/")
-    #os.mkdir("./Plots/")
     repertoire.save(path="./repertoire/")
 
     

@@ -26,6 +26,7 @@ from baselines.PPGA.utils.normalize import ReturnNormalizer, ObsNormalizer
 from baselines.PPGA.utils.utilities import save_cfg
 from baselines.PPGA.utils.archive_utils import save_heatmap, load_scheduler_from_checkpoint, archive_df_to_archive
 from baselines.PPGA.envs.brax_custom import reward_offset
+from qdax.utils.metrics import CSVLogger
 
 
 def parse_args():
@@ -271,7 +272,7 @@ def create_scheduler(cfg,
     return Scheduler(archive, emitters, result_archive, add_mode=mode, reward_offset=qd_offset)
 
 
-def train_ppga(cfg, vec_env, vec_env_eval):
+def train_ppga(cfg, vec_env, vec_env_eval, csv_logger=None, metrics_file_path="./metrics_incremental.pickle"):
     #wandb.login(key="ab476069b53a15ad74ff1845e8dee5091d241297")
     # setup logging
     exp_dir = Path(cfg.outdir)
@@ -335,31 +336,17 @@ def train_ppga(cfg, vec_env, vec_env_eval):
     log_freq = 1
     log_arch_freq = cfg.log_arch_freq
 
-    metrics = dict.fromkeys(
-        [
-            "iteration", 
-            "qd_score", 
-            "coverage", 
-            "max_fitness", 
-            "time", 
-            "evaluation",
-            ], 
-        jnp.array([])
-        )
+    # Create CSV logger if not provided
+    if csv_logger is None:
+        csv_logger = CSVLogger("./log.csv", header=["iteration", "qd_score", "coverage", "max_fitness", "time", "evaluation"])
 
-    metrics_file_path = "./metrics_incremental.pickle"
-
-
-
+    # Starting iteration
     starting_iter = scheduler.emitters[0].itrs  # if loading a checkpoint, this will be > 0
     itrs = cfg.total_iterations
     # main loop
 
     cumulative_time = 0
-    # itr = 0
-    # while cumulative_time < 1500:
-        # itr += 1
-        
+    
     for itr in range(starting_iter, itrs + 1):
         start_time = time.time()
         # Current solution point. returns a single sol per emitter
@@ -516,61 +503,29 @@ def train_ppga(cfg, vec_env, vec_env_eval):
                 data = [itr] + elite_scores
                 writer.writerow(data)
 
-        if cfg.use_wandb:
-            with torch.no_grad():
-                normA = torch.linalg.norm(scheduler.emitters[0].opt.A).cpu().numpy().item()
-            ppo_global_steps = scheduler.emitters[0].ppo.global_step
-            wandb.log({
-                "QD/QD Score": scheduler.result_archive.offset_qd_score,
-                # use regular archive for qd score because it factors in the return offset
-                "QD/average performance": result_archive.stats.obj_mean,
-                "QD/coverage (%)": result_archive.stats.coverage * 100.0,
-                "QD/best score": result_archive.stats.obj_max,
-                "QD/iteration": itr,
-                "QD/restarts": scheduler.emitters[0].restarts,
-                'QD/mean_coeff_obj': mean_grad_coeffs[0][0],
-                'XNES/norm_A': normA,
-                "Evaluations": int(ppo_global_steps // 250),
-            })
-            for i in range(1, cfg.num_dims + 1):
-                wandb.log({
-                    'QD/iteration': itr,
-                    f'QD/mean_coeff_measure{i}': mean_grad_coeffs[0][i]
-                })
-
-        current_metrics ={
-            "iteration" : jnp.array([itr]),
-            "evaluation" : jnp.array([int(ppo_global_steps // 250)]),
-            "qd_score" : jnp.array([scheduler.result_archive.offset_qd_score]),
-            "coverage" : jnp.array([result_archive.stats.coverage * 100.0]),
-            "max_fitness" : jnp.array([result_archive.stats.obj_max]),
-            "time" : jnp.array([cumulative_time])
+        # Get global step count for metrics
+        ppo_global_steps = scheduler.emitters[0].ppo.global_step
+        
+        # Create metrics
+        current_metrics = {
+            "iteration": jnp.array([itr]),
+            "evaluation": jnp.array([int(ppo_global_steps // 250)]),
+            "qd_score": jnp.array([scheduler.result_archive.offset_qd_score]),
+            "coverage": jnp.array([result_archive.stats.coverage * 100.0]),
+            "max_fitness": jnp.array([result_archive.stats.obj_max]),
+            "time": jnp.array([cumulative_time])
         }
 
+        # Convert to numpy arrays
         current_metrics_cpu = jax.tree_util.tree_map(lambda x: np.array(x), current_metrics)
 
+        # Save incremental metrics to file
         with open(metrics_file_path, "ab") as f:
             pickle.dump(current_metrics_cpu, f)
 
-    all_metrics = {}
-    with open(metrics_file_path, "rb") as f:
-        # Since we appended multiple chunks, read them all back
-        metrics_list = []
-        try:
-            while True:
-                m = pickle.load(f)
-                metrics_list.append(m)
-        except EOFError:
-            pass
-
-    # Combine all metrics arrays across the loaded chunks
-    # This assumes all chunks have the same keys and shapes along axis=0
-    for key in metrics_list[0].keys():
-        all_metrics[key] = np.concatenate([m[key] for m in metrics_list], axis=0)
-
-    # Now `all_metrics` contains all combined metrics
-    with open("./metrics.pickle", "wb") as metrics_file:
-        pickle.dump(all_metrics, metrics_file)
+        # Log metrics for this iteration
+        log_metrics = jax.tree_util.tree_map(lambda metric: float(metric[0]), current_metrics_cpu)
+        csv_logger.log(log_metrics)
 
 
 
