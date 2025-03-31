@@ -528,6 +528,26 @@ def train_ppga(cfg, vec_env, vec_env_eval, csv_logger=None, metrics_file_path=".
         csv_logger.log(log_metrics)
 
 
+    all_metrics = {}
+    with open(metrics_file_path, "rb") as f:
+        # Since we appended multiple chunks, read them all back
+        metrics_list = []
+        try:
+            while True:
+                m = pickle.load(f)
+                metrics_list.append(m)
+        except EOFError:
+            pass
+
+    # Combine all metrics arrays across the loaded chunks
+    # This assumes all chunks have the same keys and shapes along axis=0
+    for key in metrics_list[0].keys():
+        all_metrics[key] = np.concatenate([m[key] for m in metrics_list], axis=0)
+
+    # Now `all_metrics` contains all combined metrics
+    with open("./metrics.pickle", "wb") as metrics_file:
+        pickle.dump(all_metrics, metrics_file)
+
 
 if __name__ == '__main__':
     cfg = parse_args()
