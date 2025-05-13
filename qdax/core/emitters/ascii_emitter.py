@@ -1,5 +1,5 @@
 """
-Adaptive Sampling and Critic Informed (ASCII) Emitter for Quality-Diversity optimization.
+Action Sequence Crossover with performance-Informed Interpolation (ASCII) Emitter for Quality-Diversity optimization.
 
 This module implements the ASCII emitter which uses policy gradient techniques to optimize
 policies within a MAP-Elites framework. The emitter maintains a trajectory buffer and uses
@@ -67,7 +67,7 @@ class ASCIIEmitterState(EmitterState):
     random_key: RNGKey
     
 class ASCIIEmitter(Emitter):
-    """ASCII (Adaptive Sampling and Critic Informed) Emitter for QD optimization.
+    """ASCII Emitter for QD optimization.
     
     This emitter uses policy gradient methods to optimize policies within a 
     quality-diversity framework. It maintains a buffer of trajectories and uses

@@ -1,10 +1,9 @@
 """
 ASCII-ME Emitter Implementation for Quality Diversity.
 
-This module implements the ASCII-ME (Adaptive Sampling and Critic Informed MAP-Elites) emitter,
-which combines genetic algorithm (GA) emitters with policy gradient emitters for quality diversity
-optimization. This hybrid approach allows balancing between exploration (via GA) and
-exploitation (via policy gradients).
+This module implements the ASCII-ME (Action Sequence Crossover with performance-Informed Interpolation for MAP-Elites)
+emitter, which combines genetic algorithm (GA) emitters with policy gradient emitters for quality diversity
+optimization. This hybrid approach allows balancing between exploration (via GA) and exploitation (via policy gradients).
 """
 
 from typing import Callable, Tuple
