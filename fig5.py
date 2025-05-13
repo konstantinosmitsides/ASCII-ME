@@ -192,9 +192,8 @@ if __name__ == "__main__":
     #results_dir = Path("ablation/output/")
     #print(results_dir)
     
-    EPISODE_LENGTH = 250
 
-    df = get_df(results_dir, EPISODE_LENGTH)
+    df = get_df(results_dir)
 
     # Filter
     df['algo'] = df.apply(filter, axis=1)

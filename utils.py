@@ -238,7 +238,6 @@ def get_df(results_dir):
                 if config.algo.name == "ascii_me":
                     metrics["proportion_mutation_ga"] = config.algo.proportion_mutation_ga
                     metrics["no_epochs"] = config.algo.no_epochs
-                    metrics['greedy'] = config.algo.greedy
 
 
 

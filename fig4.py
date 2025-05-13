@@ -209,9 +209,8 @@ if __name__ == "__main__":
     # Create the DataFrame
     results_dir = Path("output/")
         
-    EPISODE_LENGTH = 250
 
-    df = get_df(results_dir, EPISODE_LENGTH)
+    df = get_df(results_dir)
 
     df['algo'] = df.apply(filter, axis=1)
 
